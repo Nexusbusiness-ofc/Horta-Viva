@@ -28,7 +28,7 @@ export default function Register() {
     setLoading(true);
     try {
       await base44.auth.register({ email, password });
-      window.location.href = fromUrl;
+      window.location.hash = `#${fromUrl.startsWith("/") ? fromUrl : "/" + fromUrl}`;
     } catch (err) {
       setError(err.message || "Falha ao criar conta");
     } finally {

@@ -59,12 +59,12 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
     base44.auth.logout();
     if (shouldRedirect) {
-      window.location.href = '/login';
+      window.location.hash = '#/login';
     }
   };
 
   const navigateToLogin = () => {
-    window.location.href = '/login';
+    window.location.hash = '#/login';
   };
 
   return (

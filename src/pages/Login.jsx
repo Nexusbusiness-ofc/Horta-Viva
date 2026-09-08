@@ -25,7 +25,7 @@ export default function Login() {
     setLoading(true);
     try {
       await base44.auth.loginViaEmailPassword(email, password);
-      window.location.href = fromUrl;
+      window.location.hash = `#${fromUrl.startsWith("/") ? fromUrl : "/" + fromUrl}`;
     } catch (err) {
       setError(err.message || "Email ou palavra-passe inválidos");
     } finally {
@@ -41,7 +41,7 @@ export default function Login() {
         try {
           await downloadFromGoogleDrive();
         } catch {}
-        window.location.href = fromUrl;
+        window.location.hash = `#${fromUrl.startsWith("/") ? fromUrl : "/" + fromUrl}`;
         return;
       } catch (err) {
         console.warn("Google Drive OAuth falhou ou cancelado, fallback:", err);

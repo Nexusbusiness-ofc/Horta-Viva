@@ -211,7 +211,7 @@ export const localAuth = {
     } catch {}
 
     const target = fromUrl && fromUrl.startsWith("/") ? fromUrl : "/minha-quinta";
-    window.location.href = target;
+    window.location.hash = `#${target}`;
   },
 
   loginAsGuest: (fromUrl = "/minha-quinta") => {
@@ -222,7 +222,7 @@ export const localAuth = {
     } catch {}
 
     const target = fromUrl && fromUrl.startsWith("/") ? fromUrl : "/minha-quinta";
-    window.location.href = target;
+    window.location.hash = `#${target}`;
   },
 
   loginViaEmailPassword: async (email, password) => {
@@ -280,13 +280,13 @@ export const localAuth = {
     } catch {}
 
     if (redirectUrl) {
-      window.location.href = redirectUrl;
+      window.location.hash = redirectUrl.startsWith("#") ? redirectUrl : `#${redirectUrl}`;
     }
   },
 
   redirectToLogin: (nextUrl) => {
     const target = nextUrl ? `/login?from_url=${encodeURIComponent(nextUrl)}` : "/login";
-    window.location.href = target;
+    window.location.hash = `#${target}`;
   },
 
   isAuthenticated: async () => {

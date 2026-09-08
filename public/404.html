@@ -4,16 +4,23 @@
     <meta charset="utf-8">
     <title>Horta Viva</title>
     <script type="text/javascript">
-      // Redirecionamento SPA para GitHub Pages mantendo a rota
-      var pathSegmentsToKeep = 1;
+      // Redireciona qualquer rota direta do GitHub Pages para a rota Hash correspondente
       var l = window.location;
-      l.replace(
-        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
-        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
-        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-        l.hash
-      );
+      var path = l.pathname;
+      var repoName = '/Horta-Viva';
+      var route = '';
+      if (path.indexOf(repoName) === 0) {
+        route = path.substring(repoName.length);
+      } else {
+        route = path;
+      }
+      if (!route || route === '/') {
+        route = '/';
+      } else if (route.charAt(0) !== '/') {
+        route = '/' + route;
+      }
+      var target = l.origin + repoName + '/#' + route + (l.search ? l.search : '') + l.hash;
+      window.location.replace(target);
     </script>
   </head>
   <body>
