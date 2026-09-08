@@ -54,13 +54,15 @@ export default function Home() {
       {/* Header */}
       <header className="sticky top-0 z-30 bg-gradient-to-r from-white/90 via-emerald-50/60 to-white/90 backdrop-blur-lg border-b border-emerald-100/60">
         <div className="max-w-5xl mx-auto px-4 py-3">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 via-green-500 to-green-700 flex items-center justify-center shadow-lg shadow-emerald-300/50">
-              <Leaf className="w-5 h-5 text-white" />
-            </div>
+          <div className="flex items-center gap-3 mb-3">
+            <img 
+              src="./logo.jpg" 
+              alt="Horta Viva" 
+              className="w-11 h-11 rounded-xl shadow-md border border-emerald-200/70 object-cover shrink-0" 
+            />
             <div>
-              <h1 className="text-xl font-bold text-stone-800 leading-none">Minha Horta</h1>
-              <p className="text-xs text-stone-500">O teu guia de cultivo</p>
+              <h1 className="text-xl font-extrabold text-stone-800 leading-tight">Horta Viva</h1>
+              <p className="text-xs text-stone-500 font-medium">Agricultura & Guia de Cultivo</p>
             </div>
             <div className="ml-auto flex items-center gap-2">
               <AuthButton />

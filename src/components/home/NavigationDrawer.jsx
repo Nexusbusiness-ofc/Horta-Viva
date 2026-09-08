@@ -30,9 +30,12 @@ export default function NavigationDrawer() {
         </button>
       </SheetTrigger>
       <SheetContent side="left" className="w-[280px] sm:w-[320px] p-0">
-        <SheetHeader className="px-5 pt-5 pb-3 border-b border-stone-100">
-          <SheetTitle className="text-left text-lg font-bold text-stone-800">Minha Horta</SheetTitle>
-          <p className="text-xs text-stone-500 text-left">Escolhe uma secção</p>
+        <SheetHeader className="px-5 pt-5 pb-3 border-b border-stone-100 flex flex-row items-center gap-3">
+          <img src="./logo.jpg" alt="Horta Viva" className="w-10 h-10 rounded-xl object-cover shadow-sm border border-emerald-100 shrink-0" />
+          <div>
+            <SheetTitle className="text-left text-lg font-bold text-stone-800 leading-tight">Horta Viva</SheetTitle>
+            <p className="text-xs text-stone-500 text-left">Navegação da Quinta</p>
+          </div>
         </SheetHeader>
         <div className="p-3 space-y-2 overflow-y-auto">
           {SECTIONS.map(s => {
