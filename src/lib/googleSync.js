@@ -19,12 +19,15 @@ const SCOPES = [
 let tokenClientInstance = null;
 let gisScriptLoaded = false;
 
-// Obter o Client ID configurado (via env ou definido pelo utilizador na app)
+export const DEFAULT_GOOGLE_CLIENT_ID =
+  "112974039146-pndij5p4she2jd23vbqcqknhh2vn65m2.apps.googleusercontent.com";
+
+// Obter o Client ID configurado (via localStorage, env ou ID padrao do projeto)
 export function getGoogleClientId() {
   return (
     localStorage.getItem(STORAGE_KEYS.CLIENT_ID) ||
     import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-    ""
+    DEFAULT_GOOGLE_CLIENT_ID
   );
 }
 
