@@ -1,0 +1,60 @@
+{
+  "name": "MyAnimal",
+  "type": "object",
+  "properties": {
+    "animal_name": {
+      "type": "string",
+      "title": "Animal",
+      "description": "Nome do animal que tens na quinta"
+    },
+    "animal_id": {
+      "type": "string",
+      "title": "Refer\u00eancia ao cat\u00e1logo",
+      "description": "ID do registo no cat\u00e1logo FarmAnimal (para puxar cuidados)"
+    },
+    "animal_emoji": {
+      "type": "string",
+      "title": "Emoji",
+      "default": "\ud83d\udc3e"
+    },
+    "animal_color": {
+      "type": "string",
+      "title": "Cor",
+      "default": "#ea580c"
+    },
+    "quantity": {
+      "type": "number",
+      "title": "Quantidade",
+      "default": 1
+    },
+    "location": {
+      "type": "string",
+      "title": "Local"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notas"
+    },
+    "added_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Desde"
+    }
+  },
+  "required": [
+    "animal_name",
+    "animal_emoji",
+    "animal_color"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "name": "FarmAnimal",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Nome",
+      "description": "Nome comum do animal"
+    },
+    "scientific_name": {
+      "type": "string",
+      "title": "Nome cient\u00edfico"
+    },
+    "emoji": {
+      "type": "string",
+      "title": "Emoji",
+      "default": "\ud83d\udc14"
+    },
+    "color": {
+      "type": "string",
+      "title": "Cor",
+      "default": "#c2410c"
+    },
+    "image_url": {
+      "type": "string",
+      "title": "Imagem",
+      "format": "uri"
+    },
+    "category": {
+      "type": "string",
+      "title": "Categoria",
+      "enum": [
+        "Aves",
+        "Coelhos",
+        "Caprinos",
+        "Ovinos",
+        "Su\u00ednos",
+        "Bovinos",
+        "Equ\u00eddeos",
+        "Apicultura"
+      ],
+      "default": "Aves"
+    },
+    "difficulty": {
+      "type": "string",
+      "title": "Dificuldade",
+      "enum": [
+        "F\u00e1cil",
+        "M\u00e9dia",
+        "Dif\u00edcil"
+      ],
+      "default": "F\u00e1cil"
+    },
+    "space_needed": {
+      "type": "string",
+      "title": "Espa\u00e7o necess\u00e1rio"
+    },
+    "daily_effort": {
+      "type": "string",
+      "title": "Esfor\u00e7o di\u00e1rio",
+      "enum": [
+        "Baixo",
+        "M\u00e9dio",
+        "Alto"
+      ],
+      "default": "M\u00e9dio"
+    },
+    "where_to_keep": {
+      "type": "string",
+      "title": "Onde ter (instala\u00e7\u00f5es)"
+    },
+    "how_to_keep": {
+      "type": "string",
+      "title": "Como ter"
+    },
+    "care": {
+      "type": "string",
+      "title": "Cuidados a ter"
+    },
+    "feeding": {
+      "type": "string",
+      "title": "Como alimentar"
+    },
+    "feed_items": {
+      "type": "string",
+      "title": "Alimentos"
+    },
+    "treatment": {
+      "type": "string",
+      "title": "Sa\u00fade e tratamentos"
+    },
+    "what_they_do": {
+      "type": "string",
+      "title": "O que produzem / utilidade"
+    },
+    "special_info": {
+      "type": "string",
+      "title": "Curiosidades / informa\u00e7\u00e3o extra"
+    }
+  },
+  "required": [
+    "name",
+    "emoji",
+    "color",
+    "category"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": null,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

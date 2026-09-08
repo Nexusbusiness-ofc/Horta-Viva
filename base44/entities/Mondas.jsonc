@@ -1,0 +1,94 @@
+{
+  "name": "Mondas",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Cultura"
+    },
+    "emoji": {
+      "type": "string",
+      "title": "Emoji",
+      "default": "\ud83c\udf31"
+    },
+    "color": {
+      "type": "string",
+      "title": "Cor",
+      "default": "#84cc16"
+    },
+    "image_url": {
+      "type": "string",
+      "title": "Imagem",
+      "format": "uri"
+    },
+    "category": {
+      "type": "string",
+      "title": "Categoria",
+      "enum": [
+        "Ra\u00edzes",
+        "Folhas",
+        "Allium",
+        "Cucurbit\u00e1ceas",
+        "Br\u00e1ssicas",
+        "Solan\u00e1ceas",
+        "Ervas Arom\u00e1ticas",
+        "Cereais"
+      ],
+      "default": "Folhas"
+    },
+    "when_stage": {
+      "type": "string",
+      "title": "Quando fazer (fase)"
+    },
+    "when_info": {
+      "type": "string",
+      "title": "Quando fazer"
+    },
+    "how": {
+      "type": "string",
+      "title": "Como fazer a monda"
+    },
+    "spacing": {
+      "type": "string",
+      "title": "Espa\u00e7amento final"
+    },
+    "tips": {
+      "type": "string",
+      "title": "Dicas"
+    },
+    "when_months": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 12
+      },
+      "title": "Meses t\u00edpicos",
+      "default": []
+    }
+  },
+  "required": [
+    "name",
+    "emoji",
+    "color",
+    "category"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": null,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

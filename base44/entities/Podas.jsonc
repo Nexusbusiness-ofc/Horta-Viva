@@ -1,0 +1,104 @@
+{
+  "name": "Podas",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "\u00c1rvore/Cultura"
+    },
+    "emoji": {
+      "type": "string",
+      "title": "Emoji",
+      "default": "\ud83c\udf33"
+    },
+    "color": {
+      "type": "string",
+      "title": "Cor",
+      "default": "#16a34a"
+    },
+    "image_url": {
+      "type": "string",
+      "title": "Imagem",
+      "format": "uri"
+    },
+    "category": {
+      "type": "string",
+      "title": "Categoria",
+      "enum": [
+        "Fruteiras de pepita",
+        "Fruteiras de caro\u00e7o",
+        "Citrinos",
+        "Oliveira",
+        "Vinha",
+        "Frutos secos",
+        "Pequenos frutos",
+        "Ornamentais"
+      ],
+      "default": "Fruteiras de pepita"
+    },
+    "when_months": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 12
+      },
+      "title": "Meses de poda",
+      "default": []
+    },
+    "when_info": {
+      "type": "string",
+      "title": "Quando podar"
+    },
+    "pruning_types": {
+      "type": "string",
+      "title": "Tipos de poda"
+    },
+    "how": {
+      "type": "string",
+      "title": "Como podar"
+    },
+    "tools": {
+      "type": "string",
+      "title": "Ferramentas"
+    },
+    "tips": {
+      "type": "string",
+      "title": "Dicas e cuidados"
+    },
+    "difficulty": {
+      "type": "string",
+      "title": "Dificuldade",
+      "enum": [
+        "F\u00e1cil",
+        "M\u00e9dia",
+        "Dif\u00edcil"
+      ],
+      "default": "M\u00e9dia"
+    }
+  },
+  "required": [
+    "name",
+    "emoji",
+    "color",
+    "category"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": null,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

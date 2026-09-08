@@ -1,0 +1,60 @@
+{
+  "name": "Reminder",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "T\u00edtulo"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "title": "Data do lembrete"
+    },
+    "planting_id": {
+      "type": "string",
+      "title": "Planta\u00e7\u00e3o"
+    },
+    "plant_name": {
+      "type": "string",
+      "title": "Planta"
+    },
+    "plant_emoji": {
+      "type": "string",
+      "title": "Emoji",
+      "default": "\ud83c\udf31"
+    },
+    "treatment_key": {
+      "type": "string",
+      "title": "Tratamento"
+    },
+    "product_name": {
+      "type": "string",
+      "title": "Produto fitofarmac\u00eautico"
+    },
+    "how": {
+      "type": "string",
+      "title": "Como aplicar"
+    },
+    "done": {
+      "type": "boolean",
+      "title": "Conclu\u00eddo",
+      "default": false
+    }
+  },
+  "required": [
+    "title",
+    "date"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

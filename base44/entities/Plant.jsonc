@@ -1,0 +1,145 @@
+{
+  "name": "Plant",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Nome",
+      "description": "Nome do alimento/planta"
+    },
+    "emoji": {
+      "type": "string",
+      "title": "Emoji",
+      "description": "Emoji representativo"
+    },
+    "color": {
+      "type": "string",
+      "title": "Cor",
+      "description": "Cor principal em hex para tematiza\u00e7\u00e3o"
+    },
+    "image_url": {
+      "type": "string",
+      "title": "Imagem",
+      "format": "uri"
+    },
+    "category": {
+      "type": "string",
+      "title": "Categoria",
+      "enum": [
+        "Folhas",
+        "Ra\u00edzes",
+        "Frutos",
+        "Legumes",
+        "Ervas Arom\u00e1ticas",
+        "Tub\u00e9rculos",
+        "Cereais"
+      ],
+      "default": "Legumes"
+    },
+    "sow_months": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 12
+      },
+      "title": "Meses de sementeira",
+      "default": []
+    },
+    "plant_months": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 12
+      },
+      "title": "Meses de planta\u00e7\u00e3o",
+      "default": []
+    },
+    "harvest_months": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 12
+      },
+      "title": "Meses de colheita",
+      "default": []
+    },
+    "sow_instructions": {
+      "type": "string",
+      "title": "Como semear"
+    },
+    "plant_instructions": {
+      "type": "string",
+      "title": "Como plantar"
+    },
+    "care_instructions": {
+      "type": "string",
+      "title": "Cuidados"
+    },
+    "storage_instructions": {
+      "type": "string",
+      "title": "Como armazenar"
+    },
+    "sun_requirements": {
+      "type": "string",
+      "title": "Sol",
+      "enum": [
+        "Sol pleno",
+        "Sol parcial",
+        "Sombra"
+      ],
+      "default": "Sol pleno"
+    },
+    "water_requirements": {
+      "type": "string",
+      "title": "Rega",
+      "enum": [
+        "Pouca",
+        "Moderada",
+        "Abundante"
+      ],
+      "default": "Moderada"
+    },
+    "difficulty": {
+      "type": "string",
+      "title": "Dificuldade",
+      "enum": [
+        "F\u00e1cil",
+        "M\u00e9dia",
+        "Dif\u00edcil"
+      ],
+      "default": "F\u00e1cil"
+    },
+    "days_to_harvest": {
+      "type": "string",
+      "title": "Dias at\u00e9 colheita",
+      "description": "Intervalo aproximado de dias"
+    }
+  },
+  "required": [
+    "name",
+    "emoji",
+    "color",
+    "category"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": null,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
