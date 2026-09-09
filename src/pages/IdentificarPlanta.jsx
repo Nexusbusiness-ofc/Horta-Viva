@@ -1,12 +1,12 @@
 import React, { useState, useRef } from "react";
-import { base44 } from "@/api/base44Client";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, Camera, Loader2, Sparkles, Sun, Droplets, Sprout, 
-  Bug, Calendar, Leaf, RotateCcw, X, Key, ExternalLink, Check, BookOpen, Search
+  Bug, Calendar, Leaf, RotateCcw, X, BookOpen, Search
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { getStoredGeminiKey, saveGeminiKey, hasGeminiKey, findPlantInCatalog } from "@/lib/aiService";
+import { findPlantInCatalog } from "@/lib/aiService";
+import { visionBase44 } from "@/api/visionClient";
 import { DEFAULT_PLANTS } from "@/lib/plantsData";
 
 const SCHEMA = {
@@ -24,19 +24,39 @@ const SCHEMA = {
     when_to_plant: { type: "string" },
     when_to_harvest: { type: "string" },
     common_pests: { type: "string" },
-    tips: { type: "string" }
-  }
+    tips: { type: "string" },
+  },
+  required: ["identified", "name"],
 };
 
-const PROMPT = `Analisa a imagem fornecida e identifica a planta, hortícola, árvore frutífera, erva aromática, ou eventual praga/doença vegetal presente. Responde sempre em português de Portugal. Se a imagem não contiver nenhuma planta ou praga reconhecível, define "identified" como false e "name" como "Não identificado". Caso identifiques, fornece: nome comum, nome científico, categoria (ex: hortícola, fruta, erva aromática, árvore, praga, doença), nível de confiança, descrição breve, requisitos de sol (Sol pleno / Sol parcial / Sombra), rega (Pouca / Moderada / Abundante) e tipo de solo, época de plantação e época de colheita (adaptado a Portugal, referindo meses), pragas e doenças comuns, e dicas práticas de cultivo ou tratamento.`;
+const PLANT_IDENTIFICATION_PROMPT = `Analisa cuidadosamente a fotografia e identifica a planta, árvore, flor, folha, fruto, legume, erva aromática, praga ou doença vegetal que estiver presente. Não limites a identificação a uma lista ou catálogo: identifica qualquer espécie que reconheças. Responde em português de Portugal e devolve apenas os dados pedidos. Se não houver uma planta ou praga suficientemente visível, define "identified" como false e "name" como "Não identificado". Caso identifiques, indica o nome comum, nome científico, categoria, confiança, descrição breve, exposição solar, necessidades de rega, solo, época de plantação e de colheita em Portugal, pragas/doenças comuns e dicas práticas de cultivo ou tratamento.`;
+
+function combineWithCatalog(aiResult) {
+  const catalogResult = findPlantInCatalog(aiResult.name);
+  if (!catalogResult) return aiResult;
+
+  // Quando a espécie existe no catálogo, os cuidados apresentados são os que
+  // já foram definidos para a Horta Viva; a identificação científica da IA é preservada.
+  return {
+    ...aiResult,
+    name: catalogResult.name,
+    category: catalogResult.category || aiResult.category,
+    description: catalogResult.description || aiResult.description,
+    sun: catalogResult.sun || aiResult.sun,
+    water: catalogResult.water || aiResult.water,
+    soil: catalogResult.soil || aiResult.soil,
+    when_to_plant: catalogResult.when_to_plant || aiResult.when_to_plant,
+    when_to_harvest: catalogResult.when_to_harvest || aiResult.when_to_harvest,
+    common_pests: catalogResult.common_pests || aiResult.common_pests,
+    tips: catalogResult.tips || aiResult.tips,
+  };
+}
 
 export default function IdentificarPlanta() {
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
-  const [showKeyModal, setShowKeyModal] = useState(false);
-  const [keyInput, setKeyInput] = useState(() => getStoredGeminiKey());
   const [showCatalogModal, setShowCatalogModal] = useState(false);
   const [catalogQuery, setCatalogQuery] = useState("");
   const fileRef = useRef(null);
@@ -46,54 +66,32 @@ export default function IdentificarPlanta() {
   const handleFile = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (preview) URL.revokeObjectURL(preview);
     setImage(file);
     setPreview(URL.createObjectURL(file));
     setResult(null);
   };
 
-  const handleSaveKey = () => {
-    saveGeminiKey(keyInput);
-    setShowKeyModal(false);
-    toast({
-      title: "Chave Gemini guardada!",
-      description: "A IA de visão da Google está agora configurada e pronta a identificar fotos.",
-    });
-    if (image && !result) {
-      identify();
-    }
-  };
-
   const identify = async () => {
     if (!image) return;
-
-    // Se ainda não tiver chave da Google configurada, abrir modal explicativo
-    if (!hasGeminiKey()) {
-      setShowKeyModal(true);
-      return;
-    }
 
     setLoading(true);
     setResult(null);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: image });
-      const res = await base44.integrations.Core.InvokeLLM({
-        prompt: PROMPT,
-        add_context_from_internet: true,
-        model: "gemini-2.5-flash",
+      const { file_url } = await visionBase44.integrations.Core.UploadFile({ file: image });
+      const aiResult = await visionBase44.integrations.Core.InvokeLLM({
+        prompt: PLANT_IDENTIFICATION_PROMPT,
+        model: "gemini_3_flash",
         file_urls: [file_url],
-        response_json_schema: SCHEMA
+        response_json_schema: SCHEMA,
       });
-      setResult(res);
+      setResult(combineWithCatalog(aiResult));
     } catch (err) {
-      if (err?.message === "CHAVE_GEMINI_NECESSARIA" || err?.code === "API_KEY_MISSING") {
-        setShowKeyModal(true);
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Não foi possível identificar com a IA",
-          description: String(err?.message || err),
-        });
-      }
+      toast({
+        variant: "destructive",
+        title: "Não foi possível identificar a planta com a IA",
+        description: String(err?.message || err),
+      });
     } finally {
       setLoading(false);
     }
@@ -112,6 +110,7 @@ export default function IdentificarPlanta() {
   };
 
   const reset = () => {
+    if (preview) URL.revokeObjectURL(preview);
     setImage(null);
     setPreview(null);
     setResult(null);
@@ -145,18 +144,13 @@ export default function IdentificarPlanta() {
               <h1 className="text-lg sm:text-xl font-bold text-stone-800 leading-none truncate">Identificar Planta</h1>
               <p className="text-xs text-stone-500 truncate">Reconhecimento por IA e catálogo botânico</p>
             </div>
-            <button
-              onClick={() => setShowKeyModal(true)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all shadow-sm ${
-                hasGeminiKey() 
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" 
-                  : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 animate-pulse"
-              }`}
-              title="Configurar Chave da Google Gemini"
+            <span
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm"
+              title="Identificação avançada por IA"
             >
-              <Key className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{hasGeminiKey() ? "IA Ativa" : "Configurar IA"}</span>
-            </button>
+              <Sparkles className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">IA de plantas</span>
+            </span>
           </div>
         </div>
       </header>
@@ -179,7 +173,7 @@ export default function IdentificarPlanta() {
               </div>
               <h2 className="text-lg font-bold text-stone-800 mb-1">Tira ou carrega uma foto</h2>
               <p className="text-sm text-stone-500 mb-4 max-w-md mx-auto">
-                Fotografa qualquer folha, flor, fruto, planta, árvore ou praga para a IA identificar a espécie e características.
+                Fotografa uma planta, folha, flor, fruto ou legume. A IA analisa a espécie e abre a ficha de cultivo mais adequada.
               </p>
               <span className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-500 via-teal-600 to-teal-700 text-white text-sm font-semibold px-6 py-3 rounded-xl shadow-md shadow-teal-200/50 hover:shadow-lg transition-all active:scale-95">
                 <Camera className="w-5 h-5" /> Abrir câmara ou galeria
@@ -208,9 +202,9 @@ export default function IdentificarPlanta() {
                 className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 via-teal-600 to-teal-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-teal-200/50 hover:shadow-xl transition-all disabled:opacity-60 active:scale-[0.98]"
               >
                 {loading ? (
-                  <><Loader2 className="w-5 h-5 animate-spin" /> A identificar espécie com a IA...</>
+                  <><Loader2 className="w-5 h-5 animate-spin" /> A analisar a espécie com IA...</>
                 ) : (
-                  <><Sparkles className="w-5 h-5" /> Identificar Planta com IA</>
+                  <><Sparkles className="w-5 h-5" /> Identificar planta</>
                 )}
               </button>
 
@@ -223,19 +217,12 @@ export default function IdentificarPlanta() {
                   <BookOpen className="w-3.5 h-3.5 text-teal-600" />
                   Ou escolher do Catálogo Botânico da Horta
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setShowKeyModal(true)}
-                  className="text-xs text-stone-500 hover:text-stone-800 flex items-center gap-1 font-medium py-1"
-                >
-                  <Key className="w-3.5 h-3.5" />
-                  {hasGeminiKey() ? "Chave IA Ativa" : "Configurar IA"}
-                </button>
+                <span className="text-[11px] text-stone-400 font-medium py-1">IA avançada</span>
               </div>
 
               {loading && (
                 <p className="text-xs text-stone-400 text-center animate-pulse">
-                  A analisar a folhagem, flores e características com o modelo Google Gemini Vision...
+                  A analisar a fotografia, folhas, flores e características da espécie…
                 </p>
               )}
             </div>
@@ -249,6 +236,7 @@ export default function IdentificarPlanta() {
             preview={preview} 
             confidenceColor={confidenceColor} 
             onReset={reset}
+            onChooseCatalog={() => setShowCatalogModal(true)}
             onAddToFarm={() => navigate("/minha-quinta")}
           />
         )}
@@ -283,80 +271,6 @@ export default function IdentificarPlanta() {
           </div>
         )}
       </main>
-
-      {/* Modal de Configuração da Chave da Google */}
-      {showKeyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-teal-100">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-teal-100 flex items-center justify-center text-teal-700">
-                  <Key className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-stone-800 leading-tight">Chave IA Google Gemini</h3>
-                  <p className="text-xs text-stone-500">Gratuita para reconhecimento por foto</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setShowKeyModal(false)}
-                className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 flex items-center justify-center text-stone-500"
-              >
-                ✕
-              </button>
-            </div>
-
-            <p className="text-xs text-stone-600 leading-relaxed">
-              Para a IA identificar espécies através de fotos diretamente no navegador, podes ligar a tua <strong>chave gratuita do Google Gemini</strong>:
-            </p>
-
-            <div className="bg-stone-50 rounded-2xl p-3.5 space-y-2 border border-stone-200 text-xs text-stone-600">
-              <p className="font-semibold text-stone-700">Como obter em 30 segundos (Grátis):</p>
-              <ol className="list-decimal list-inside space-y-1 text-stone-500">
-                <li>Acede a <strong>Google AI Studio</strong> (sem cartão).</li>
-                <li>Clica em <strong>"Get API key"</strong> e cria uma chave.</li>
-                <li>Copia e cola a chave no campo abaixo.</li>
-              </ol>
-              <a
-                href="https://aistudio.google.com/app/apikey"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-teal-700 font-bold hover:underline pt-1"
-              >
-                Abrir Google AI Studio <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-stone-700">Chave da API:</label>
-              <input
-                type="text"
-                value={keyInput}
-                onChange={(e) => setKeyInput(e.target.value)}
-                placeholder="AIzaSy..."
-                className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-sm font-mono focus:border-teal-500 focus:outline-none"
-              />
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowKeyModal(false)}
-                className="flex-1 py-2.5 rounded-xl text-stone-600 bg-stone-100 hover:bg-stone-200 font-semibold text-xs transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveKey}
-                className="flex-1 py-2.5 rounded-xl text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 font-bold text-xs shadow-md shadow-teal-200 transition-all"
-              >
-                Guardar Chave
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Modal do Catálogo Botânico */}
       {showCatalogModal && (
@@ -419,7 +333,7 @@ export default function IdentificarPlanta() {
   );
 }
 
-function ResultCard({ result, preview, confidenceColor, onReset, onAddToFarm }) {
+function ResultCard({ result, preview, confidenceColor, onReset, onChooseCatalog, onAddToFarm }) {
   const r = result;
 
   if (r.identified === false) {
@@ -430,11 +344,16 @@ function ResultCard({ result, preview, confidenceColor, onReset, onAddToFarm }) 
           <div className="text-4xl mb-2">🤔</div>
           <h2 className="text-lg font-bold text-stone-800 mb-1">Não consegui identificar</h2>
           <p className="text-sm text-stone-500 mb-4 max-w-sm mx-auto">
-            Não reconheci uma planta ou praga clara nesta imagem. Tenta outra foto com mais luz e com a folha ou fruto bem focado.
+            A IA não conseguiu reconhecer esta planta com confiança. Tenta outra imagem, com boa luz e a folha, flor ou fruto bem focado, ou escolhe a planta no catálogo.
           </p>
-          <button onClick={onReset} className="inline-flex items-center gap-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-sm font-medium px-4 py-2.5 rounded-xl transition-colors">
-            <RotateCcw className="w-4 h-4" /> Tentar outra foto
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+            <button onClick={onReset} className="inline-flex items-center justify-center gap-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-sm font-medium px-4 py-2.5 rounded-xl transition-colors">
+              <RotateCcw className="w-4 h-4" /> Tentar outra foto
+            </button>
+            <button onClick={onChooseCatalog} className="inline-flex items-center justify-center gap-2 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+              <BookOpen className="w-4 h-4" /> Escolher no catálogo
+            </button>
+          </div>
         </div>
       </div>
     );
