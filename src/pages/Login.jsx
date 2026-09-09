@@ -14,7 +14,7 @@ import { isGoogleConfigured, connectGoogleDrive, downloadFromGoogleDrive } from 
 
 export default function Login() {
   const [searchParams] = useSearchParams();
-  const fromUrl = searchParams.get("from_url") || searchParams.get("returnTo") || "/minha-quinta";
+  const fromUrl = searchParams.get("from_url") || searchParams.get("returnTo") || "/";
   const { isAuthenticated, user, checkUserAuth } = useAuth();
 
   const [email, setEmail] = useState("");

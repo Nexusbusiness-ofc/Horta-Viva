@@ -6,17 +6,17 @@ import { useAuth } from "@/lib/AuthContext";
 export default function AuthButton({ className = "" }) {
   const { isAuthenticated, user, navigateToLogin } = useAuth();
 
-  if (isAuthenticated) {
+  if (isAuthenticated && user) {
     return (
       <Link
         to="/perfil"
         className={`shrink-0 w-11 h-11 rounded-xl bg-white border border-stone-200 flex items-center justify-center overflow-hidden shadow-sm hover:border-emerald-300 transition-colors ${className}`}
-        title="O meu perfil"
+        title={`O meu perfil (${user.full_name || "Agricultor"})`}
       >
-        {user?.avatar_url ? (
+        {user.avatar_url ? (
           <img src={user.avatar_url} alt="perfil" className="w-full h-full object-cover" />
         ) : (
-          <span className="text-xl">{user?.avatar_emoji || "🌱"}</span>
+          <span className="text-xl">{user.avatar_emoji || "🌾"}</span>
         )}
       </Link>
     );

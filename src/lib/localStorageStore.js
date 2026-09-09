@@ -162,38 +162,52 @@ export const localEntities = {
 export const localAuth = {
   me: async () => {
     try {
-      if (localStorage.getItem(STORAGE_KEYS.LOGGED_OUT) === "true") {
+      const isLoggedOut = localStorage.getItem(STORAGE_KEYS.LOGGED_OUT) === "true";
+      const googleRaw = localStorage.getItem("hortaviva_google_user_info");
+
+      // 1. Se tem conta Google associada e não foi feito logout explícito, prioridade máxima
+      if (googleRaw && !isLoggedOut) {
+        const g = JSON.parse(googleRaw);
+        let existing = null;
+        try {
+          const raw = localStorage.getItem(STORAGE_KEYS.USER);
+          if (raw) existing = JSON.parse(raw);
+        } catch {}
+
+        const name = g.name || existing?.full_name || "Agricultor Google";
+        const firstName = name.split(" ")[0] || "Cultivo";
+        const googleUser = {
+          ...(existing || {}),
+          id: g.id || g.sub || existing?.id || "google_user",
+          full_name: name,
+          email: g.email || existing?.email || "agricultor@gmail.com",
+          avatar_url: g.picture || existing?.avatar_url || "",
+          avatar_emoji: existing?.avatar_emoji || "🌾",
+          farm_name: existing?.farm_name || `Quinta de ${firstName}`,
+          farmer_type: existing?.farmer_type || "Agricultura biológica",
+          experience_years: existing?.experience_years ?? 2,
+          role: "admin",
+          auth_provider: "google",
+        };
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(googleUser));
+        return googleUser;
+      }
+
+      // 2. Se o utilizador fez logout explícito
+      if (isLoggedOut) {
         return null;
       }
+
+      // 3. Utilizador guardado localmente (se existir)
       const raw = localStorage.getItem(STORAGE_KEYS.USER);
       if (raw) {
         return JSON.parse(raw);
       }
-      // Se houver utilizador Google guardado, carregar automaticamente
-      const googleRaw = localStorage.getItem("hortaviva_google_user_info");
-      if (googleRaw) {
-        const g = JSON.parse(googleRaw);
-        const user = {
-          id: g.id || "google_user",
-          full_name: g.name || "Agricultor Google",
-          email: g.email || "agricultor@gmail.com",
-          avatar_url: g.picture || "",
-          avatar_emoji: "🌾",
-          farm_name: `Quinta de ${g.name?.split(" ")[0] || "Cultivo"}`,
-          farmer_type: "Agricultura biológica",
-          experience_years: 2,
-          role: "admin",
-          auth_provider: "google",
-        };
-        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-        return user;
-      }
-      // Sessão local predefinida ativa por padrão
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(DEFAULT_USER));
-      localStorage.setItem(STORAGE_KEYS.TOKEN, "local_default_token");
-      return DEFAULT_USER;
+
+      // 4. Sem sessão ativa
+      return null;
     } catch {
-      return DEFAULT_USER;
+      return null;
     }
   },
 
@@ -255,7 +269,7 @@ export const localAuth = {
     }
   },
 
-  loginWithProvider: (provider, fromUrl = "/minha-quinta") => {
+  loginWithProvider: (provider, fromUrl = "/") => {
     const isGoogle = provider === "google";
     const googleUser = {
       id: "user_google_local",
@@ -278,18 +292,18 @@ export const localAuth = {
       localStorage.removeItem(STORAGE_KEYS.LOGGED_OUT);
     } catch {}
 
-    const target = fromUrl && fromUrl.startsWith("/") ? fromUrl : "/minha-quinta";
+    const target = fromUrl && fromUrl.startsWith("/") ? fromUrl : "/";
     window.location.hash = `#${target}`;
   },
 
-  loginAsGuest: (fromUrl = "/minha-quinta") => {
+  loginAsGuest: (fromUrl = "/") => {
     try {
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(DEFAULT_USER));
       localStorage.setItem(STORAGE_KEYS.TOKEN, `guest_token_${Date.now()}`);
       localStorage.removeItem(STORAGE_KEYS.LOGGED_OUT);
     } catch {}
 
-    const target = fromUrl && fromUrl.startsWith("/") ? fromUrl : "/minha-quinta";
+    const target = fromUrl && fromUrl.startsWith("/") ? fromUrl : "/";
     window.location.hash = `#${target}`;
   },
 
@@ -432,13 +446,34 @@ export function importFarmData(data) {
     localStorage.setItem(STORAGE_KEYS.REMINDERS, JSON.stringify(data.reminders));
   }
   if (data.user && typeof data.user === "object") {
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user));
+    const googleRaw = localStorage.getItem("hortaviva_google_user_info");
+    if (googleRaw) {
+      try {
+        const g = JSON.parse(googleRaw);
+        const mergedUser = {
+          ...data.user,
+          id: g.id || g.sub || data.user.id || "google_user",
+          full_name: g.name || data.user.full_name || "Agricultor Google",
+          email: g.email || data.user.email || "agricultor@gmail.com",
+          avatar_url: g.picture || data.user.avatar_url || "",
+          auth_provider: "google",
+        };
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(mergedUser));
+      } catch {
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user));
+      }
+    } else {
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user));
+    }
     localStorage.removeItem(STORAGE_KEYS.LOGGED_OUT);
   }
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("hortaviva_remote_updated"));
-    if (data.user) {
-      window.dispatchEvent(new CustomEvent("hortaviva_auth_changed", { detail: { user: data.user } }));
+    const finalUser = (() => {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.USER)); } catch { return null; }
+    })();
+    if (finalUser) {
+      window.dispatchEvent(new CustomEvent("hortaviva_auth_changed", { detail: { user: finalUser } }));
     }
   }
   return {
