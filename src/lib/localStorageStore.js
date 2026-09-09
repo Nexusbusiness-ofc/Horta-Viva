@@ -1,5 +1,6 @@
 import { DEFAULT_PLANTS } from "./plantsData.js";
 import { DEFAULT_ANIMALS, DEFAULT_MUSHROOMS, DEFAULT_PODAS, DEFAULT_MONDAS } from "./catalogData.js";
+import { callGemini } from "./aiService.js";
 
 const STORAGE_KEYS = {
   PLANTINGS: "hortaviva_plantings",
@@ -410,6 +411,14 @@ export const localIntegrations = {
         reader.onload = () => resolve({ file_url: reader.result });
         reader.onerror = (err) => reject(err);
         reader.readAsDataURL(file);
+      });
+    },
+    InvokeLLM: async ({ prompt, model, file_urls, response_json_schema, add_context_from_internet }) => {
+      return callGemini({
+        prompt,
+        model,
+        fileUrls: file_urls,
+        responseJsonSchema: response_json_schema,
       });
     },
   },

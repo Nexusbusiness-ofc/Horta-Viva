@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, Loader2, ArrowLeft, Sprout, PawPrint } from "lucide-react";
+import { Plus, Loader2, ArrowLeft, Sprout, PawPrint, Camera } from "lucide-react";
 import { Link } from "react-router-dom";
 import PlantingForm from "@/components/quinta/PlantingForm";
 import PlantingCard from "@/components/quinta/PlantingCard";
@@ -166,6 +166,14 @@ export default function MinhaQuinta() {
               <span className="hidden sm:inline">{isSynced ? "Nuvem ativa" : "Sincronizar"}</span>
               {isSynced && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
             </button>
+            <Link
+              to="/identificar"
+              title="Identificar planta com foto"
+              className="shrink-0 flex items-center gap-1.5 text-xs font-semibold px-2.5 sm:px-3 py-2 rounded-xl border bg-cyan-50 border-cyan-200 text-cyan-800 hover:bg-cyan-100 shadow-sm transition-all"
+            >
+              <Camera className="w-4 h-4 text-cyan-700" />
+              <span className="hidden sm:inline">Identificar</span>
+            </Link>
             <button
               onClick={openAdd}
               className="shrink-0 flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white text-sm font-medium px-3 sm:px-4 py-2 rounded-xl shadow-md shadow-emerald-200/50 hover:shadow-lg transition-all active:scale-95"

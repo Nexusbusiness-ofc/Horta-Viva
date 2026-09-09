@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { Leaf, Loader2, Sprout } from "lucide-react";
+import { Leaf, Loader2, Sprout, Camera, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import SearchBar from "@/components/plant/SearchBar";
 import MonthSelector from "@/components/plant/MonthSelector";
@@ -68,6 +68,14 @@ export default function Home() {
               <AuthButton />
               <NavigationDrawer />
               <Link
+                to="/identificar"
+                className="shrink-0 flex items-center gap-1.5 bg-gradient-to-r from-teal-500 to-cyan-600 text-white text-sm font-medium px-3 py-2 rounded-xl shadow-md shadow-teal-200/50 hover:shadow-lg transition-all active:scale-95"
+                title="Identificar planta por foto"
+              >
+                <Camera className="w-4 h-4" />
+                <span className="hidden md:inline">Identificar</span>
+              </Link>
+              <Link
                 to="/minha-quinta"
                 className="shrink-0 flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white text-sm font-medium px-3 sm:px-4 py-2 rounded-xl shadow-md shadow-emerald-200/50 hover:shadow-lg transition-all active:scale-95"
               >
@@ -85,6 +93,44 @@ export default function Home() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-5 space-y-6">
+        {/* Banner Identificar Planta com IA */}
+        {searchResults === null && (
+          <Link
+            to="/identificar"
+            className="group relative overflow-hidden bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 rounded-3xl p-4 sm:p-5 text-white shadow-md shadow-teal-600/20 hover:shadow-xl transition-all duration-300 block border border-teal-400/30"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl sm:text-3xl shrink-0 group-hover:scale-105 transition-transform">
+                  📸
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider bg-white/25 px-2.5 py-0.5 rounded-full">
+                      Inteligência Artificial
+                    </span>
+                    <span className="text-xs text-teal-100 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> Reconhecimento por Foto
+                    </span>
+                  </div>
+                  <h2 className="text-base sm:text-lg font-bold mt-1 text-white leading-tight">
+                    Identificar Planta por Foto
+                  </h2>
+                  <p className="text-xs sm:text-sm text-teal-50/90 mt-0.5 leading-snug">
+                    Tira uma foto a qualquer planta ou praga para descobrir o nome comum, científico e guia de cultivo.
+                  </p>
+                </div>
+              </div>
+              <div className="shrink-0 flex items-center self-end sm:self-center">
+                <span className="inline-flex items-center gap-2 bg-white text-teal-800 font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-sm group-hover:bg-teal-50 transition-colors">
+                  <Camera className="w-4 h-4 text-teal-600" />
+                  Abrir Câmara
+                </span>
+              </div>
+            </div>
+          </Link>
+        )}
+
         {/* Hero carousel (hidden during search) */}
         {searchResults === null && !loading && plants.length > 0 && (
           <HeroCarousel plants={plants} onSelect={setSelectedPlant} />

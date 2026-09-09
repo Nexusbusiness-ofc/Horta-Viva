@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { Search, X } from "lucide-react";
+import { Search, X, Camera } from "lucide-react";
+import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const MONTHS = [
@@ -60,6 +61,14 @@ export default function SearchBar({ plants, onResults, onAIQuery }) {
             <X className="w-5 h-5" />
           </button>
         )}
+        <Link
+          to="/identificar"
+          className="shrink-0 flex items-center gap-1.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 text-xs sm:text-sm font-semibold px-2.5 sm:px-3 py-1.5 rounded-xl transition-all duration-200 active:scale-95 shadow-sm"
+          title="Tirar foto para identificar planta"
+        >
+          <Camera className="w-4 h-4 text-cyan-700" />
+          <span className="hidden sm:inline">Foto</span>
+        </Link>
         <button
           onClick={handleAskAI}
           className="shrink-0 flex items-center gap-1 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 rounded-xl hover:shadow-lg hover:shadow-emerald-300/50 transition-all duration-200 active:scale-95"
