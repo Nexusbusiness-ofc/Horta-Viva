@@ -45,6 +45,13 @@ class LocalEntityStore {
   _setItems(items) {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(items));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("hortaviva_data_changed", {
+            detail: { storageKey: this.storageKey },
+          })
+        );
+      }
     } catch (e) {
       console.error(`Erro ao guardar em ${this.storageKey}:`, e);
     }
@@ -162,6 +169,25 @@ export const localAuth = {
       if (raw) {
         return JSON.parse(raw);
       }
+      // Se houver utilizador Google guardado, carregar automaticamente
+      const googleRaw = localStorage.getItem("hortaviva_google_user_info");
+      if (googleRaw) {
+        const g = JSON.parse(googleRaw);
+        const user = {
+          id: g.id || "google_user",
+          full_name: g.name || "Agricultor Google",
+          email: g.email || "agricultor@gmail.com",
+          avatar_url: g.picture || "",
+          avatar_emoji: "🌾",
+          farm_name: `Quinta de ${g.name?.split(" ")[0] || "Cultivo"}`,
+          farmer_type: "Agricultura biológica",
+          experience_years: 2,
+          role: "admin",
+          auth_provider: "google",
+        };
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+        return user;
+      }
       // Sessão local predefinida ativa por padrão
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(DEFAULT_USER));
       localStorage.setItem(STORAGE_KEYS.TOKEN, "local_default_token");
@@ -169,6 +195,44 @@ export const localAuth = {
     } catch {
       return DEFAULT_USER;
     }
+  },
+
+  loginWithGoogleUser: (googleProfile, accessToken) => {
+    let existing = null;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.USER);
+      if (raw) existing = JSON.parse(raw);
+    } catch {}
+
+    const name = googleProfile.name || googleProfile.full_name || existing?.full_name || "Agricultor Google";
+    const firstName = name.split(" ")[0] || "Cultivo";
+
+    const user = {
+      ...(existing || {}),
+      id: googleProfile.sub || googleProfile.id || existing?.id || `google_${Date.now()}`,
+      full_name: name,
+      email: googleProfile.email || existing?.email || "agricultor@gmail.com",
+      avatar_url: googleProfile.picture || googleProfile.avatar_url || existing?.avatar_url || "",
+      avatar_emoji: existing?.avatar_emoji || "🌾",
+      farm_name: existing?.farm_name || `Quinta de ${firstName}`,
+      farmer_type: existing?.farmer_type || "Agricultura biológica",
+      experience_years: existing?.experience_years ?? 2,
+      role: "admin",
+      auth_provider: "google",
+    };
+    try {
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+      if (accessToken) {
+        localStorage.setItem(STORAGE_KEYS.TOKEN, accessToken);
+      }
+      localStorage.removeItem(STORAGE_KEYS.LOGGED_OUT);
+    } catch {}
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hortaviva_auth_changed", { detail: { user } }));
+      window.dispatchEvent(new CustomEvent("hortaviva_sync_change", { detail: { status: "synced", connected: true, user } }));
+    }
+    return user;
   },
 
   updateMe: async (data) => {
@@ -180,6 +244,10 @@ export const localAuth = {
         updated_at: new Date().toISOString(),
       };
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updated));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("hortaviva_auth_changed", { detail: { user: updated } }));
+        window.dispatchEvent(new CustomEvent("hortaviva_data_changed", { detail: { storageKey: STORAGE_KEYS.USER } }));
+      }
       return updated;
     } catch (e) {
       console.error("Erro ao atualizar utilizador:", e);
@@ -276,8 +344,16 @@ export const localAuth = {
     try {
       localStorage.removeItem(STORAGE_KEYS.TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER);
+      localStorage.removeItem("hortaviva_google_access_token");
+      localStorage.removeItem("hortaviva_google_token_expires_at");
+      localStorage.removeItem("hortaviva_google_user_info");
       localStorage.setItem(STORAGE_KEYS.LOGGED_OUT, "true");
     } catch {}
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hortaviva_auth_changed", { detail: { user: null } }));
+      window.dispatchEvent(new CustomEvent("hortaviva_sync_change", { detail: { status: "idle", connected: false } }));
+    }
 
     if (redirectUrl) {
       window.location.hash = redirectUrl.startsWith("#") ? redirectUrl : `#${redirectUrl}`;
@@ -358,6 +434,12 @@ export function importFarmData(data) {
   if (data.user && typeof data.user === "object") {
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user));
     localStorage.removeItem(STORAGE_KEYS.LOGGED_OUT);
+  }
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("hortaviva_remote_updated"));
+    if (data.user) {
+      window.dispatchEvent(new CustomEvent("hortaviva_auth_changed", { detail: { user: data.user } }));
+    }
   }
   return {
     success: true,

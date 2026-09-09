@@ -89,6 +89,7 @@ export default function SyncBackupModal({ isOpen, onClose, onDataChanged }) {
       // Sincronizar automaticamente após ligar
       await uploadToGoogleDrive();
       updateState();
+      onDataChanged?.();
     } catch (e) {
       toast({
         title: "Não foi possível ligar ao Google",

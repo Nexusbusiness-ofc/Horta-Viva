@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
+import { localAuth } from "@/lib/localStorageStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,11 +15,18 @@ import { isGoogleConfigured, connectGoogleDrive, downloadFromGoogleDrive } from 
 export default function Login() {
   const [searchParams] = useSearchParams();
   const fromUrl = searchParams.get("from_url") || searchParams.get("returnTo") || "/minha-quinta";
+  const { isAuthenticated, user, checkUserAuth } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated && user && !loading) {
+      window.location.hash = `#${fromUrl.startsWith("/") ? fromUrl : "/" + fromUrl}`;
+    }
+  }, [isAuthenticated, user, fromUrl, loading]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,6 +34,7 @@ export default function Login() {
     setLoading(true);
     try {
       await base44.auth.loginViaEmailPassword(email, password);
+      await checkUserAuth();
       window.location.hash = `#${fromUrl.startsWith("/") ? fromUrl : "/" + fromUrl}`;
     } catch (err) {
       setError(err.message || "Email ou palavra-passe inválidos");
@@ -36,24 +46,32 @@ export default function Login() {
   const handleGoogle = async () => {
     if (isGoogleConfigured()) {
       setLoading(true);
+      setError("");
       try {
-        await connectGoogleDrive();
+        await connectGoogleDrive({ prompt: "consent" });
+        await checkUserAuth();
         try {
-          await downloadFromGoogleDrive();
-        } catch {}
+          await downloadFromGoogleDrive(false);
+        } catch (syncErr) {
+          console.warn("Download inicial do Google Drive:", syncErr);
+        }
+        await checkUserAuth();
         window.location.hash = `#${fromUrl.startsWith("/") ? fromUrl : "/" + fromUrl}`;
         return;
       } catch (err) {
         console.warn("Google Drive OAuth falhou ou cancelado, fallback:", err);
+        setError("Não foi possível concluir a autenticação com a conta Google. Tenta novamente.");
       } finally {
         setLoading(false);
       }
     }
     base44.auth.loginWithProvider("google", fromUrl);
+    await checkUserAuth();
   };
 
-  const handleGuest = () => {
+  const handleGuest = async () => {
     base44.auth.loginAsGuest(fromUrl);
+    await checkUserAuth();
   };
 
   return (

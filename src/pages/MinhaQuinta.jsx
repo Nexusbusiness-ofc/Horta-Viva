@@ -72,8 +72,20 @@ export default function MinhaQuinta() {
     const handleSyncChange = () => {
       setIsSynced(isGoogleConnected());
     };
+    const handleRemoteUpdate = () => {
+      load();
+    };
     window.addEventListener("hortaviva_sync_change", handleSyncChange);
-    return () => window.removeEventListener("hortaviva_sync_change", handleSyncChange);
+    window.addEventListener("hortaviva_remote_updated", handleRemoteUpdate);
+
+    if (isGoogleConnected()) {
+      autoSyncGoogleDrive().catch(() => {});
+    }
+
+    return () => {
+      window.removeEventListener("hortaviva_sync_change", handleSyncChange);
+      window.removeEventListener("hortaviva_remote_updated", handleRemoteUpdate);
+    };
   }, []);
 
   const handleUpdate = async (id, data) => {

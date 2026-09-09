@@ -1,4 +1,4 @@
-import { exportFarmData, importFarmData } from "./localStorageStore.js";
+import { exportFarmData, importFarmData, localAuth } from "./localStorageStore.js";
 
 const STORAGE_KEYS = {
   CLIENT_ID: "hortaviva_google_client_id",
@@ -14,6 +14,7 @@ const SCOPES = [
   "https://www.googleapis.com/auth/drive.file",
   "https://www.googleapis.com/auth/userinfo.profile",
   "https://www.googleapis.com/auth/userinfo.email",
+  "openid",
 ].join(" ");
 
 let tokenClientInstance = null;
@@ -45,7 +46,15 @@ export function isGoogleConfigured() {
   return !!getGoogleClientId();
 }
 
+// O utilizador tem a conta Google ligada se os dados do perfil existirem e nao tiver feito logout
 export function isGoogleConnected() {
+  return (
+    !!localStorage.getItem(STORAGE_KEYS.GOOGLE_USER) &&
+    localStorage.getItem("hortaviva_logged_out") !== "true"
+  );
+}
+
+export function hasValidGoogleToken() {
   const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
   const expiresAt = Number(localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRES_AT) || 0);
   return !!token && Date.now() < expiresAt;
@@ -110,7 +119,8 @@ function notifySyncState(status = "idle", detail = "") {
 }
 
 // Iniciar sessão com a conta Google e obter permissão para o Google Drive
-export async function connectGoogleDrive() {
+export async function connectGoogleDrive(options = {}) {
+  const promptMode = options.prompt !== undefined ? options.prompt : "consent";
   const clientId = getGoogleClientId();
   if (!clientId) {
     throw new Error("ID de Cliente Google não configurado.");
@@ -133,37 +143,52 @@ export async function connectGoogleDrive() {
           const expiresIn = Number(tokenResponse.expires_in || 3600);
           const expiresAt = Date.now() + (expiresIn - 60) * 1000;
 
+          // 1. Limpar explicitamente qualquer flag de logout e salvar tokens
+          localStorage.removeItem("hortaviva_logged_out");
           localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
           localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES_AT, String(expiresAt));
 
-          // Obter dados de perfil do utilizador Google
+          // 2. Criar imediatamente um utilizador Google autenticado localmente
+          let googleUser = {
+            id: `google_${Date.now()}`,
+            email: "agricultor.google@gmail.com",
+            name: "Agricultor Google",
+            full_name: "Agricultor Google",
+            picture: "",
+            avatar_url: "",
+            avatar_emoji: "🌾",
+            auth_provider: "google",
+          };
+
+          const prevInfo = getGoogleUser();
+          if (prevInfo && prevInfo.email) {
+            googleUser = { ...googleUser, ...prevInfo };
+          }
+
+          localStorage.setItem(STORAGE_KEYS.GOOGLE_USER, JSON.stringify(googleUser));
+          localAuth.loginWithGoogleUser(googleUser, accessToken);
+
+          // 3. Tentar enriquecer os dados através do endpoint de userinfo da Google
           try {
             const userRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
               headers: { Authorization: `Bearer ${accessToken}` },
             });
             if (userRes.ok) {
               const profile = await userRes.json();
-              const googleUser = {
-                id: profile.sub,
-                email: profile.email,
-                name: profile.name,
-                picture: profile.picture,
+              googleUser = {
+                ...googleUser,
+                id: profile.sub || profile.id || googleUser.id,
+                email: profile.email || googleUser.email,
+                name: profile.name || googleUser.name,
+                full_name: profile.name || googleUser.name,
+                picture: profile.picture || "",
+                avatar_url: profile.picture || "",
               };
               localStorage.setItem(STORAGE_KEYS.GOOGLE_USER, JSON.stringify(googleUser));
-
-              // Atualizar também o utilizador local para refletir a conta Google
-              const currentUserRaw = localStorage.getItem("hortaviva_current_user");
-              const currentUser = currentUserRaw ? JSON.parse(currentUserRaw) : {};
-              const mergedUser = {
-                ...currentUser,
-                full_name: profile.name || currentUser.full_name || "Agricultor Google",
-                email: profile.email || currentUser.email,
-                avatar_url: profile.picture || currentUser.avatar_url,
-              };
-              localStorage.setItem("hortaviva_current_user", JSON.stringify(mergedUser));
+              localAuth.loginWithGoogleUser(googleUser, accessToken);
             }
           } catch (e) {
-            console.warn("Não foi possível carregar o perfil Google:", e);
+            console.warn("Não foi possível carregar o perfil Google detalhado:", e);
           }
 
           notifySyncState("synced", "Ligado com sucesso à conta Google.");
@@ -171,7 +196,7 @@ export async function connectGoogleDrive() {
         },
       });
 
-      tokenClientInstance.requestAccessToken({ prompt: "consent" });
+      tokenClientInstance.requestAccessToken({ prompt: promptMode });
     } catch (e) {
       notifySyncState("error", e.message);
       reject(e);
@@ -193,12 +218,20 @@ export function disconnectGoogleDrive() {
   notifySyncState("idle", "Desconectado do Google Drive");
 }
 
-async function getValidAccessToken() {
-  if (isGoogleConnected()) {
+export async function getValidAccessToken(interactive = false) {
+  if (hasValidGoogleToken()) {
     return localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
   }
-  // Se expirou, reconectar
-  return connectGoogleDrive();
+  if (!interactive) {
+    // Tentar renovar silenciosamente em segundo plano sem abrir popup
+    try {
+      return await connectGoogleDrive({ prompt: "" });
+    } catch (e) {
+      console.warn("[GoogleSync] Renovação silenciosa de token falhou:", e);
+      throw e;
+    }
+  }
+  return connectGoogleDrive({ prompt: "consent" });
 }
 
 // Procurar ficheiro existente horta_viva_quinta.json no Google Drive
@@ -233,10 +266,11 @@ async function findDriveFile(token) {
 }
 
 // Enviar dados locais para o Google Drive
-export async function uploadToGoogleDrive() {
+export async function uploadToGoogleDrive(interactive = false) {
+  if (!isGoogleConnected()) return { skipped: true };
   notifySyncState("syncing", "A enviar quinta para o Google Drive...");
   try {
-    const token = await getValidAccessToken();
+    const token = await getValidAccessToken(interactive);
     const farmData = exportFarmData();
     const jsonContent = JSON.stringify(farmData, null, 2);
     const existingFileId = await findDriveFile(token);
@@ -294,7 +328,7 @@ export async function uploadToGoogleDrive() {
 
     const now = new Date().toISOString();
     localStorage.setItem(STORAGE_KEYS.LAST_SYNC, now);
-    notifySyncState("synced", "Quinta sincronizada no Google Drive com sucesso.");
+    notifySyncState("synced", "Quinta guardada no Google Drive automaticamente.");
     return { success: true, syncedAt: now };
   } catch (e) {
     notifySyncState("error", e.message);
@@ -303,10 +337,11 @@ export async function uploadToGoogleDrive() {
 }
 
 // Descarregar e sincronizar dados do Google Drive para o dispositivo local
-export async function downloadFromGoogleDrive() {
+export async function downloadFromGoogleDrive(interactive = false) {
+  if (!isGoogleConnected()) return { skipped: true };
   notifySyncState("syncing", "A carregar dados do Google Drive...");
   try {
-    const token = await getValidAccessToken();
+    const token = await getValidAccessToken(interactive);
     const fileId = await findDriveFile(token);
 
     if (!fileId) {
@@ -324,7 +359,7 @@ export async function downloadFromGoogleDrive() {
     const result = importFarmData(remoteData);
     const now = new Date().toISOString();
     localStorage.setItem(STORAGE_KEYS.LAST_SYNC, now);
-    notifySyncState("synced", "Dados carregados e sincronizados com sucesso.");
+    notifySyncState("synced", "Dados da quinta sincronizados com o Google Drive.");
     return { success: true, ...result, syncedAt: now };
   } catch (e) {
     notifySyncState("error", e.message);
@@ -336,7 +371,7 @@ export async function downloadFromGoogleDrive() {
 export async function autoSyncGoogleDrive() {
   if (!isGoogleConfigured() || !isGoogleConnected()) return;
   try {
-    const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    const token = await getValidAccessToken(false);
     const fileId = await findDriveFile(token);
     if (fileId) {
       // Obter data de modificação no Drive
@@ -349,16 +384,32 @@ export async function autoSyncGoogleDrive() {
         const lastSync = new Date(getLastSyncTime() || 0).getTime();
 
         if (driveModified > lastSync + 5000) {
-          // O Drive tem uma versão mais recente (feita noutro dispositivo)
           console.log("[GoogleSync] Versão mais recente encontrada no Drive, a descarregar...");
-          await downloadFromGoogleDrive();
+          await downloadFromGoogleDrive(false);
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("hortaviva_remote_updated"));
+          }
           return;
         }
       }
     }
     // Caso contrário, enviar as alterações locais para o Drive
-    await uploadToGoogleDrive();
+    await uploadToGoogleDrive(false);
   } catch (e) {
-    console.warn("[GoogleSync] Falha na sincronização automática:", e?.message);
+    console.warn("[GoogleSync] Falha na sincronização automática em segundo plano:", e?.message);
   }
+}
+
+// Auto-gravação automática em segundo plano a cada alteração na quinta
+let autoSyncDebounceTimer = null;
+if (typeof window !== "undefined") {
+  window.addEventListener("hortaviva_data_changed", () => {
+    if (!isGoogleConnected()) return;
+    if (autoSyncDebounceTimer) clearTimeout(autoSyncDebounceTimer);
+    autoSyncDebounceTimer = setTimeout(() => {
+      autoSyncGoogleDrive().catch((err) => {
+        console.warn("[GoogleSync] Falha na auto-gravação:", err);
+      });
+    }, 1200);
+  });
 }

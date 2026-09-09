@@ -15,6 +15,18 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     checkAppState();
+
+    const handleAuthChange = () => {
+      checkUserAuth();
+    };
+
+    window.addEventListener("hortaviva_auth_changed", handleAuthChange);
+    window.addEventListener("storage", handleAuthChange);
+
+    return () => {
+      window.removeEventListener("hortaviva_auth_changed", handleAuthChange);
+      window.removeEventListener("storage", handleAuthChange);
+    };
   }, []);
 
   const checkAppState = async () => {
@@ -45,12 +57,14 @@ export const AuthProvider = ({ children }) => {
       }
       setIsLoadingAuth(false);
       setAuthChecked(true);
+      return currentUser;
     } catch (error) {
       console.warn('User auth check failed:', error);
       setUser(null);
       setIsAuthenticated(false);
       setIsLoadingAuth(false);
       setAuthChecked(true);
+      return null;
     }
   };
 

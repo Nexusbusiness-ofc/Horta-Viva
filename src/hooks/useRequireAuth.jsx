@@ -1,9 +1,10 @@
 import { useAuth } from "@/lib/AuthContext";
+import { localAuth } from "@/lib/localStorageStore";
 
 export function useRequireAuth() {
-  const { isAuthenticated, navigateToLogin } = useAuth();
+  const { isAuthenticated, user, navigateToLogin } = useAuth();
   return () => {
-    if (isAuthenticated) return true;
+    if (isAuthenticated || user || localAuth.hasToken()) return true;
     navigateToLogin();
     return false;
   };

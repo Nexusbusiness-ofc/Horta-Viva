@@ -1,16 +1,19 @@
 import React, { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserPlus, Mail, Lock, Loader2, Sprout } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
+import { isGoogleConfigured, connectGoogleDrive, downloadFromGoogleDrive } from "@/lib/googleSync";
 
 export default function Register() {
   const [searchParams] = useSearchParams();
   const fromUrl = searchParams.get("from_url") || searchParams.get("returnTo") || "/minha-quinta";
+  const { checkUserAuth } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,6 +31,7 @@ export default function Register() {
     setLoading(true);
     try {
       await base44.auth.register({ email, password });
+      await checkUserAuth();
       window.location.hash = `#${fromUrl.startsWith("/") ? fromUrl : "/" + fromUrl}`;
     } catch (err) {
       setError(err.message || "Falha ao criar conta");
@@ -36,12 +40,35 @@ export default function Register() {
     }
   };
 
-  const handleGoogle = () => {
+  const handleGoogle = async () => {
+    if (isGoogleConfigured()) {
+      setLoading(true);
+      setError("");
+      try {
+        await connectGoogleDrive({ prompt: "consent" });
+        await checkUserAuth();
+        try {
+          await downloadFromGoogleDrive(false);
+        } catch (syncErr) {
+          console.warn("Download inicial do Google Drive:", syncErr);
+        }
+        await checkUserAuth();
+        window.location.hash = `#${fromUrl.startsWith("/") ? fromUrl : "/" + fromUrl}`;
+        return;
+      } catch (err) {
+        console.warn("Google OAuth / Drive falhou:", err);
+        setError("Não foi possível concluir a ligação com a conta Google.");
+      } finally {
+        setLoading(false);
+      }
+    }
     base44.auth.loginWithProvider("google", fromUrl);
+    await checkUserAuth();
   };
 
-  const handleGuest = () => {
+  const handleGuest = async () => {
     base44.auth.loginAsGuest(fromUrl);
+    await checkUserAuth();
   };
 
   return (

@@ -9,7 +9,16 @@ import { isGoogleConnected } from "@/lib/googleSync";
 export default function Perfil() {
   const { user, checkUserAuth, logout, navigateToLogin } = useAuth();
   const [showSyncModal, setShowSyncModal] = useState(false);
-  const isGoogleLinked = isGoogleConnected();
+  const [isGoogleLinked, setIsGoogleLinked] = useState(isGoogleConnected());
+
+  React.useEffect(() => {
+    const handleSync = () => setIsGoogleLinked(isGoogleConnected());
+    window.addEventListener("hortaviva_sync_change", handleSync);
+    if (!user) {
+      checkUserAuth();
+    }
+    return () => window.removeEventListener("hortaviva_sync_change", handleSync);
+  }, [user]);
 
   if (!user) {
     return (
