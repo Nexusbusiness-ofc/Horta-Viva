@@ -1,5 +1,6 @@
 import React from "react";
 import { MapPin, Calendar, Scissors, Package, AlertTriangle, Leaf } from "lucide-react";
+import { resolveAssetUrl } from "@/lib/utils";
 
 const EDIBILITY_STYLES = {
   "Comestível": { bg: "#dcfce7", fg: "#16a34a" },
@@ -26,6 +27,7 @@ function Section({ icon: Icon, title, children, color }) {
 
 export default function MushroomDetail({ mushroom, onClose }) {
   if (!mushroom) return null;
+  const [imageFailed, setImageFailed] = React.useState(false);
   const ed = EDIBILITY_STYLES[mushroom.edibility] || EDIBILITY_STYLES["Comestível"];
   const isDanger = mushroom.edibility === "Tóxico" || mushroom.edibility === "Mortal";
   const months = (mushroom.season_months || []).map(m => MONTH_NAMES[m]).join(" · ");
@@ -50,9 +52,14 @@ export default function MushroomDetail({ mushroom, onClose }) {
           >
             ✕
           </button>
-          {mushroom.image_url ? (
+          {mushroom.image_url && !imageFailed ? (
             <div className="relative h-44 w-full rounded-2xl overflow-hidden mb-3">
-              <img src={mushroom.image_url} alt={mushroom.name} className="w-full h-full object-cover" />
+              <img
+                src={resolveAssetUrl(mushroom.image_url)}
+                alt={mushroom.name}
+                className="w-full h-full object-cover"
+                onError={() => setImageFailed(true)}
+              />
             </div>
           ) : (
             <div className="text-6xl mb-2">{mushroom.emoji || "🍄"}</div>

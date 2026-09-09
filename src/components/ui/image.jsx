@@ -1,6 +1,6 @@
 import * as React from "react"
 import { useSize } from "@/hooks/use-size"
-import { cn } from "@/lib/utils"
+import { cn, resolveAssetUrl } from "@/lib/utils"
 
 const FALLBACK_IMAGE_URL =
   "https://static.wixstatic.com/media/12d367_4f26ccd17f8f4e3a8958306ea08c2332~mv2.png"
@@ -186,10 +186,10 @@ const Image = React.forwardRef(
     },
     ref
   ) => {
-    const [imgSrc, setImgSrc] = React.useState(src)
+    const [imgSrc, setImgSrc] = React.useState(() => resolveAssetUrl(src))
 
     React.useEffect(() => {
-      setImgSrc(src)
+      setImgSrc(resolveAssetUrl(src))
     }, [src])
 
     const imageProps = {

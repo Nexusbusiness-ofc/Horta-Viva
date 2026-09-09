@@ -1,5 +1,6 @@
 import React from "react";
 import { Home, Heart, Sprout, Stethoscope, Wheat, Lightbulb, Ruler, Clock, Package, Info } from "lucide-react";
+import { resolveAssetUrl } from "@/lib/utils";
 
 const DIFFICULTY_STYLES = {
   "Fácil": { bg: "#dcfce7", fg: "#16a34a" },
@@ -29,6 +30,7 @@ function Section({ icon: Icon, title, children, color }) {
 
 export default function AnimalDetail({ animal, onClose }) {
   if (!animal) return null;
+  const [imageFailed, setImageFailed] = React.useState(false);
   const diff = DIFFICULTY_STYLES[animal.difficulty] || DIFFICULTY_STYLES["Fácil"];
   const effort = EFFORT_STYLES[animal.daily_effort] || EFFORT_STYLES["Médio"];
   const color = animal.color || "#c2410c";
@@ -53,9 +55,14 @@ export default function AnimalDetail({ animal, onClose }) {
           >
             ✕
           </button>
-          {animal.image_url ? (
+          {animal.image_url && !imageFailed ? (
             <div className="relative h-44 w-full rounded-2xl overflow-hidden mb-3">
-              <img src={animal.image_url} alt={animal.name} className="w-full h-full object-cover" />
+              <img
+                src={resolveAssetUrl(animal.image_url)}
+                alt={animal.name}
+                className="w-full h-full object-cover"
+                onError={() => setImageFailed(true)}
+              />
             </div>
           ) : (
             <div className="text-6xl mb-2">{animal.emoji || "🐔"}</div>

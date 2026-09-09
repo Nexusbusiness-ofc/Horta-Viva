@@ -1,4 +1,5 @@
 import React from "react";
+import { resolveAssetUrl } from "@/lib/utils";
 
 const DIFFICULTY_STYLES = {
   "Fácil": { bg: "#dcfce7", fg: "#16a34a" },
@@ -13,6 +14,7 @@ const EFFORT_STYLES = {
 };
 
 export default function AnimalCard({ animal, onClick }) {
+  const [imageFailed, setImageFailed] = React.useState(false);
   const diff = DIFFICULTY_STYLES[animal.difficulty] || DIFFICULTY_STYLES["Fácil"];
   const effort = EFFORT_STYLES[animal.daily_effort] || "🟡";
 
@@ -21,9 +23,15 @@ export default function AnimalCard({ animal, onClick }) {
       onClick={onClick}
       className="text-left bg-white rounded-2xl border border-stone-200/80 overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all"
     >
-      {animal.image_url ? (
+      {animal.image_url && !imageFailed ? (
         <div className="relative h-28 w-full overflow-hidden">
-          <img src={animal.image_url} alt={animal.name} loading="lazy" className="w-full h-full object-cover" />
+          <img
+            src={resolveAssetUrl(animal.image_url)}
+            alt={animal.name}
+            loading="lazy"
+            className="w-full h-full object-cover"
+            onError={() => setImageFailed(true)}
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
           <div className="absolute bottom-2 left-3 right-3 flex items-center gap-2">
             <span className="text-xl drop-shadow">{animal.emoji || "🐔"}</span>

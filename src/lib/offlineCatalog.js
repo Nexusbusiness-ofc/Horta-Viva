@@ -1,5 +1,6 @@
 import { DEFAULT_PLANTS } from "./plantsData";
 import { DEFAULT_ANIMALS, DEFAULT_MUSHROOMS, DEFAULT_PODAS, DEFAULT_MONDAS } from "./catalogData";
+import { resolveAssetUrl } from "./utils";
 
 // Cache offline simples para catálogos de consulta rápida na horta.
 // Guarda o resultado da última carga com sucesso no localStorage e
@@ -14,16 +15,28 @@ const SEED_DATA = {
   mondas: DEFAULT_MONDAS,
 };
 
+function normalizeItems(items) {
+  if (!Array.isArray(items)) return [];
+  return items.map(item => {
+    if (item && item.image_url) {
+      return { ...item, image_url: resolveAssetUrl(item.image_url) };
+    }
+    return item;
+  });
+}
+
 export async function cachedList(key, fetcher) {
   const storageKey = PREFIX + key;
-  const fallback = SEED_DATA[key] || [];
+  const rawFallback = SEED_DATA[key] || [];
+  const fallback = normalizeItems(rawFallback);
 
   try {
     if (typeof fetcher === "function") {
       const data = await fetcher();
       if (Array.isArray(data) && data.length > 0) {
-        try { localStorage.setItem(storageKey, JSON.stringify({ t: Date.now(), data })); } catch {}
-        return data;
+        const normalized = normalizeItems(data);
+        try { localStorage.setItem(storageKey, JSON.stringify({ t: Date.now(), data: normalized })); } catch {}
+        return normalized;
       }
     }
   } catch (e) {
@@ -36,7 +49,9 @@ export async function cachedList(key, fetcher) {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.data) && parsed.data.length >= fallback.length && parsed.data.length > 0) {
-        return parsed.data;
+        const normalized = normalizeItems(parsed.data);
+        try { localStorage.setItem(storageKey, JSON.stringify({ t: Date.now(), data: normalized })); } catch {}
+        return normalized;
       }
     }
   } catch {}

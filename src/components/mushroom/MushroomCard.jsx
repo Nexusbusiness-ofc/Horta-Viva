@@ -1,4 +1,5 @@
 import React from "react";
+import { resolveAssetUrl } from "@/lib/utils";
 
 const EDIBILITY_STYLES = {
   "Comestível": { bg: "#dcfce7", fg: "#16a34a", dot: "#22c55e" },
@@ -10,6 +11,7 @@ const EDIBILITY_STYLES = {
 const MONTH_SHORT = ["", "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 export default function MushroomCard({ mushroom, onClick }) {
+  const [imageFailed, setImageFailed] = React.useState(false);
   const ed = EDIBILITY_STYLES[mushroom.edibility] || EDIBILITY_STYLES["Comestível"];
   const months = (mushroom.season_months || []).map(m => MONTH_SHORT[m]).join(" · ");
 
@@ -18,9 +20,15 @@ export default function MushroomCard({ mushroom, onClick }) {
       onClick={onClick}
       className="text-left bg-white rounded-2xl border border-stone-200/80 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
     >
-      {mushroom.image_url ? (
+      {mushroom.image_url && !imageFailed ? (
         <div className="relative h-28 w-full overflow-hidden">
-          <img src={mushroom.image_url} alt={mushroom.name} loading="lazy" className="w-full h-full object-cover" />
+          <img
+            src={resolveAssetUrl(mushroom.image_url)}
+            alt={mushroom.name}
+            loading="lazy"
+            className="w-full h-full object-cover"
+            onError={() => setImageFailed(true)}
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
           <div className="absolute bottom-2 left-3 right-3 flex items-center gap-2">
             <span className="text-xl drop-shadow">{mushroom.emoji || "🍄"}</span>
