@@ -103,7 +103,7 @@ export default function InstallPrompt() {
           <img
             src="./icons/icon-192x192.png"
             alt="Horta Viva"
-            className="w-12 h-12 rounded-xl object-cover shadow-md border border-emerald-100 shrink-0"
+            className="w-12 h-12 rounded-xl object-cover shadow-md border border-stone-200/60 shrink-0"
           />
           <div className="flex-1 min-w-0">
             <p className="font-bold text-stone-800 text-sm leading-tight flex items-center gap-1.5 truncate">
@@ -158,7 +158,7 @@ export function IOSInstructionsModal({ onClose }) {
           <img
             src="./icons/icon-192x192.png"
             alt="Horta Viva"
-            className="w-14 h-14 rounded-2xl shadow-md border border-emerald-200 shrink-0"
+            className="w-14 h-14 rounded-2xl shadow-md border border-stone-200/60 shrink-0"
           />
           <div>
             <h3 className="font-bold text-stone-800 text-base leading-tight">Instalar no iPhone / iPad</h3>

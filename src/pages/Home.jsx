@@ -58,7 +58,7 @@ export default function Home() {
             <img 
               src="./logo.jpg" 
               alt="Horta Viva" 
-              className="w-11 h-11 rounded-xl shadow-md border border-emerald-200/70 object-cover shrink-0" 
+              className="w-11 h-11 rounded-xl shadow-md border border-stone-200/60 object-cover shrink-0" 
             />
             <div>
               <h1 className="text-xl font-extrabold text-stone-800 leading-tight">Horta Viva</h1>
