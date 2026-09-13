@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Sparkles, Send, Loader2, Camera } from "lucide-react";
 import { Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { visionBase44 } from "@/api/visionClient";
 
 export default function AIAssistant({ query, plants, onClearQuery }) {
   const [messages, setMessages] = useState([]);
@@ -47,9 +47,9 @@ Pergunta do utilizador: "${question}"
 
 Responde de forma clara, prática e direta em português europeu. Se a pergunta for sobre o que plantar agora, usa os dados acima para recomendar plantas cujos meses de sementeira ou plantação incluem o mês atual. Se for sobre uma planta específica, dá instruções práticas. Se não souberes exactamente, usa o teu conhecimento geral sobre hortas em Portugal. Sê conciso mas completo.`;
 
-      const res = await base44.integrations.Core.InvokeLLM({
+      const res = await visionBase44.integrations.Core.InvokeLLM({
         prompt,
-        add_context_from_internet: true,
+        model: "gemini_3_flash",
       });
 
       setMessages(prev => [...prev, { role: "assistant", text: res }]);
@@ -64,7 +64,7 @@ Responde de forma clara, prática e direta em português europeu. Se a pergunta 
       } else {
         setMessages(prev => [...prev, {
           role: "assistant",
-          text: "Não foi possível contactar a IA da Google no momento. Podes perguntar diretamente pelo nome de uma planta (ex: Tomate, Alface, Fava) ou configurar a tua chave gratuita do Google Gemini no ecrã de Identificação por Foto!"
+          text: "Não foi possível contactar a IA da Horta Viva neste momento. Podes perguntar diretamente pelo nome de uma planta (ex.: Tomate, Alface ou Fava) e consultar a respetiva ficha de cultivo."
         }]);
       }
     } finally {
