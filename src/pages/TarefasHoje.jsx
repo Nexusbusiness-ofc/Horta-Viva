@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
-import { Loader2, ArrowLeft, Bell, BellOff, Droplets, PawPrint, Scissors, Plus } from "lucide-react";
+import { Loader2, ArrowLeft, Bell, BellOff, Droplets, PawPrint, Scissors, Sprout, Plus } from "lucide-react";
 import { computeDailyTasks, countTasks } from "@/lib/dailyTasks";
 import { notifyPermission, requestNotifyPermission, sendNotify, shouldNotifyToday, notifySupported } from "@/lib/notify";
 import { useToast } from "@/components/ui/use-toast";
@@ -11,6 +11,7 @@ const SECTIONS = [
   { key: "rega", icon: Droplets, label: "Rega", color: "#0ea5e9", emoji: "💧" },
   { key: "animais", icon: PawPrint, label: "Animais", color: "#ea580c", emoji: "🐾" },
   { key: "podas", icon: Scissors, label: "Podas", color: "#16a34a", emoji: "✂️" },
+  { key: "mondas", icon: Sprout, label: "Mondas", color: "#84cc16", emoji: "🌱" },
 ];
 
 function TaskItem({ task }) {
@@ -36,6 +37,12 @@ function TaskItem({ task }) {
               <p className="text-xs text-stone-600 leading-relaxed">{task.how}</p>
             </div>
           )}
+          {task.tips && (
+            <div className="mt-1.5 bg-emerald-50 rounded-lg p-2.5">
+              <p className="text-xs font-semibold text-emerald-700 mb-0.5">💡 Dica</p>
+              <p className="text-xs text-stone-600 leading-relaxed">{task.tips}</p>
+            </div>
+          )}
           {task.care && (
             <div className="mt-1.5 bg-amber-50 rounded-lg p-2.5">
               <p className="text-xs font-semibold text-amber-700 mb-0.5">🩺 Cuidados</p>
@@ -50,7 +57,7 @@ function TaskItem({ task }) {
 
 export default function TarefasHoje() {
   const [loading, setLoading] = useState(true);
-  const [tasks, setTasks] = useState({ rega: [], animais: [], podas: [] });
+  const [tasks, setTasks] = useState({ rega: [], animais: [], podas: [], mondas: [] });
   const [perm, setPerm] = useState(notifyPermission());
   const [hasData, setHasData] = useState(true);
   const { toast } = useToast();
@@ -58,23 +65,25 @@ export default function TarefasHoje() {
   useEffect(() => {
     (async () => {
       try {
-        const [plantings, plants, myAnimals, farmAnimals, podas] = await Promise.all([
+        const [plantings, plants, myAnimals, farmAnimals, podas, mondas] = await Promise.all([
           base44.entities.Planting.list("-planted_date").catch(() => []),
           cachedList("plants", () => base44.entities.Plant.list()),
           base44.entities.MyAnimal.list().catch(() => []),
           cachedList("farmanimals", () => base44.entities.FarmAnimal.list()),
           cachedList("podas", () => base44.entities.Podas.list()),
+          cachedList("mondas", () => base44.entities.Mondas.list()),
         ]);
-        const t = computeDailyTasks({ plantings, plants, myAnimals, farmAnimals, podas });
+        const t = computeDailyTasks({ plantings, plants, myAnimals, farmAnimals, podas, mondas });
         setTasks(t);
         setHasData(plantings.length > 0 || myAnimals.length > 0);
         if (notifySupported() && Notification.permission === "granted" && shouldNotifyToday()) {
           const n = countTasks(t);
           if (n > 0) {
             const parts = [];
-            if (t.rega.length) parts.push(`${t.rega.length} rega(s)`);
-            if (t.animais.length) parts.push(`${t.animais.length} animal(is)`);
-            if (t.podas.length) parts.push(`${t.podas.length} poda(s)`);
+            if (t.rega?.length) parts.push(`${t.rega.length} rega(s)`);
+            if (t.animais?.length) parts.push(`${t.animais.length} animal(is)`);
+            if (t.podas?.length) parts.push(`${t.podas.length} poda(s)`);
+            if (t.mondas?.length) parts.push(`${t.mondas.length} monda(s)`);
             sendNotify("Tarefas de hoje 🌱", `Tens ${n} tarefas: ${parts.join(", ")}.`);
           }
         }
@@ -111,7 +120,7 @@ export default function TarefasHoje() {
             </div>
             <div className="flex-1">
               <h1 className="text-xl font-bold text-stone-800 leading-none">Tarefas de Hoje</h1>
-              <p className="text-xs text-stone-500">Rega, animais e podas — o que fazer hoje</p>
+              <p className="text-xs text-stone-500">Rega, animais, podas e mondas — o que fazer hoje</p>
             </div>
             <button
               onClick={enableNotifications}
@@ -149,15 +158,15 @@ export default function TarefasHoje() {
           <div className="text-center py-20">
             <div className="text-6xl mb-4">🌿</div>
             <h2 className="text-lg font-semibold text-stone-700 mb-1">Tudo em dia!</h2>
-            <p className="text-sm text-stone-500">Não tens tarefas de rega marcadas para hoje.</p>
+            <p className="text-sm text-stone-500">Não tens tarefas de rega, podas ou mondas marcadas para hoje.</p>
           </div>
         ) : (
           <>
             {/* Resumo */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {SECTIONS.map(s => (
                 <div key={s.key} className="bg-white rounded-2xl border border-stone-200/80 p-4 text-center shadow-sm">
-                  <p className="text-2xl font-bold" style={{ color: s.color }}>{tasks[s.key].length}</p>
+                  <p className="text-2xl font-bold" style={{ color: s.color }}>{tasks[s.key]?.length || 0}</p>
                   <p className="text-xs text-stone-500 mt-0.5">{s.label}</p>
                 </div>
               ))}
@@ -181,7 +190,7 @@ export default function TarefasHoje() {
 
             {/* Secções de tarefas */}
             {SECTIONS.map(s => {
-              const list = tasks[s.key];
+              const list = tasks[s.key] || [];
               if (list.length === 0) return null;
               const Icon = s.icon;
               return (

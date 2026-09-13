@@ -136,9 +136,12 @@ export function findPlantInCatalog(nameOrHint) {
   const q = nameOrHint.toLowerCase().trim();
 
   // Pesquisar em DEFAULT_PLANTS
-  const plant = DEFAULT_PLANTS.find(p =>
-    p.name.toLowerCase().includes(q) || q.includes(p.name.toLowerCase())
-  );
+  // Dar prioridade ao nome exato. Sem isto, por exemplo, "Couve" podia abrir
+  // a ficha de "Couve-flor", que surge antes no catálogo.
+  const plant = DEFAULT_PLANTS.find(p => p.name.toLowerCase() === q) ||
+    DEFAULT_PLANTS.find(p =>
+      p.name.toLowerCase().includes(q) || q.includes(p.name.toLowerCase())
+    );
   if (plant) {
     return {
       identified: true,
@@ -158,7 +161,8 @@ export function findPlantInCatalog(nameOrHint) {
   }
 
   // Pesquisar em Podas
-  const poda = (DEFAULT_PODAS || []).find(p => p.name.toLowerCase().includes(q) || q.includes(p.name.toLowerCase()));
+  const poda = (DEFAULT_PODAS || []).find(p => p.name.toLowerCase() === q) ||
+    (DEFAULT_PODAS || []).find(p => p.name.toLowerCase().includes(q) || q.includes(p.name.toLowerCase()));
   if (poda) {
     return {
       identified: true,

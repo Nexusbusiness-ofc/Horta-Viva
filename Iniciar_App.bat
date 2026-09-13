@@ -9,8 +9,14 @@ echo               HORTA VIVA - GUIA DE CULTIVO
 echo ========================================================
 echo.
 
-:: Garantir que o Node.js esta acessivel
-set "PATH=C:\Users\andre\AppData\Local\OpenAI\Codex\runtimes\cua_node\b474a88d5d105afa\bin;%PATH%"
+:: Garantir que o Node.js e o npm estao acessiveis.
+:: A pasta do runtime do Codex pode mudar após uma atualização, por isso não
+:: fica presa a uma versão específica.
+set "HORTA_NODE_RUNTIME="
+for /d %%R in ("C:\Users\andre\AppData\Local\OpenAI\Codex\runtimes\cua_node\*") do (
+    if exist "%%~fR\bin\npm.cmd" set "HORTA_NODE_RUNTIME=%%~fR\bin"
+)
+if defined HORTA_NODE_RUNTIME set "PATH=%HORTA_NODE_RUNTIME%;%PATH%"
 
 :: Verificar se o node_modules existe
 if not exist "node_modules" (
