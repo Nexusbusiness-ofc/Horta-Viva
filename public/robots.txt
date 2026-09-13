@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://nexusbusiness-ofc.github.io/Horta-Viva/sitemap.xml
