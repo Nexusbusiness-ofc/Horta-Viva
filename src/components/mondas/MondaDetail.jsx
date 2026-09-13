@@ -8,14 +8,14 @@ function monthList(months) { return (months || []).map(m => MONTH_NAMES[m]).join
 
 function Section({ icon: Icon, title, children, color }) {
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1.5 min-w-0">
       <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: color + "22" }}>
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: color + "22" }}>
           <Icon className="w-4 h-4" style={{ color }} />
         </div>
-        <h3 className="font-semibold text-stone-800 text-sm uppercase tracking-wide">{title}</h3>
+        <h3 className="font-semibold text-stone-800 text-sm uppercase tracking-wide truncate">{title}</h3>
       </div>
-      <p className="text-stone-600 text-sm leading-relaxed pl-9 whitespace-pre-line">{children}</p>
+      <p className="text-stone-600 text-sm leading-relaxed pl-9 whitespace-pre-line break-words">{children}</p>
     </div>
   );
 }

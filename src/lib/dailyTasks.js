@@ -189,9 +189,13 @@ export function computeDailyTasks({ plantings, plants, myAnimals, farmAnimals, p
   // Podas — apenas de espécies plantadas pelo utilizador (ativas) e no mês correto
   (podas || []).forEach(po => {
     if ((po.when_months || []).includes(currentMonth) && matchesPoda(po, activePlantNames)) {
+      const cleanTitle = po.name.toLowerCase().startsWith("poda")
+        ? po.name
+        : `Podar ${po.name}`;
+
       tasks.podas.push({
         id: `poda-${po.id}`,
-        title: `Podar ${po.name}`,
+        title: cleanTitle,
         detail: po.when_info || "Época de poda",
         how: po.how,
         tips: po.tips,
@@ -204,10 +208,15 @@ export function computeDailyTasks({ plantings, plants, myAnimals, farmAnimals, p
   // Mondas — apenas de espécies plantadas pelo utilizador (ativas) e no mês correto
   (mondas || []).forEach(mo => {
     if ((mo.when_months || []).includes(currentMonth) && matchesMonda(mo, activePlantNames)) {
+      const cleanTitle = mo.name.toLowerCase().startsWith("monda")
+        ? mo.name
+        : `Monda: ${mo.name}`;
+
       tasks.mondas.push({
         id: `monda-${mo.id}`,
-        title: `Monda: ${mo.name}`,
-        detail: mo.when_stage || mo.spacing || "Época de monda",
+        title: cleanTitle,
+        detail: mo.when_stage || mo.when_info || "Época de desbaste e monda",
+        spacing: mo.spacing || "",
         how: mo.how,
         tips: mo.tips,
         emoji: mo.emoji || "🌱",
