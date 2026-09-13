@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu } from "lucide-react";
+import { Menu, Smartphone } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { IconResumo, IconQuinta, IconCuras, IconPodas, IconAnimais, IconCogumelos, IconIdentificar, IconTarefas, IconPerfil } from "@/components/home/SectionIcons";
+import { usePWAInstall, IOSInstructionsModal } from "@/components/pwa/InstallPrompt";
 
 const SECTIONS = [
   { to: "/tarefas-hoje", icon: IconTarefas, label: "Tarefas de hoje", desc: "Rega, podas e animais", color: "#0d9488" },
@@ -18,50 +19,81 @@ const SECTIONS = [
 
 export default function NavigationDrawer() {
   const [open, setOpen] = useState(false);
+  const [showIOSModal, setShowIOSModal] = useState(false);
+  const { isStandalone, hasPrompt, triggerInstall } = usePWAInstall();
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <button
-          className="shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-white border border-stone-200 text-stone-600 hover:border-emerald-300 hover:text-emerald-600 transition-colors shadow-sm"
-          aria-label="Menu de secções"
-        >
-          <Menu className="w-6 h-6" />
-        </button>
-      </SheetTrigger>
-      <SheetContent side="left" className="w-[280px] sm:w-[320px] p-0">
-        <SheetHeader className="px-5 pt-5 pb-3 border-b border-stone-100 flex flex-row items-center gap-3">
-          <img src="./logo.jpg" alt="Horta Viva" className="w-10 h-10 rounded-xl object-cover shadow-sm border border-emerald-100 shrink-0" />
-          <div>
-            <SheetTitle className="text-left text-lg font-bold text-stone-800 leading-tight">Horta Viva</SheetTitle>
-            <p className="text-xs text-stone-500 text-left">Navegação da Quinta</p>
-          </div>
-        </SheetHeader>
-        <div className="p-3 space-y-2 overflow-y-auto">
-          {SECTIONS.map(s => {
-            const Icon = s.icon;
-            return (
-              <Link
-                key={s.to}
-                to={s.to}
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-4 rounded-2xl p-4 hover:bg-stone-50 active:scale-[0.98] transition-all min-h-[60px]"
-              >
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: s.color + "15", color: s.color }}
+    <>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <button
+            className="shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-white border border-stone-200 text-stone-600 hover:border-emerald-300 hover:text-emerald-600 transition-colors shadow-sm"
+            aria-label="Menu de secções"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-[280px] sm:w-[320px] p-0 flex flex-col">
+          <SheetHeader className="px-5 pt-5 pb-3 border-b border-stone-100 flex flex-row items-center gap-3 shrink-0">
+            <img src="./icons/icon-192x192.png" alt="Horta Viva" className="w-10 h-10 rounded-xl object-cover shadow-sm border border-emerald-100 shrink-0" />
+            <div>
+              <SheetTitle className="text-left text-lg font-bold text-stone-800 leading-tight">Horta Viva</SheetTitle>
+              <p className="text-xs text-stone-500 text-left">Navegação da Quinta</p>
+            </div>
+          </SheetHeader>
+          <div className="p-3 space-y-2 overflow-y-auto flex-1">
+            {SECTIONS.map(s => {
+              const Icon = s.icon;
+              return (
+                <Link
+                  key={s.to}
+                  to={s.to}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-4 rounded-2xl p-4 hover:bg-stone-50 active:scale-[0.98] transition-all min-h-[60px]"
                 >
-                  <Icon className="w-6 h-6" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-base font-semibold text-stone-800">{s.label}</p>
-                  <p className="text-xs text-stone-400">{s.desc}</p>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      </SheetContent>
-    </Sheet>
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: s.color + "15", color: s.color }}
+                  >
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-base font-semibold text-stone-800">{s.label}</p>
+                    <p className="text-xs text-stone-400">{s.desc}</p>
+                  </div>
+                </Link>
+              );
+            })}
+
+            {/* Botão de instalação da app no smartphone */}
+            {!isStandalone && (
+              <div className="pt-2 pb-2">
+                <button
+                  onClick={() => {
+                    setOpen(false);
+                    if (hasPrompt) {
+                      triggerInstall();
+                    } else {
+                      setShowIOSModal(true);
+                    }
+                  }}
+                  className="w-full flex items-center gap-3.5 p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white shadow-md shadow-emerald-200/50 hover:shadow-lg transition-all active:scale-[0.98] text-left"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                    <Smartphone className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold leading-tight">Instalar no Telemóvel</p>
+                    <p className="text-xs text-white/80">Ícone oficial no ecrã inicial</p>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {showIOSModal && <IOSInstructionsModal onClose={() => setShowIOSModal(false)} />}
+    </>
   );
 }

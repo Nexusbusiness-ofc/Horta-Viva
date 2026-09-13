@@ -23,6 +23,7 @@ import PodasMondas from './pages/PodasMondas';
 import IdentificarPlanta from './pages/IdentificarPlanta';
 import TarefasHoje from './pages/TarefasHoje';
 import Perfil from './pages/Perfil';
+import InstallPrompt from '@/components/pwa/InstallPrompt';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -75,6 +76,7 @@ function App() {
         <Router>
           <ScrollToTop />
           <AuthenticatedApp />
+          <InstallPrompt />
         </Router>
         <Toaster />
       </QueryClientProvider>
