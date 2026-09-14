@@ -68,11 +68,11 @@ const PODA_MAPPING = {
 };
 
 const MONDA_MAPPING = {
-  monda_cenoura: ["cenoura"],
+  monda_cenoura: ["cenoura", "cherovia", "pastinaca"],
   monda_rabanete: ["rabanete", "rabano"],
   monda_beterraba: ["beterraba"],
   monda_nabo: ["nabo", "nabica", "nabicas", "grelos"],
-  monda_alface: ["alface"],
+  monda_alface: ["alface", "canonigos", "agriao", "chicoria", "endivia"],
   monda_espinafre: ["espinafre", "espinafres"],
   monda_rucula: ["rucula"],
   monda_acelga: ["acelga", "acelgas"],
@@ -83,12 +83,12 @@ const MONDA_MAPPING = {
   monda_pimenteiro: ["pimento", "pimenteiro", "pimentos", "malagueta", "malaguetas", "piri piri", "piripiri"],
   monda_beringela: ["beringela", "berinjela"],
   monda_curgete: ["curgete", "courgette"],
-  monda_abobora: ["abobora"],
+  monda_abobora: ["abobora", "chuchu"],
   monda_melao: ["melao", "melancia"],
   monda_milho: ["milho"],
-  monda_favas: ["fava", "favas", "ervilha", "ervilhas"],
-  monda_couve: ["couve", "couves", "repolho", "repolhos", "couve flor", "brocolos", "couve portuguesa"],
-  monda_salsa: ["salsa", "coentro", "coentros"],
+  monda_favas: ["fava", "favas", "ervilha", "ervilhas", "grao de bico", "grao-de-bico", "feijao frade", "feijao-frade", "lentilha", "lentilhas", "tremoco", "tremocos"],
+  monda_couve: ["couve", "couves", "repolho", "repolhos", "couve flor", "brocolos", "couve portuguesa", "couve galega", "couve-galega", "couve lombarda", "couve-lombarda", "couve coracao", "couve-coracao", "couve roxa", "couve-roxa"],
+  monda_salsa: ["salsa", "coentro", "coentros", "oregaos", "lucia-lima", "lucia lima", "erva-cidreira", "erva cidreira", "poejo", "salva", "camomila", "estragao"],
   monda_manjericao: ["manjericao"]
 };
 
