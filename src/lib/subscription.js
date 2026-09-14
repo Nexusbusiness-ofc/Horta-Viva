@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 
 export const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/eVqaEX0i272p92Mc5tfjG00";
 export const FREE_IDENTIFICATION_LIMIT = 1;
+export const FREE_PLANTATIONS_LIMIT = 3;
+export const FREE_ANIMALS_LIMIT = 2;
 
 const STORAGE_KEYS = {
   USAGE_COUNT: "hortaviva_photo_identifications_count",
@@ -94,6 +96,24 @@ export function canUsePhotoIdentification() {
 }
 
 /**
+ * Verifica se o utilizador pode adicionar mais uma plantação à Minha Quinta.
+ * Retorna true se for Pro OU se o total for inferior a FREE_PLANTATIONS_LIMIT (3).
+ */
+export function canAddPlantation(currentCount = 0) {
+  if (isProSubscriber()) return true;
+  return currentCount < FREE_PLANTATIONS_LIMIT;
+}
+
+/**
+ * Verifica se o utilizador pode adicionar mais um animal à Minha Quinta.
+ * Retorna true se for Pro OU se o total for inferior a FREE_ANIMALS_LIMIT (2).
+ */
+export function canAddAnimal(currentCount = 0) {
+  if (isProSubscriber()) return true;
+  return currentCount < FREE_ANIMALS_LIMIT;
+}
+
+/**
  * Notifica a aplicação de alterações na subscrição ou quota.
  */
 function emitSubscriptionChange() {
@@ -132,6 +152,10 @@ export function useSubscription() {
     remainingFree,
     canIdentify,
     freeLimit: FREE_IDENTIFICATION_LIMIT,
+    freePlantationsLimit: FREE_PLANTATIONS_LIMIT,
+    freeAnimalsLimit: FREE_ANIMALS_LIMIT,
+    canAddPlantation: (count = 0) => isPro || count < FREE_PLANTATIONS_LIMIT,
+    canAddAnimal: (count = 0) => isPro || count < FREE_ANIMALS_LIMIT,
     openCheckout: () => {
       window.open(STRIPE_PAYMENT_LINK, "_blank", "noopener,noreferrer");
     },

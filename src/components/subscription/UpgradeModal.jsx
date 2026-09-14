@@ -2,7 +2,14 @@ import React, { useState } from "react";
 import { Sparkles, Check, Lock, ShieldCheck, ArrowRight, ExternalLink, X } from "lucide-react";
 import { STRIPE_PAYMENT_LINK, activateProSubscription } from "@/lib/subscription";
 
-export default function UpgradeModal({ isOpen, onClose, onExploreCatalog }) {
+export default function UpgradeModal({ 
+  isOpen, 
+  onClose, 
+  onExploreCatalog,
+  reason = "photos",
+  customTitle,
+  customDescription
+}) {
   const [showRestore, setShowRestore] = useState(false);
   const [emailInput, setEmailInput] = useState("");
   const [restoreSuccess, setRestoreSuccess] = useState(false);
@@ -23,6 +30,37 @@ export default function UpgradeModal({ isOpen, onClose, onExploreCatalog }) {
     }, 1500);
   };
 
+  const getHeaderInfo = () => {
+    if (reason === "plantacoes") {
+      return {
+        tag: "Minha Quinta · Plantações",
+        title: customTitle || "Limite de Plantações Atingido",
+        desc: customDescription || "O plano base permite registar até 3 plantações. Desbloqueia plantações ilimitadas para expandir a tua horta!",
+      };
+    }
+    if (reason === "animais") {
+      return {
+        tag: "Minha Quinta · Animais",
+        title: customTitle || "Limite de Animais Atingido",
+        desc: customDescription || "O plano base permite registar até 2 animais. Desbloqueia animais ilimitados e organiza todos os cuidados diários!",
+      };
+    }
+    if (reason === "photos") {
+      return {
+        tag: "IA de Plantas · Foto",
+        title: customTitle || "Limite de Fotos Grátis Atingido",
+        desc: customDescription || "Já aproveitaste a tua 1 foto gratuita. Desbloqueia fotos ilimitadas com IA para identificar qualquer planta!",
+      };
+    }
+    return {
+      tag: "Horta Viva Pro",
+      title: customTitle || "Subscrição Horta Viva Pro",
+      desc: customDescription || "Desbloqueia todo o potencial da tua horta e quinta com recursos ilimitados!",
+    };
+  };
+
+  const headerInfo = getHeaderInfo();
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-stone-100 overflow-hidden relative flex flex-col">
@@ -42,14 +80,14 @@ export default function UpgradeModal({ isOpen, onClose, onExploreCatalog }) {
 
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold uppercase tracking-wider text-emerald-100 mb-3 shadow-xs">
             <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>Horta Viva Pro</span>
+            <span>{headerInfo.tag}</span>
           </div>
 
           <h2 className="text-xl sm:text-2xl font-extrabold leading-tight">
-            Limite Gratuito Atingido
+            {headerInfo.title}
           </h2>
           <p className="text-xs sm:text-sm text-emerald-100/90 mt-1.5 max-w-xs mx-auto">
-            Já aproveitaste a tua identificação gratuita. Desbloqueia fotos ilimitadas para toda a tua horta!
+            {headerInfo.desc}
           </p>
 
           <div className="mt-4 inline-flex items-baseline gap-1.5 bg-black/20 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10">
@@ -66,7 +104,7 @@ export default function UpgradeModal({ isOpen, onClose, onExploreCatalog }) {
                 <Check className="w-3.5 h-3.5 stroke-[3]" />
               </div>
               <p className="text-xs sm:text-sm text-stone-700 leading-snug">
-                <strong>Identificações fotográficas ilimitadas:</strong> qualquer planta, legume, árvore, fruto ou erva aromática.
+                <strong>Plantações ilimitadas na Minha Quinta:</strong> cultiva sem limites de canteiros (base: até 3).
               </p>
             </div>
 
@@ -75,7 +113,16 @@ export default function UpgradeModal({ isOpen, onClose, onExploreCatalog }) {
                 <Check className="w-3.5 h-3.5 stroke-[3]" />
               </div>
               <p className="text-xs sm:text-sm text-stone-700 leading-snug">
-                <strong>Deteção de pragas e doenças:</strong> diagnóstico por IA botânica com tratamento biológico e convencional.
+                <strong>Animais ilimitados na Minha Quinta:</strong> adiciona todas as tuas espécies (base: até 2).
+              </p>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
+              </div>
+              <p className="text-xs sm:text-sm text-stone-700 leading-snug">
+                <strong>Identificações fotográficas ilimitadas:</strong> fotos ilimitadas de plantas e folhas com IA botânica.
               </p>
             </div>
 

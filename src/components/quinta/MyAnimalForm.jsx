@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { X, PawPrint, MapPin, Calendar, Package, StickyNote } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { canAddAnimal, FREE_ANIMALS_LIMIT } from "@/lib/subscription";
 
 export default function MyAnimalForm({ animals, onClose, onSaved, editing }) {
   const [form, setForm] = useState({
@@ -46,6 +47,16 @@ export default function MyAnimalForm({ animals, onClose, onSaved, editing }) {
       if (editing?.id) {
         await base44.entities.MyAnimal.update(editing.id, data);
       } else {
+        const currentList = await base44.entities.MyAnimal.list().catch(() => []);
+        if (!canAddAnimal(currentList.length)) {
+          setSaving(false);
+          toast({
+            variant: "destructive",
+            title: `Limite atingido (${FREE_ANIMALS_LIMIT}/${FREE_ANIMALS_LIMIT} animais)`,
+            description: `O plano base permite até ${FREE_ANIMALS_LIMIT} animais. Ativa o Horta Viva Pro para adicionares animais ilimitados!`,
+          });
+          return;
+        }
         await base44.entities.MyAnimal.create(data);
       }
       onSaved();

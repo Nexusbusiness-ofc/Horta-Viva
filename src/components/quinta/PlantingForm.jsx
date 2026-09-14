@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { X, Sprout, MapPin, Calendar, Package, StickyNote } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { canAddPlantation, FREE_PLANTATIONS_LIMIT } from "@/lib/subscription";
 
 const STATUS_OPTIONS = ["Plantada", "Em crescimento", "Pronta a colher", "Colhida"];
 
@@ -51,6 +52,16 @@ export default function PlantingForm({ plants, onClose, onSaved, editing }) {
       if (editing?.id) {
         await base44.entities.Planting.update(editing.id, data);
       } else {
+        const currentList = await base44.entities.Planting.list().catch(() => []);
+        if (!canAddPlantation(currentList.length)) {
+          setSaving(false);
+          toast({
+            variant: "destructive",
+            title: `Limite atingido (${FREE_PLANTATIONS_LIMIT}/${FREE_PLANTATIONS_LIMIT} plantações)`,
+            description: `O plano base permite até ${FREE_PLANTATIONS_LIMIT} plantações. Ativa o Horta Viva Pro para cultivares sem limites!`,
+          });
+          return;
+        }
         await base44.entities.Planting.create(data);
       }
       onSaved();
