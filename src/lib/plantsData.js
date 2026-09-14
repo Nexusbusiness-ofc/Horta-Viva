@@ -1174,7 +1174,7 @@ export const DEFAULT_PLANTS = [
     "name": "Salsa",
     "emoji": "🌿",
     "color": "rgb(46, 125, 50)",
-    "image_url": "https://images.unsplash.com/photo-1588879460618-9249e7d947d1?fm=jpg&q=80&w=800",
+    "image_url": "./images/plants/salsa.jpg",
     "category": "Ervas Aromáticas",
     "sow_months": [
       3,
