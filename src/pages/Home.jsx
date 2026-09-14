@@ -164,7 +164,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="text-center py-6 text-xs">
+      <footer className="text-center pt-4 pb-28 text-xs">
         <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent font-medium">
           🌱 Minha Horta — Cultiva com sabedoria
         </span>

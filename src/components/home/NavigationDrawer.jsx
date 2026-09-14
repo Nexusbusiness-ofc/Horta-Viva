@@ -6,15 +6,16 @@ import { IconResumo, IconQuinta, IconCuras, IconPodas, IconAnimais, IconCogumelo
 import { usePWAInstall, IOSInstructionsModal } from "@/components/pwa/InstallPrompt";
 
 const SECTIONS = [
-  { to: "/tarefas-hoje", icon: IconTarefas, label: "Tarefas de hoje", desc: "Rega, podas e animais", color: "#0d9488" },
-  { to: "/resumo-mensal", icon: IconResumo, label: "Resumo mensal", desc: "Visão geral do mês", color: "#4f46e5" },
-  { to: "/minha-quinta", icon: IconQuinta, label: "Minha Quinta", desc: "As tuas plantações", color: "#16a34a" },
-  { to: "/calendario-curas", icon: IconCuras, label: "Curas & Tratamentos", desc: "Produtos fitofarmacêuticos", color: "#7c3aed" },
-  { to: "/podas-mondas", icon: IconPodas, label: "Podas & Mondas", desc: "Guias de poda e monda", color: "#15803d" },
-  { to: "/animais", icon: IconAnimais, label: "Animais", desc: "Criação de animais", color: "#ea580c" },
-  { to: "/cogumelos", icon: IconCogumelos, label: "Cogumelos", desc: "Catálogo micológico", color: "#d97706" },
-  { to: "/identificar", icon: IconIdentificar, label: "Identificar Planta", desc: "Tira foto e descobre", color: "#0891b2" },
-  { to: "/perfil", icon: IconPerfil, label: "O meu perfil", desc: "Foto e dados da quinta", color: "#9333ea" },
+  { to: "/", emoji: "🏡", label: "Início", desc: "Página principal e catálogo", color: "#16a34a" },
+  { to: "/tarefas-hoje", emoji: "📋", label: "Tarefas de hoje", desc: "Rega, podas e animais", color: "#0d9488" },
+  { to: "/minha-quinta", emoji: "🌱", label: "Minha Quinta", desc: "As tuas plantações", color: "#16a34a" },
+  { to: "/perfil", emoji: "👨‍🌾", label: "O meu perfil", desc: "Foto e dados da quinta", color: "#9333ea" },
+  { to: "/resumo-mensal", emoji: "📊", label: "Resumo mensal", desc: "Visão geral do mês", color: "#4f46e5" },
+  { to: "/calendario-curas", emoji: "🌿", label: "Curas & Tratamentos", desc: "Produtos fitofarmacêuticos", color: "#7c3aed" },
+  { to: "/podas-mondas", emoji: "✂️", label: "Podas & Mondas", desc: "Guias de poda e monda", color: "#15803d" },
+  { to: "/animais", emoji: "🐔", label: "Animais da Quinta", desc: "Criação de animais", color: "#ea580c" },
+  { to: "/cogumelos", emoji: "🍄", label: "Cogumelos", desc: "Catálogo micológico", color: "#d97706" },
+  { to: "/identificar", emoji: "📸", label: "Identificar Planta", desc: "Tira foto e descobre", color: "#0891b2" },
 ];
 
 export default function NavigationDrawer() {
@@ -33,33 +34,32 @@ export default function NavigationDrawer() {
             <Menu className="w-6 h-6" />
           </button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-[280px] sm:w-[320px] p-0 flex flex-col">
+        <SheetContent side="left" className="w-[290px] sm:w-[330px] p-0 flex flex-col">
           <SheetHeader className="px-5 pt-5 pb-3 border-b border-stone-100 flex flex-row items-center gap-3 shrink-0">
             <img src="./icons/icon-192x192.png" alt="Horta Viva" className="w-10 h-10 rounded-xl object-cover shadow-sm border border-stone-200/60 shrink-0" />
             <div>
               <SheetTitle className="text-left text-lg font-bold text-stone-800 leading-tight">Horta Viva</SheetTitle>
-              <p className="text-xs text-stone-500 text-left">Navegação da Quinta</p>
+              <p className="text-xs text-stone-500 text-left">Menu & Secções</p>
             </div>
           </SheetHeader>
-          <div className="p-3 space-y-2 overflow-y-auto flex-1">
+          <div className="p-3 space-y-1.5 overflow-y-auto flex-1">
             {SECTIONS.map(s => {
-              const Icon = s.icon;
               return (
                 <Link
                   key={s.to}
                   to={s.to}
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-4 rounded-2xl p-4 hover:bg-stone-50 active:scale-[0.98] transition-all min-h-[60px]"
+                  className="flex items-center gap-3.5 rounded-2xl p-3 hover:bg-stone-50 active:scale-[0.98] transition-all min-h-[56px]"
                 >
                   <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: s.color + "15", color: s.color }}
+                    className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 text-2xl shadow-sm"
+                    style={{ backgroundColor: s.color + "18" }}
                   >
-                    <Icon className="w-6 h-6" />
+                    <span role="img" aria-label={s.label}>{s.emoji}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-semibold text-stone-800">{s.label}</p>
-                    <p className="text-xs text-stone-400">{s.desc}</p>
+                    <p className="text-sm sm:text-base font-semibold text-stone-800 leading-snug">{s.label}</p>
+                    <p className="text-xs text-stone-400 truncate">{s.desc}</p>
                   </div>
                 </Link>
               );

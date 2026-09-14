@@ -14,6 +14,7 @@ import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { cachedList } from "@/lib/offlineCatalog";
 import { isGoogleConnected, autoSyncGoogleDrive } from "@/lib/googleSync";
 import { Cloud } from "lucide-react";
+import NavigationDrawer from "@/components/home/NavigationDrawer";
 
 const FILTERS = ["Todas", "Plantada", "Em crescimento", "Pronta a colher", "Colhida"];
 
@@ -181,6 +182,7 @@ export default function MinhaQuinta() {
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Adicionar</span>
             </button>
+            <NavigationDrawer />
           </div>
 
           {/* Separador Plantações / Animais */}
@@ -292,7 +294,7 @@ export default function MinhaQuinta() {
         )}
       </main>
 
-      <footer className="text-center py-6 text-xs">
+      <footer className="text-center pt-4 pb-28 text-xs">
         <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent font-medium">
           🌱 Minha Horta — Cultiva com sabedoria
         </span>

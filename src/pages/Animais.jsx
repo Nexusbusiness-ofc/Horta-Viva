@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import AnimalCard from "@/components/animal/AnimalCard";
 import AnimalDetail from "@/components/animal/AnimalDetail";
 import { cachedList } from "@/lib/offlineCatalog";
+import NavigationDrawer from "@/components/home/NavigationDrawer";
 
 const CATEGORIES = ["Todos", "Aves", "Coelhos", "Caprinos", "Ovinos", "Suínos", "Bovinos", "Equídeos", "Apicultura"];
 
@@ -48,6 +49,7 @@ export default function Animais() {
               <h1 className="text-xl font-bold text-stone-800 leading-none">Animais do Campo</h1>
               <p className="text-xs text-stone-500">Guia de criação e cuidados</p>
             </div>
+            <NavigationDrawer />
           </div>
         </div>
       </header>
@@ -107,7 +109,7 @@ export default function Animais() {
         )}
       </main>
 
-      <footer className="text-center py-6 text-xs">
+      <footer className="text-center pt-4 pb-28 text-xs">
         <span className="bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 bg-clip-text text-transparent font-medium">
           🐾 Minha Horta — Cria com sabedoria
         </span>

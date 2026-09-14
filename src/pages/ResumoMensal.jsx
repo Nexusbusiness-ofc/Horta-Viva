@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Sprout, Scissors, PawPrint, Calendar, Loader2, ChevronRight } from "lucide-react";
 import { generateAllCuras } from "@/lib/careSchedule";
 import { cachedList } from "@/lib/offlineCatalog";
+import NavigationDrawer from "@/components/home/NavigationDrawer";
 
 const MONTH_NAMES_FULL = ["", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 const WEEKDAYS_SHORT = ["D", "S", "T", "Q", "Q", "S", "S"];
@@ -71,6 +72,7 @@ export default function ResumoMensal() {
               <h1 className="text-xl font-bold text-stone-800 leading-none">Resumo mensal</h1>
               <p className="text-xs text-stone-500">{MONTH_NAMES_FULL[currentMonth]} {currentYear}</p>
             </div>
+            <NavigationDrawer />
           </div>
         </div>
       </header>
@@ -218,7 +220,7 @@ export default function ResumoMensal() {
         )}
       </main>
 
-      <footer className="text-center py-6 text-xs">
+      <footer className="text-center pt-4 pb-28 text-xs">
         <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent font-medium">
           🌱 Minha Horta — Cultiva com sabedoria
         </span>

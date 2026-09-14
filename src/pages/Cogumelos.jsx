@@ -6,6 +6,7 @@ import MonthSelector from "@/components/plant/MonthSelector";
 import MushroomCard from "@/components/mushroom/MushroomCard";
 import MushroomDetail from "@/components/mushroom/MushroomDetail";
 import { cachedList } from "@/lib/offlineCatalog";
+import NavigationDrawer from "@/components/home/NavigationDrawer";
 
 const CATEGORIES = ["Todos", "Comestível", "Comestível com precaução", "Tóxico", "Mortal"];
 
@@ -58,6 +59,7 @@ export default function Cogumelos() {
               <h1 className="text-xl font-bold text-stone-800 leading-none">Cogumelos Silvestres</h1>
               <p className="text-xs text-stone-500">Guia de apanha e identificação</p>
             </div>
+            <NavigationDrawer />
           </div>
         </div>
       </header>
@@ -139,7 +141,7 @@ export default function Cogumelos() {
         )}
       </main>
 
-      <footer className="text-center py-6 text-xs">
+      <footer className="text-center pt-4 pb-28 text-xs">
         <span className="bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 bg-clip-text text-transparent font-medium">
           🍄 Minha Horta — Colhe com sabedoria
         </span>

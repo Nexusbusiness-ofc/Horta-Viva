@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { findPlantInCatalog } from "@/lib/aiService";
 import { visionBase44 } from "@/api/visionClient";
 import { DEFAULT_PLANTS } from "@/lib/plantsData";
+import NavigationDrawer from "@/components/home/NavigationDrawer";
 
 const SCHEMA = {
   type: "object",
@@ -151,6 +152,7 @@ export default function IdentificarPlanta() {
               <Sparkles className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">IA de plantas</span>
             </span>
+            <NavigationDrawer />
           </div>
         </div>
       </header>
@@ -324,7 +326,7 @@ export default function IdentificarPlanta() {
         </div>
       )}
 
-      <footer className="text-center py-6 text-xs">
+      <footer className="text-center pt-4 pb-28 text-xs">
         <span className="bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 bg-clip-text text-transparent font-medium">
           🌱 Horta Viva — Cultiva com sabedoria
         </span>

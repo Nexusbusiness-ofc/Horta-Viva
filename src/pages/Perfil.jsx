@@ -5,6 +5,7 @@ import { ArrowLeft, LogOut, Mail, Sprout, Cloud } from "lucide-react";
 import ProfileForm from "@/components/profile/ProfileForm";
 import SyncBackupModal from "@/components/quinta/SyncBackupModal";
 import { isGoogleConnected } from "@/lib/googleSync";
+import NavigationDrawer from "@/components/home/NavigationDrawer";
 
 export default function Perfil() {
   const { user, checkUserAuth, logout, navigateToLogin } = useAuth();
@@ -33,10 +34,11 @@ export default function Perfil() {
                 <h1 className="text-xl font-bold text-stone-800 leading-none">O meu perfil</h1>
                 <p className="text-xs text-stone-500">Personaliza a tua experiência</p>
               </div>
+              <NavigationDrawer />
             </div>
           </div>
         </header>
-        <main className="max-w-3xl mx-auto px-4 py-5">
+        <main className="max-w-3xl mx-auto px-4 py-5 pb-28">
           <div className="text-center py-20">
             <div className="text-6xl mb-4">🔐</div>
             <h2 className="text-lg font-semibold text-stone-700 mb-1">Inicia sessão para veres o teu perfil</h2>
@@ -67,6 +69,7 @@ export default function Perfil() {
               <h1 className="text-xl font-bold text-stone-800 leading-none">O meu perfil</h1>
               <p className="text-xs text-stone-500">Personaliza a tua experiência</p>
             </div>
+            <NavigationDrawer />
           </div>
         </div>
       </header>
@@ -160,7 +163,7 @@ export default function Perfil() {
         </button>
       </main>
 
-      <footer className="text-center py-6 text-xs">
+      <footer className="text-center pt-4 pb-28 text-xs">
         <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent font-medium">
           🌱 Minha Horta — Cultiva com sabedoria
         </span>

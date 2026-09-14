@@ -8,6 +8,7 @@ import HerbicideCard from "@/components/curas/HerbicideCard";
 import HerbicideGuides from "@/components/curas/HerbicideGuides";
 import { useToast } from "@/components/ui/use-toast";
 import { cachedList } from "@/lib/offlineCatalog";
+import NavigationDrawer from "@/components/home/NavigationDrawer";
 
 const MONTH_NAMES = ["", "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
@@ -78,6 +79,7 @@ export default function CalendarioCuras() {
               <h1 className="text-xl font-bold text-stone-800 leading-none">Curas &amp; Tratamentos</h1>
               <p className="text-xs text-stone-500">Produtos fitofarmacêuticos · quando e como aplicar</p>
             </div>
+            <NavigationDrawer />
           </div>
         </div>
       </header>
@@ -196,7 +198,7 @@ export default function CalendarioCuras() {
         <HerbicideGuides />
       </main>
 
-      <footer className="text-center py-6 text-xs">
+      <footer className="text-center pt-4 pb-28 text-xs">
         <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent font-medium">
           🌱 Minha Horta — Cultiva com sabedoria
         </span>

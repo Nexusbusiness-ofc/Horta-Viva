@@ -6,6 +6,7 @@ import { computeDailyTasks, countTasks } from "@/lib/dailyTasks";
 import { notifyPermission, requestNotifyPermission, sendNotify, shouldNotifyToday, notifySupported } from "@/lib/notify";
 import { useToast } from "@/components/ui/use-toast";
 import { cachedList } from "@/lib/offlineCatalog";
+import NavigationDrawer from "@/components/home/NavigationDrawer";
 
 const SECTIONS = [
   { key: "rega", icon: Droplets, label: "Rega", color: "#0ea5e9", emoji: "💧" },
@@ -171,6 +172,7 @@ export default function TarefasHoje() {
               {perm === "granted" ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
               <span className="hidden sm:inline">{perm === "granted" ? "Ativadas" : "Ativar"}</span>
             </button>
+            <NavigationDrawer />
           </div>
         </div>
       </header>
@@ -250,7 +252,7 @@ export default function TarefasHoje() {
         )}
       </main>
 
-      <footer className="text-center py-6 text-xs px-4">
+      <footer className="text-center pt-4 pb-28 text-xs px-4">
         <span className="bg-gradient-to-r from-teal-600 via-emerald-600 to-green-600 bg-clip-text text-transparent font-medium">
           🌱 Minha Horta — Nunca te esqueças de nada
         </span>

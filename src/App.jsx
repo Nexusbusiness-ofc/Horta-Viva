@@ -24,6 +24,7 @@ import IdentificarPlanta from './pages/IdentificarPlanta';
 import TarefasHoje from './pages/TarefasHoje';
 import Perfil from './pages/Perfil';
 import InstallPrompt from '@/components/pwa/InstallPrompt';
+import BottomNav from '@/components/navigation/BottomNav';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -76,6 +77,7 @@ function App() {
         <Router>
           <ScrollToTop />
           <AuthenticatedApp />
+          <BottomNav />
           <InstallPrompt />
         </Router>
         <Toaster />
