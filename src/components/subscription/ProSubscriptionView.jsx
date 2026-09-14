@@ -28,13 +28,17 @@ export default function ProSubscriptionView({ onSubscribed }) {
   const handleRestore = (e) => {
     e.preventDefault();
     if (!emailInput.trim()) return;
+    const input = emailInput.trim();
+    const isAdm = input.toLowerCase() === "admin" || input.toLowerCase() === "andre" || input.toLowerCase() === "hortaviva" || input.toLowerCase().includes("admin");
     setRestoring(true);
     setTimeout(() => {
-      activateProSubscription({ email: emailInput.trim() });
+      activateProSubscription({ email: input, is_admin: isAdm });
       setRestoring(false);
       toast({
-        title: "🎉 Subscrição Pro ativada!",
-        description: `Dispositivo vinculado com sucesso ao e-mail ${emailInput.trim()}.`,
+        title: isAdm ? "👑 Modo Administrador Ativado!" : "🎉 Subscrição Pro ativada!",
+        description: isAdm
+          ? "Acesso Pro gratuito e vitalício ativado com sucesso para o administrador."
+          : `Dispositivo vinculado com sucesso ao e-mail ${input}.`,
       });
       setEmailInput("");
       if (onSubscribed) onSubscribed();
@@ -245,9 +249,9 @@ export default function ProSubscriptionView({ onSubscribed }) {
         </p>
         <form onSubmit={handleRestore} className="flex flex-col sm:flex-row gap-2">
           <input
-            type="email"
+            type="text"
             required
-            placeholder="teu.email@exemplo.com"
+            placeholder="teu.email@exemplo.com (ou 'admin')"
             value={emailInput}
             onChange={(e) => setEmailInput(e.target.value)}
             className="flex-1 bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-stone-800 outline-none focus:border-emerald-500 transition-colors"

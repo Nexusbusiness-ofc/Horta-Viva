@@ -71,18 +71,43 @@ export function isProSubscriber() {
 }
 
 /**
+ * Retorna os detalhes da subscrição Pro ativa ou null.
+ */
+export function getProSubscriptionDetails() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Ativa a subscrição Pro no dispositivo local.
+ * Suporta modo Administrador gratuito vitalício.
  */
 export function activateProSubscription(details = {}) {
   try {
+    const emailRaw = (details.email || "").trim().toLowerCase();
+    const isAdmin = Boolean(
+      details.is_admin === true ||
+      emailRaw === "admin" ||
+      emailRaw === "andre" ||
+      emailRaw === "hortaviva" ||
+      emailRaw.includes("admin") ||
+      emailRaw.includes("hortaviva")
+    );
+
     const subData = {
       active: true,
-      plan: "monthly",
-      price: "2.99€",
+      plan: isAdmin ? "admin_lifetime" : (details.plan || "monthly"),
+      price: isAdmin ? "0.00€ (Acesso Administrador)" : "2.99€",
       currency: "eur",
+      is_admin: isAdmin,
       activated_at: new Date().toISOString(),
       session_id: details.session_id || null,
-      customer_email: details.email || null,
+      customer_email: details.email || (isAdmin ? "admin@hortaviva.pt" : null),
     };
     localStorage.setItem(STORAGE_KEYS.PRO_SUBSCRIPTION, JSON.stringify(subData));
     emitSubscriptionChange();
@@ -90,6 +115,13 @@ export function activateProSubscription(details = {}) {
   } catch {
     return false;
   }
+}
+
+/**
+ * Ativa diretamente o plano Pro gratuito de Administrador.
+ */
+export function activateAdminPro(adminEmail = "admin@hortaviva.pt") {
+  return activateProSubscription({ email: adminEmail, is_admin: true });
 }
 
 /**
@@ -152,13 +184,29 @@ function emitSubscriptionChange() {
 export function useSubscription() {
   const [isPro, setIsPro] = useState(isProSubscriber());
   const [aiUsageCount, setAiUsageCount] = useState(getAIUsageCount());
+  const [subDetails, setSubDetails] = useState(getProSubscriptionDetails());
 
   const syncState = () => {
     setIsPro(isProSubscriber());
     setAiUsageCount(getAIUsageCount());
+    setSubDetails(getProSubscriptionDetails());
   };
 
   useEffect(() => {
+    // Verificação automática de URL de administrador ou sucesso de pagamento
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash || "";
+      const search = window.location.search || "";
+      if (
+        hash.includes("admin=true") || 
+        hash.includes("admin_pro=true") || 
+        search.includes("admin=true") || 
+        search.includes("admin_pro=true")
+      ) {
+        activateAdminPro();
+      }
+    }
+
     window.addEventListener("hortaviva_subscription_changed", syncState);
     window.addEventListener("storage", syncState);
     return () => {
@@ -169,9 +217,12 @@ export function useSubscription() {
 
   const remainingFreeAI = Math.max(0, FREE_AI_LIMIT - aiUsageCount);
   const userCanUseAI = isPro || remainingFreeAI > 0;
+  const isAdminPro = isPro && (subDetails?.is_admin === true || subDetails?.plan === "admin_lifetime");
 
   return {
     isPro,
+    isAdminPro,
+    subDetails,
     aiUsageCount,
     usageCount: aiUsageCount,
     remainingFreeAI,
@@ -188,5 +239,7 @@ export function useSubscription() {
       window.open(STRIPE_PAYMENT_LINK, "_blank", "noopener,noreferrer");
     },
     activatePro: activateProSubscription,
+    activateAdminPro,
+    cancelPro: cancelProSubscription,
   };
 }
