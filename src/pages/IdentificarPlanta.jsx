@@ -9,6 +9,8 @@ import { findPlantInCatalog } from "@/lib/aiService";
 import { visionBase44 } from "@/api/visionClient";
 import { DEFAULT_PLANTS } from "@/lib/plantsData";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
+import { useSubscription, incrementPhotoUsage, activateProSubscription } from "@/lib/subscription";
+import UpgradeModal from "@/components/subscription/UpgradeModal";
 
 const SCHEMA = {
   type: "object",
@@ -60,9 +62,26 @@ export default function IdentificarPlanta() {
   const [result, setResult] = useState(null);
   const [showCatalogModal, setShowCatalogModal] = useState(false);
   const [catalogQuery, setCatalogQuery] = useState("");
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const { isPro, remainingFree, canIdentify, usageCount } = useSubscription();
   const fileRef = useRef(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    const hash = window.location.hash || "";
+    const search = window.location.search || "";
+    if (hash.includes("payment=success") || search.includes("payment=success")) {
+      activateProSubscription();
+      toast({
+        title: "🎉 Horta Viva Pro Ativado!",
+        description: "A tua subscrição foi confirmada com sucesso. Tens agora identificações ilimitadas de plantas por foto!",
+      });
+      if (window.history?.replaceState) {
+        window.history.replaceState({}, document.title, window.location.pathname + "#/identificar");
+      }
+    }
+  }, [toast]);
 
   const handleFile = (e) => {
     const file = e.target.files?.[0];
@@ -76,6 +95,11 @@ export default function IdentificarPlanta() {
   const identify = async () => {
     if (!image) return;
 
+    if (!canIdentify) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setLoading(true);
     setResult(null);
     try {
@@ -87,6 +111,13 @@ export default function IdentificarPlanta() {
         response_json_schema: SCHEMA,
       });
       setResult(combineWithCatalog(aiResult));
+      if (!isPro) {
+        incrementPhotoUsage();
+        toast({
+          title: "Identificação gratuita concluída (1 de 1 usada)",
+          description: "Aproveita a ficha botânica! Para identificares mais fotos, ativa o Horta Viva Pro por 2,99€/mês.",
+        });
+      }
     } catch (err) {
       toast({
         variant: "destructive",
@@ -145,19 +176,72 @@ export default function IdentificarPlanta() {
               <h1 className="text-lg sm:text-xl font-bold text-stone-800 leading-none truncate">Identificar Planta</h1>
               <p className="text-xs text-stone-500 truncate">Reconhecimento por IA e catálogo botânico</p>
             </div>
-            <span
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm"
-              title="Identificação avançada por IA"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">IA de plantas</span>
-            </span>
+            {isPro ? (
+              <span
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border bg-gradient-to-r from-amber-50 to-emerald-50 text-emerald-800 border-emerald-300 shadow-sm"
+                title="Subscrição Ativa"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>Pro Ilimitado</span>
+              </span>
+            ) : (
+              <button
+                onClick={() => setShowUpgradeModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all active:scale-95 shadow-sm bg-gradient-to-r from-amber-50 to-teal-50 text-teal-800 border-teal-200 hover:border-amber-300 hover:shadow"
+                title="Ver plano Pro"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                {remainingFree > 0 ? (
+                  <span>1 foto grátis</span>
+                ) : (
+                  <span className="font-bold text-amber-700">Ativar Pro (2,99€)</span>
+                )}
+              </button>
+            )}
             <NavigationDrawer />
           </div>
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-5 space-y-5">
+        {/* Banner de Limite Atingido */}
+        {!isPro && remainingFree === 0 && (
+          <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-teal-50 border border-amber-200 rounded-3xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-200 flex items-center justify-center shrink-0 text-amber-600 text-lg">
+                ⭐
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-stone-800">Uso gratuito concluído (1/1 fotos)</h3>
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                    2,99€ / mês
+                  </span>
+                </div>
+                <p className="text-xs text-stone-600 mt-0.5 max-w-md">
+                  Já utilizaste a tua identificação por foto gratuita. Assina o plano Pro para fotografares e identificares quantas plantas quiseres!
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setShowCatalogModal(true)}
+                className="flex-1 sm:flex-none text-xs text-stone-600 hover:text-stone-800 font-medium px-3 py-2.5 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 transition-colors"
+              >
+                Catálogo grátis
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowUpgradeModal(true)}
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-500 to-emerald-600 hover:from-amber-600 hover:to-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md shadow-emerald-200/50 transition-all active:scale-95 whitespace-nowrap"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Desbloquear Pro
+              </button>
+            </div>
+          </div>
+        )}
         {/* Upload / captura */}
         {!preview && (
           <label className="block cursor-pointer">
@@ -325,6 +409,13 @@ export default function IdentificarPlanta() {
           </div>
         </div>
       )}
+
+      {/* Modal de Upgrade Pro / Pagamento */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        onExploreCatalog={() => setShowCatalogModal(true)}
+      />
 
       <footer className="text-center pt-4 pb-28 text-xs">
         <span className="bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 bg-clip-text text-transparent font-medium">
