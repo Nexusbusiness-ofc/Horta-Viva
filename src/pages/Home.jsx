@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { Leaf, Loader2, Sprout, Camera } from "lucide-react";
+import { Leaf, Loader2, Sprout, Camera, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import SearchBar from "@/components/plant/SearchBar";
 import MonthSelector from "@/components/plant/MonthSelector";
@@ -13,6 +13,8 @@ import OnboardingProfile from "@/components/profile/OnboardingProfile";
 import AuthButton from "@/components/auth/AuthButton";
 import { cachedList } from "@/lib/offlineCatalog";
 import { ViewModeToggle, useViewMode } from "@/components/ui/ViewModeToggle";
+import { useSubscription } from "@/lib/subscription";
+import UpgradeModal from "@/components/subscription/UpgradeModal";
 
 const MONTH_NAMES = ["", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
@@ -23,7 +25,9 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState(null);
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [aiQuery, setAiQuery] = useState(null);
+  const [showProModal, setShowProModal] = useState(false);
   const [viewMode, setViewMode] = useViewMode("hortaviva_plant_view_mode", "large");
+  const { isPro } = useSubscription();
 
   useEffect(() => {
     cachedList("plants", () => base44.entities.Plant.list())
@@ -56,22 +60,41 @@ export default function Home() {
       {/* Header */}
       <header className="sticky top-0 z-30 bg-gradient-to-r from-white/90 via-emerald-50/60 to-white/90 backdrop-blur-lg border-b border-emerald-100/60">
         <div className="max-w-5xl mx-auto px-4 py-3">
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-2 sm:gap-3 mb-3">
             <img 
               src="./logo.jpg" 
               alt="Horta Viva" 
-              className="w-11 h-11 rounded-xl shadow-md border border-stone-200/60 object-cover shrink-0" 
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl shadow-md border border-stone-200/60 object-cover shrink-0" 
             />
-            <div>
-              <h1 className="text-xl font-extrabold text-stone-800 leading-tight">Horta Viva</h1>
-              <p className="text-xs text-stone-500 font-medium">Agricultura & Guia de Cultivo</p>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl font-extrabold text-stone-800 leading-tight truncate">Horta Viva</h1>
+              <p className="text-[11px] sm:text-xs text-stone-500 font-medium truncate">Agricultura & Guia de Cultivo</p>
             </div>
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Botão Pro no Home */}
+              <button
+                type="button"
+                onClick={() => setShowProModal(true)}
+                className={`shrink-0 flex items-center gap-1 sm:gap-1.5 text-xs font-black px-2.5 sm:px-3 py-2 rounded-xl shadow-md transition-all active:scale-95 ${
+                  isPro 
+                    ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-stone-900 border border-amber-300 shadow-amber-200/40" 
+                    : "bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-stone-900 border border-amber-300/80 shadow-amber-300/50 animate-pulse hover:animate-none"
+                }`}
+                title={isPro ? "⭐ Plano Pro Ativo" : "⭐ Ativar Horta Viva Pro (2,99€/mês)"}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-950 shrink-0" />
+                <span>Pro</span>
+                {!isPro && (
+                  <span className="text-[10px] sm:text-[11px] bg-black/15 text-stone-900 px-1.5 py-0.5 rounded-md font-black">
+                    2,99€
+                  </span>
+                )}
+              </button>
               <AuthButton />
               <NavigationDrawer />
               <Link
                 to="/identificar"
-                className="shrink-0 flex items-center gap-1.5 bg-gradient-to-r from-teal-500 to-cyan-600 text-white text-sm font-medium px-3 py-2 rounded-xl shadow-md shadow-teal-200/50 hover:shadow-lg transition-all active:scale-95"
+                className="shrink-0 flex items-center gap-1.5 bg-gradient-to-r from-teal-500 to-cyan-600 text-white text-sm font-medium px-2.5 sm:px-3 py-2 rounded-xl shadow-md shadow-teal-200/50 hover:shadow-lg transition-all active:scale-95"
                 title="Identificar planta por foto"
               >
                 <Camera className="w-4 h-4" />
@@ -95,6 +118,47 @@ export default function Home() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-5 space-y-6">
+        {/* Banner Promocional Pro no Home */}
+        {!isPro && searchResults === null && (
+          <div
+            onClick={() => setShowProModal(true)}
+            className="cursor-pointer bg-gradient-to-r from-amber-500 via-emerald-600 to-teal-700 rounded-3xl p-4 sm:p-5 text-white shadow-lg shadow-emerald-900/15 hover:shadow-xl transition-all duration-300 relative overflow-hidden group active:scale-[0.99] border border-white/20"
+          >
+            <div className="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-white/10 blur-xl pointer-events-none group-hover:scale-110 transition-transform" />
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 text-2xl shadow-xs border border-white/30">
+                  ⭐
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-black text-base sm:text-lg text-white leading-none">
+                      Horta Viva Pro
+                    </h3>
+                    <span className="bg-amber-300 text-stone-900 text-[10px] sm:text-[11px] font-black px-2 py-0.5 rounded-full shadow-xs">
+                      2,99€ / MÊS
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-emerald-100/95 mt-1 leading-snug">
+                    IA Botânica e Fotos Ilimitadas · Todas as tuas culturas e animais sem restrições.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowProModal(true);
+                }}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-stone-900 font-extrabold text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-2xl shadow-md shadow-amber-950/20 active:scale-95 transition-all whitespace-nowrap"
+              >
+                <Sparkles className="w-4 h-4 text-amber-950" />
+                <span>Ver Benefícios & Aderir</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Hero carousel (hidden during search) */}
         {searchResults === null && !loading && plants.length > 0 && (
           <HeroCarousel plants={plants} onSelect={setSelectedPlant} />
@@ -184,6 +248,13 @@ export default function Home() {
       {selectedPlant && (
         <PlantDetail plant={selectedPlant} onClose={() => setSelectedPlant(null)} />
       )}
+
+      {/* Modal de Upgrade Pro no Home */}
+      <UpgradeModal
+        isOpen={showProModal}
+        onClose={() => setShowProModal(false)}
+        reason="home"
+      />
 
       <OnboardingProfile />
     </div>

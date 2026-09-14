@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Sparkles, Check, Lock, ShieldCheck, ArrowRight, ExternalLink, X } from "lucide-react";
-import { STRIPE_PAYMENT_LINK, activateProSubscription } from "@/lib/subscription";
+import { Link } from "react-router-dom";
+import { STRIPE_PAYMENT_LINK, activateProSubscription, useSubscription } from "@/lib/subscription";
 
 export default function UpgradeModal({ 
   isOpen, 
@@ -13,6 +14,7 @@ export default function UpgradeModal({
   const [showRestore, setShowRestore] = useState(false);
   const [emailInput, setEmailInput] = useState("");
   const [restoreSuccess, setRestoreSuccess] = useState(false);
+  const { isPro } = useSubscription();
 
   if (!isOpen) return null;
 
@@ -31,6 +33,20 @@ export default function UpgradeModal({
   };
 
   const getHeaderInfo = () => {
+    if (isPro) {
+      return {
+        tag: "⭐ Subscrição Ativa",
+        title: "Tens o Plano Pro Ativo!",
+        desc: "Aproveita todas as funcionalidades sem quaisquer limites neste dispositivo.",
+      };
+    }
+    if (reason === "home") {
+      return {
+        tag: "⭐ Horta Viva Pro",
+        title: customTitle || "Cultiva a Tua Horta Sem Limites",
+        desc: customDescription || "Inteligência Artificial botânica ilimitada, identificação por foto e gestão completa da tua quinta.",
+      };
+    }
     if (reason === "plantacoes") {
       return {
         tag: "Minha Quinta · Plantações",
@@ -98,32 +114,20 @@ export default function UpgradeModal({
           </p>
 
           <div className="mt-4 inline-flex items-baseline gap-1.5 bg-black/20 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10">
-            <span className="text-3xl font-extrabold text-white">2,99€</span>
-            <span className="text-xs font-medium text-emerald-100">/ mês</span>
+            {isPro ? (
+              <span className="text-lg sm:text-xl font-black text-amber-300">⭐ Subscrição Pro Ativa</span>
+            ) : (
+              <>
+                <span className="text-3xl font-extrabold text-white">2,99€</span>
+                <span className="text-xs font-medium text-emerald-100">/ mês</span>
+              </>
+            )}
           </div>
         </div>
 
         {/* Corpo do modal */}
         <div className="p-5 sm:p-6 space-y-4">
           <div className="space-y-2.5">
-            <div className="flex items-start gap-3">
-              <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-                <Check className="w-3.5 h-3.5 stroke-[3]" />
-              </div>
-              <p className="text-xs sm:text-sm text-stone-700 leading-snug">
-                <strong>Plantações ilimitadas na Minha Quinta:</strong> cultiva sem limites de canteiros (base: até 3).
-              </p>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-                <Check className="w-3.5 h-3.5 stroke-[3]" />
-              </div>
-              <p className="text-xs sm:text-sm text-stone-700 leading-snug">
-                <strong>Animais ilimitados na Minha Quinta:</strong> adiciona todas as tuas espécies (base: até 2).
-              </p>
-            </div>
-
             <div className="flex items-start gap-3">
               <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
                 <Check className="w-3.5 h-3.5 stroke-[3]" />
@@ -138,23 +142,77 @@ export default function UpgradeModal({
                 <Check className="w-3.5 h-3.5 stroke-[3]" />
               </div>
               <p className="text-xs sm:text-sm text-stone-700 leading-snug">
-                <strong>Sem fidelização:</strong> cancelamento simples a qualquer momento com 1 clique.
+                <strong>Plantações ilimitadas na Minha Quinta:</strong> cultiva sem limites de canteiros (base: até 3).
+              </p>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
+              </div>
+              <p className="text-xs sm:text-sm text-stone-700 leading-snug">
+                <strong>Animais ilimitados na Minha Quinta:</strong> adiciona todas as tuas espécies e tarefas diárias (base: até 2).
+              </p>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
+              </div>
+              <p className="text-xs sm:text-sm text-stone-700 leading-snug">
+                <strong>Pragas & Doenças:</strong> diagnóstico rápido por IA com soluções biológicas e convencionais.
+              </p>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
+              </div>
+              <p className="text-xs sm:text-sm text-stone-700 leading-snug">
+                <strong>Sem fidelização:</strong> apenas 2,99€/mês, cancela a qualquer momento com 1 clique.
               </p>
             </div>
           </div>
 
-          {/* Botão de pagamento Stripe */}
-          <button
-            onClick={handleSubscribe}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-sm sm:text-base py-3.5 px-4 rounded-2xl shadow-lg shadow-emerald-600/30 active:scale-[0.99] transition-all"
-          >
-            <span>Subscrever por 2,99€ / mês</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          {/* Botão de pagamento Stripe ou Estado Ativo */}
+          {isPro ? (
+            <div className="space-y-2">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 text-center">
+                <p className="text-xs font-bold text-emerald-800">✅ A tua subscrição Pro está ativa</p>
+                <p className="text-[11px] text-emerald-600 mt-0.5">Tens acesso ilimitado à IA, fotos, plantações e animais.</p>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-sm py-3.5 px-4 rounded-2xl shadow-md transition-all active:scale-[0.99]"
+              >
+                Continuar a Usar a Horta
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleSubscribe}
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-sm sm:text-base py-3.5 px-4 rounded-2xl shadow-lg shadow-emerald-600/30 active:scale-[0.99] transition-all"
+            >
+              <span>Subscrever Pro por 2,99€ / mês</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
 
           <div className="flex items-center justify-center gap-2 text-[11px] text-stone-400">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
             <span>Pagamento 100% seguro processado pela <strong>Stripe</strong></span>
+          </div>
+
+          {/* Link para página detalhada de comparação */}
+          <div className="text-center pt-1">
+            <Link
+              to="/pro"
+              onClick={onClose}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 hover:text-teal-900 transition-colors"
+            >
+              <span>📊 Ver comparação detalhada dos planos</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
 
           {/* Opção secundária: Catálogo Botânico gratuito */}
