@@ -1,34 +1,48 @@
 import { useState, useEffect } from "react";
 
 export const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/eVqaEX0i272p92Mc5tfjG00";
-export const FREE_IDENTIFICATION_LIMIT = 1;
+export const FREE_AI_LIMIT = 2;
+export const FREE_IDENTIFICATION_LIMIT = 2;
 export const FREE_PLANTATIONS_LIMIT = 3;
 export const FREE_ANIMALS_LIMIT = 2;
 
 const STORAGE_KEYS = {
+  AI_USAGE_COUNT: "hortaviva_ai_usage_count",
   USAGE_COUNT: "hortaviva_photo_identifications_count",
   PRO_SUBSCRIPTION: "hortaviva_pro_subscription",
 };
 
 /**
- * Retorna o número de identificações fotográficas já realizadas pelo utilizador.
+ * Retorna o número de utilizações de IA (chat ou fotos) já realizadas pelo utilizador.
  */
-export function getPhotoUsageCount() {
+export function getAIUsageCount() {
   try {
-    const val = localStorage.getItem(STORAGE_KEYS.USAGE_COUNT);
-    return val ? parseInt(val, 10) || 0 : 0;
+    const aiVal = localStorage.getItem(STORAGE_KEYS.AI_USAGE_COUNT);
+    if (aiVal !== null) {
+      return parseInt(aiVal, 10) || 0;
+    }
+    const legacyVal = localStorage.getItem(STORAGE_KEYS.USAGE_COUNT);
+    return legacyVal ? parseInt(legacyVal, 10) || 0 : 0;
   } catch {
     return 0;
   }
 }
 
 /**
- * Incrementa o número de fotos identificadas.
+ * Retorna o número de identificações fotográficas já realizadas (compatibilidade).
  */
-export function incrementPhotoUsage() {
+export function getPhotoUsageCount() {
+  return getAIUsageCount();
+}
+
+/**
+ * Incrementa o número de utilizações de IA (chat ou foto).
+ */
+export function incrementAIUsage() {
   try {
-    const current = getPhotoUsageCount();
+    const current = getAIUsageCount();
     const updated = current + 1;
+    localStorage.setItem(STORAGE_KEYS.AI_USAGE_COUNT, updated.toString());
     localStorage.setItem(STORAGE_KEYS.USAGE_COUNT, updated.toString());
     emitSubscriptionChange();
     return updated;
@@ -36,6 +50,11 @@ export function incrementPhotoUsage() {
     return 1;
   }
 }
+
+/**
+ * Incrementa o número de fotos identificadas (alias para incrementAIUsage).
+ */
+export const incrementPhotoUsage = incrementAIUsage;
 
 /**
  * Verifica se o utilizador possui o plano Pro ativo.
@@ -87,13 +106,18 @@ export function cancelProSubscription() {
 }
 
 /**
- * Verifica se o utilizador pode efetuar mais uma identificação fotográfica.
- * Retorna true se for Pro OU se ainda tiver o 1 uso gratuito.
+ * Verifica se o utilizador pode efetuar mais uma chamada de IA (chat ou foto).
+ * Retorna true se for Pro OU se ainda tiver utilizações gratuitas (< FREE_AI_LIMIT = 2).
  */
-export function canUsePhotoIdentification() {
+export function canUseAI() {
   if (isProSubscriber()) return true;
-  return getPhotoUsageCount() < FREE_IDENTIFICATION_LIMIT;
+  return getAIUsageCount() < FREE_AI_LIMIT;
 }
+
+/**
+ * Alias de retrocompatibilidade para identificação fotográfica.
+ */
+export const canUsePhotoIdentification = canUseAI;
 
 /**
  * Verifica se o utilizador pode adicionar mais uma plantação à Minha Quinta.
@@ -127,11 +151,11 @@ function emitSubscriptionChange() {
  */
 export function useSubscription() {
   const [isPro, setIsPro] = useState(isProSubscriber());
-  const [usageCount, setUsageCount] = useState(getPhotoUsageCount());
+  const [aiUsageCount, setAiUsageCount] = useState(getAIUsageCount());
 
   const syncState = () => {
     setIsPro(isProSubscriber());
-    setUsageCount(getPhotoUsageCount());
+    setAiUsageCount(getAIUsageCount());
   };
 
   useEffect(() => {
@@ -143,15 +167,19 @@ export function useSubscription() {
     };
   }, []);
 
-  const remainingFree = Math.max(0, FREE_IDENTIFICATION_LIMIT - usageCount);
-  const canIdentify = isPro || remainingFree > 0;
+  const remainingFreeAI = Math.max(0, FREE_AI_LIMIT - aiUsageCount);
+  const userCanUseAI = isPro || remainingFreeAI > 0;
 
   return {
     isPro,
-    usageCount,
-    remainingFree,
-    canIdentify,
-    freeLimit: FREE_IDENTIFICATION_LIMIT,
+    aiUsageCount,
+    usageCount: aiUsageCount,
+    remainingFreeAI,
+    remainingFree: remainingFreeAI,
+    canUseAI: userCanUseAI,
+    canIdentify: userCanUseAI,
+    freeAILimit: FREE_AI_LIMIT,
+    freeLimit: FREE_AI_LIMIT,
     freePlantationsLimit: FREE_PLANTATIONS_LIMIT,
     freeAnimalsLimit: FREE_ANIMALS_LIMIT,
     canAddPlantation: (count = 0) => isPro || count < FREE_PLANTATIONS_LIMIT,

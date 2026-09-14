@@ -2,12 +2,16 @@ import React, { useState, useRef, useEffect } from "react";
 import { Sparkles, Send, Loader2, Camera } from "lucide-react";
 import { Link } from "react-router-dom";
 import { visionBase44 } from "@/api/visionClient";
+import { useSubscription, incrementAIUsage } from "@/lib/subscription";
+import UpgradeModal from "@/components/subscription/UpgradeModal";
 
 export default function AIAssistant({ query, plants, onClearQuery }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const scrollRef = useRef(null);
+  const { isPro, remainingFreeAI, canUseAI } = useSubscription();
 
   useEffect(() => {
     if (query) {
@@ -23,12 +27,25 @@ export default function AIAssistant({ query, plants, onClearQuery }) {
   }, [messages, loading]);
 
   const buildContext = () => {
-    return plants.map(p =>
-      `${p.emoji} ${p.name} (${p.category}) — Sementeira: ${(p.sow_months||[]).join(",")}; Plantação: ${(p.plant_months||[]).join(",")}; Colheita: ${(p.harvest_months||[]).join(",")}. Sol: ${p.sun_requirements}; Rega: ${p.water_requirements}; Dificuldade: ${p.difficulty}. Semear: ${p.sow_instructions||""} Plantar: ${p.plant_instructions||""} Cuidados: ${p.care_instructions||""} Armazenar: ${p.storage_instructions||""}`
+    return (plants || []).map(p =>
+      `${p.emoji || "🌱"} ${p.name} (${p.category || "Geral"}) — Sementeira: ${(p.sow_months||[]).join(",")}; Plantação: ${(p.plant_months||[]).join(",")}; Colheita: ${(p.harvest_months||[]).join(",")}. Sol: ${p.sun_requirements || "Sol pleno"}; Rega: ${p.water_requirements || "Moderada"}; Dificuldade: ${p.difficulty || "Fácil"}. Semear: ${p.sow_instructions||""} Plantar: ${p.plant_instructions||""} Cuidados: ${p.care_instructions||""} Armazenar: ${p.storage_instructions||""}`
     ).join("\n");
   };
 
   const askAI = async (question) => {
+    if (!canUseAI) {
+      setShowUpgradeModal(true);
+      setMessages(prev => [
+        ...prev,
+        { role: "user", text: question },
+        {
+          role: "assistant",
+          text: "⭐ **Limite de 2 utilizações gratuitas de IA atingido.**\n\nJá utilizaste os teus 2 usos gratuitos de IA. Para continuares a conversar com o Assistente IA da Horta e identificares plantas por foto sem limites, ativa o **Horta Viva Pro** por apenas 2,99€/mês.",
+        }
+      ]);
+      return;
+    }
+
     const userMsg = { role: "user", text: question };
     setMessages(prev => [...prev, userMsg]);
     setInput("");
@@ -53,6 +70,10 @@ Responde de forma clara, prática e direta em português europeu. Se a pergunta 
       });
 
       setMessages(prev => [...prev, { role: "assistant", text: res }]);
+
+      if (!isPro) {
+        incrementAIUsage();
+      }
     } catch (e) {
       const qLower = question.toLowerCase();
       const matched = (plants || []).find(p => qLower.includes(p.name.toLowerCase()));
@@ -74,9 +95,14 @@ Responde de forma clara, prática e direta em português europeu. Se a pergunta 
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (input.trim() && !loading) {
-      askAI(input.trim());
+    if (!input.trim() || loading) return;
+
+    if (!canUseAI) {
+      setShowUpgradeModal(true);
+      return;
     }
+
+    askAI(input.trim());
   };
 
   const suggestions = [
@@ -86,23 +112,50 @@ Responde de forma clara, prática e direta em português europeu. Se a pergunta 
   ];
 
   return (
-    <div className="bg-gradient-to-br from-white to-emerald-50/20 rounded-3xl border border-emerald-100 shadow-md shadow-emerald-100/30 overflow-hidden flex flex-col" style={{ maxHeight: "520px" }}>
-      <div className="bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 px-5 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-white" />
-          <h3 className="text-white font-semibold text-sm">Assistente IA da Horta</h3>
+    <div className="bg-gradient-to-br from-white to-emerald-50/20 rounded-3xl border border-emerald-100 shadow-md shadow-emerald-100/30 overflow-hidden flex flex-col" style={{ maxHeight: "540px" }}>
+      {/* Header */}
+      <div className="bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 px-4 sm:px-5 py-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <Sparkles className="w-5 h-5 text-white shrink-0" />
+          <h3 className="text-white font-semibold text-sm truncate">Assistente IA da Horta</h3>
         </div>
-        <Link
-          to="/identificar"
-          className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition-all shadow-sm"
-          title="Tirar foto a uma planta para identificar"
-        >
-          <Camera className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Identificar com Foto</span>
-          <span className="sm:hidden">Foto</span>
-        </Link>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {isPro ? (
+            <span
+              className="flex items-center gap-1 bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-xl shadow-2xs"
+              title="Plano Pro ativo"
+            >
+              ⭐ Pro Ilimitado
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowUpgradeModal(true)}
+              className="flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white text-xs font-medium px-2.5 py-1 rounded-xl transition-all shadow-2xs"
+              title="Quota de IA gratuita"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              {remainingFreeAI > 0 ? (
+                <span>{remainingFreeAI} {remainingFreeAI === 1 ? "uso grátis" : "usos grátis"}</span>
+              ) : (
+                <span className="font-bold text-amber-200">Ativar Pro</span>
+              )}
+            </button>
+          )}
+
+          <Link
+            to="/identificar"
+            className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-1 rounded-xl transition-all shadow-sm"
+            title="Tirar foto a uma planta para identificar"
+          >
+            <Camera className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Foto</span>
+          </Link>
+        </div>
       </div>
 
+      {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3 min-h-[200px]">
         {messages.length === 0 && (
           <div className="text-center py-6">
@@ -143,13 +196,34 @@ Responde de forma clara, prática e direta em português europeu. Se a pergunta 
         )}
       </div>
 
+      {/* Banner de limite de IA atingido */}
+      {!isPro && remainingFreeAI === 0 && (
+        <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-emerald-50 border-t border-amber-200/80 px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="text-amber-600 text-lg">⭐</span>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-stone-800 leading-tight">Usos gratuitos de IA esgotados (2/2)</p>
+              <p className="text-[11px] text-stone-500 truncate">Ativa o Horta Viva Pro para conversares e identificares sem limites.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowUpgradeModal(true)}
+            className="shrink-0 bg-gradient-to-r from-amber-500 to-emerald-600 hover:from-amber-600 hover:to-emerald-700 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl shadow-xs transition-all active:scale-95 whitespace-nowrap"
+          >
+            Ativar Pro (2,99€)
+          </button>
+        </div>
+      )}
+
+      {/* Input form */}
       <form onSubmit={handleSubmit} className="border-t border-stone-100 p-3 flex gap-2">
         <input
           type="text"
           value={input}
           onChange={e => setInput(e.target.value)}
-          placeholder="Escreve a tua pergunta..."
-          className="flex-1 bg-gradient-to-br from-stone-50 to-emerald-50/20 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-300 text-stone-700"
+          placeholder={!canUseAI ? "Ativa o Pro para continuar a perguntar à IA..." : "Escreve a tua pergunta..."}
+          className="flex-1 bg-gradient-to-br from-stone-50 to-emerald-50/20 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-300 text-stone-700 placeholder:text-stone-400"
         />
         <button
           type="submit"
@@ -159,6 +233,13 @@ Responde de forma clara, prática e direta em português europeu. Se a pergunta 
           <Send className="w-4 h-4" />
         </button>
       </form>
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        reason="ai"
+      />
     </div>
   );
 }

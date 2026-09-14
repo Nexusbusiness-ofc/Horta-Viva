@@ -112,10 +112,12 @@ export default function IdentificarPlanta() {
       });
       setResult(combineWithCatalog(aiResult));
       if (!isPro) {
-        incrementPhotoUsage();
+        const updatedCount = incrementPhotoUsage();
         toast({
-          title: "Identificação gratuita concluída (1 de 1 usada)",
-          description: "Aproveita a ficha botânica! Para identificares mais fotos, ativa o Horta Viva Pro por 2,99€/mês.",
+          title: `Identificação por IA concluída (${updatedCount} de 2 usos gratuitos)`,
+          description: updatedCount >= 2
+            ? "Aproveitaste os teus 2 usos gratuitos de IA! Para continuares a identificar fotos e usares o assistente sem limites, ativa o Horta Viva Pro."
+            : "Aproveita a ficha botânica! Ainda tens 1 uso gratuito de IA restante.",
         });
       }
     } catch (err) {
@@ -192,7 +194,7 @@ export default function IdentificarPlanta() {
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                 {remainingFree > 0 ? (
-                  <span>1 foto grátis</span>
+                  <span>{remainingFree} {remainingFree === 1 ? "foto/IA grátis" : "fotos/IA grátis"}</span>
                 ) : (
                   <span className="font-bold text-amber-700">Ativar Pro (2,99€)</span>
                 )}
@@ -213,13 +215,13 @@ export default function IdentificarPlanta() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-stone-800">Uso gratuito concluído (1/1 fotos)</h3>
+                  <h3 className="text-sm font-bold text-stone-800">Usos gratuitos de IA esgotados (2/2)</h3>
                   <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
                     2,99€ / mês
                   </span>
                 </div>
                 <p className="text-xs text-stone-600 mt-0.5 max-w-md">
-                  Já utilizaste a tua identificação por foto gratuita. Assina o plano Pro para fotografares e identificares quantas plantas quiseres!
+                  Já utilizaste os teus 2 usos gratuitos de IA (fotos e assistente). Assina o plano Pro para fotografares e conversares com a IA quantas vezes quiseres!
                 </p>
               </div>
             </div>
@@ -415,6 +417,7 @@ export default function IdentificarPlanta() {
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
         onExploreCatalog={() => setShowCatalogModal(true)}
+        reason="photos"
       />
 
       <footer className="text-center pt-4 pb-28 text-xs">

@@ -9,6 +9,7 @@ import {
   activateProSubscription, 
   FREE_PLANTATIONS_LIMIT,
   FREE_ANIMALS_LIMIT,
+  FREE_AI_LIMIT,
   FREE_IDENTIFICATION_LIMIT
 } from "@/lib/subscription";
 import { useToast } from "@/components/ui/use-toast";
@@ -43,7 +44,7 @@ export default function ProSubscriptionView({ onSubscribed }) {
   const faqs = [
     {
       q: "O que está incluído no Horta Viva Pro?",
-      a: "Identificações de plantas por fotografia ilimitadas com Inteligência Artificial, plantações ilimitadas na Minha Quinta (o plano base tem limite de 3), e animais ilimitados com lembretes diários de cuidados e tarefas (o plano base tem limite de 2)."
+      a: "Inteligência Artificial ilimitada (Assistente Botânico e identificação de plantas por fotografia), plantações ilimitadas na Minha Quinta (o plano base tem limite de 3), e animais ilimitados com lembretes diários de cuidados e tarefas (o plano base tem limite de 2)."
     },
     {
       q: "Como funciona a cobrança de 2,99€ / mês?",
@@ -120,13 +121,13 @@ export default function ProSubscriptionView({ onSubscribed }) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-stone-800 text-sm">Fotos Ilimitadas (IA)</h3>
+              <h3 className="font-bold text-stone-800 text-sm">Inteligência Artificial (IA)</h3>
               <span className="text-[10px] font-extrabold bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded-full">PRO</span>
             </div>
             <p className="text-xs text-stone-500 mt-1 leading-relaxed">
-              Tira fotografias a folhas, flores, árvores, frutos ou legumes. A IA reconhece a espécie e cuidados ideais.
+              Conversa com o Assistente IA da horta e fotografa plantas ou folhas para diagnósticos botânicos imediatos.
             </p>
-            <p className="text-[11px] text-stone-400 mt-1 font-medium">Plano Base: apenas {FREE_IDENTIFICATION_LIMIT} foto grátis</p>
+            <p className="text-[11px] text-stone-400 mt-1 font-medium">Plano Base: {FREE_AI_LIMIT} utilizações gratuitas de IA</p>
           </div>
         </div>
 
@@ -196,8 +197,8 @@ export default function ProSubscriptionView({ onSubscribed }) {
           </div>
 
           <div className="grid grid-cols-3 p-3.5 sm:p-4 items-center">
-            <span className="font-semibold text-stone-800">Identificação por Foto (IA)</span>
-            <span className="text-center text-stone-500 font-medium">1 foto</span>
+            <span className="font-semibold text-stone-800">Inteligência Artificial (IA & Fotos)</span>
+            <span className="text-center text-stone-500 font-medium">{FREE_AI_LIMIT} utilizações</span>
             <span className="text-center font-bold text-emerald-700 bg-emerald-50 py-1 px-2 rounded-lg">Ilimitado</span>
           </div>
 

@@ -45,11 +45,18 @@ export default function UpgradeModal({
         desc: customDescription || "O plano base permite registar até 2 animais. Desbloqueia animais ilimitados e organiza todos os cuidados diários!",
       };
     }
+    if (reason === "ai") {
+      return {
+        tag: "Inteligência Artificial · Pro",
+        title: customTitle || "Limite de IA Gratuita Atingido",
+        desc: customDescription || "Aproveitaste os 2 usos gratuitos de IA. Desbloqueia o Assistente IA da Horta e identificações botânicas ilimitadas!",
+      };
+    }
     if (reason === "photos") {
       return {
         tag: "IA de Plantas · Foto",
         title: customTitle || "Limite de Fotos Grátis Atingido",
-        desc: customDescription || "Já aproveitaste a tua 1 foto gratuita. Desbloqueia fotos ilimitadas com IA para identificar qualquer planta!",
+        desc: customDescription || "Aproveitaste os teus 2 usos gratuitos de IA. Desbloqueia fotos e assistente botânico ilimitados com IA!",
       };
     }
     return {
@@ -122,7 +129,7 @@ export default function UpgradeModal({
                 <Check className="w-3.5 h-3.5 stroke-[3]" />
               </div>
               <p className="text-xs sm:text-sm text-stone-700 leading-snug">
-                <strong>Identificações fotográficas ilimitadas:</strong> fotos ilimitadas de plantas e folhas com IA botânica.
+                <strong>IA Botânica e Fotos Ilimitadas:</strong> conversa com o Assistente IA e fotografa plantas sem limites (base: 2 usos gratuitos).
               </p>
             </div>
 
