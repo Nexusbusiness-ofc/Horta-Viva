@@ -26,8 +26,7 @@ export default function UpgradeModal({
     e.preventDefault();
     if (!emailInput.trim()) return;
     const input = emailInput.trim();
-    const isAdm = input.toLowerCase() === "admin" || input.toLowerCase() === "andre" || input.toLowerCase() === "hortaviva" || input.toLowerCase().includes("admin");
-    activateProSubscription({ email: input, is_admin: isAdm });
+    activateProSubscription({ email: input });
     setRestoreSuccess(true);
     setTimeout(() => {
       onClose();
@@ -253,7 +252,7 @@ export default function UpgradeModal({
                   <input
                     type="text"
                     required
-                    placeholder="teu.email@exemplo.com (ou 'admin')"
+                    placeholder="teu.email@exemplo.com"
                     value={emailInput}
                     onChange={(e) => setEmailInput(e.target.value)}
                     className="flex-1 bg-white border border-stone-200 rounded-xl px-2.5 py-1.5 text-xs text-stone-800 outline-none focus:border-emerald-500"

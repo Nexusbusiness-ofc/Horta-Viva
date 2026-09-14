@@ -7,14 +7,12 @@ import SyncBackupModal from "@/components/quinta/SyncBackupModal";
 import { isGoogleConnected } from "@/lib/googleSync";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
 import { useSubscription } from "@/lib/subscription";
-import { useToast } from "@/components/ui/use-toast";
 
 export default function Perfil() {
   const { user, checkUserAuth, logout, navigateToLogin } = useAuth();
-  const { isPro, isAdminPro, activateAdminPro, cancelPro } = useSubscription();
+  const { isPro } = useSubscription();
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [isGoogleLinked, setIsGoogleLinked] = useState(isGoogleConnected());
-  const { toast } = useToast();
 
   React.useEffect(() => {
     const handleSync = () => setIsGoogleLinked(isGoogleConnected());
@@ -24,22 +22,6 @@ export default function Perfil() {
     }
     return () => window.removeEventListener("hortaviva_sync_change", handleSync);
   }, [user]);
-
-  const handleToggleAdminPro = () => {
-    if (isPro) {
-      cancelPro();
-      toast({
-        title: "Modo Base Ativado",
-        description: "A app está agora no modo base (gratuito) para poderes testar limites como um utilizador normal.",
-      });
-    } else {
-      activateAdminPro();
-      toast({
-        title: "👑 Modo Administrador Ativado!",
-        description: "Acesso Pro gratuito e vitalício ativado com sucesso neste dispositivo.",
-      });
-    }
-  };
 
   if (!user) {
     return (
@@ -137,8 +119,8 @@ export default function Perfil() {
           <ProfileForm user={user} onSaved={checkUserAuth} />
         </div>
 
-        {/* Subscrição Horta Viva Pro com Controlo de Administrador */}
-        <div className="bg-white rounded-3xl border border-stone-200/80 shadow-sm p-5 space-y-3.5">
+        {/* Subscrição Horta Viva Pro */}
+        <div className="bg-white rounded-3xl border border-stone-200/80 shadow-sm p-5 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
@@ -147,7 +129,7 @@ export default function Perfil() {
               <div>
                 <h3 className="text-sm font-bold text-stone-800">Horta Viva Pro</h3>
                 <p className="text-xs text-stone-500">
-                  {isPro ? (isAdminPro ? "Acesso Pro Vitalício de Administrador" : "Acesso ilimitado ativo") : "Plano base ativo · 2,99€/mês"}
+                  {isPro ? "Acesso ilimitado ativo" : "Plano base ativo · 2,99€/mês"}
                 </p>
               </div>
             </div>
@@ -158,7 +140,7 @@ export default function Perfil() {
                   : "bg-amber-100 text-amber-800 border-amber-300"
               }`}
             >
-              {isPro ? (isAdminPro ? "👑 Admin Pro" : "Pro Ativo") : "Plano Base"}
+              {isPro ? "Pro Ativo" : "Plano Base"}
             </span>
           </div>
 
@@ -176,32 +158,6 @@ export default function Perfil() {
             <span>{isPro ? "Ver Detalhes do Plano Pro" : "Ver e Pagar Pro (2,99€/mês)"}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
-
-          {/* Área de Controlo de Administrador */}
-          <div className="mt-3 pt-3 border-t border-stone-100 bg-stone-50/70 -mx-5 -mb-5 p-4 rounded-b-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className="text-xl">👑</span>
-              <div>
-                <p className="text-xs font-bold text-stone-800">Acesso de Administrador</p>
-                <p className="text-[11px] text-stone-500 leading-tight">
-                  {isPro
-                    ? "Tens o Pro gratuito ativo. Podes alternar para o modo base quando quiseres testar."
-                    : "Como administrador, podes ativar o Pro gratuitamente a qualquer momento com 1 clique."}
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleToggleAdminPro}
-              className={`w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl border transition-all active:scale-95 whitespace-nowrap shadow-xs ${
-                isPro
-                  ? "bg-white hover:bg-stone-100 text-stone-700 border-stone-200"
-                  : "bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white border-transparent shadow-emerald-200/50"
-              }`}
-            >
-              <span>{isPro ? "Testar Modo Base (Desativar)" : "👑 Ativar Pro Grátis (Admin)"}</span>
-            </button>
-          </div>
         </div>
 
         {/* Sincronização Google Drive & Cópia de Segurança */}

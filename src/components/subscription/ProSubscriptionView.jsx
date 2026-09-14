@@ -29,16 +29,13 @@ export default function ProSubscriptionView({ onSubscribed }) {
     e.preventDefault();
     if (!emailInput.trim()) return;
     const input = emailInput.trim();
-    const isAdm = input.toLowerCase() === "admin" || input.toLowerCase() === "andre" || input.toLowerCase() === "hortaviva" || input.toLowerCase().includes("admin");
     setRestoring(true);
     setTimeout(() => {
-      activateProSubscription({ email: input, is_admin: isAdm });
+      activateProSubscription({ email: input });
       setRestoring(false);
       toast({
-        title: isAdm ? "👑 Modo Administrador Ativado!" : "🎉 Subscrição Pro ativada!",
-        description: isAdm
-          ? "Acesso Pro gratuito e vitalício ativado com sucesso para o administrador."
-          : `Dispositivo vinculado com sucesso ao e-mail ${input}.`,
+        title: "🎉 Subscrição Pro ativada!",
+        description: "Acesso Pro desbloqueado com sucesso neste dispositivo.",
       });
       setEmailInput("");
       if (onSubscribed) onSubscribed();
@@ -251,7 +248,7 @@ export default function ProSubscriptionView({ onSubscribed }) {
           <input
             type="text"
             required
-            placeholder="teu.email@exemplo.com (ou 'admin')"
+            placeholder="teu.email@exemplo.com"
             value={emailInput}
             onChange={(e) => setEmailInput(e.target.value)}
             className="flex-1 bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-stone-800 outline-none focus:border-emerald-500 transition-colors"
