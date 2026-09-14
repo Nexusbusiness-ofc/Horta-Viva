@@ -71,7 +71,7 @@ export default function Home() {
               <p className="text-[11px] sm:text-xs text-stone-500 font-medium truncate">Agricultura & Guia de Cultivo</p>
             </div>
             <div className="ml-auto flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {/* Botão Pro no Home */}
+              {/* Ícone / Botão Pro no topo do Home */}
               <button
                 type="button"
                 onClick={() => setShowProModal(true)}
@@ -118,47 +118,6 @@ export default function Home() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-5 space-y-6">
-        {/* Banner Promocional Pro no Home */}
-        {!isPro && searchResults === null && (
-          <div
-            onClick={() => setShowProModal(true)}
-            className="cursor-pointer bg-gradient-to-r from-amber-500 via-emerald-600 to-teal-700 rounded-3xl p-4 sm:p-5 text-white shadow-lg shadow-emerald-900/15 hover:shadow-xl transition-all duration-300 relative overflow-hidden group active:scale-[0.99] border border-white/20"
-          >
-            <div className="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-white/10 blur-xl pointer-events-none group-hover:scale-110 transition-transform" />
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 text-2xl shadow-xs border border-white/30">
-                  ⭐
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-black text-base sm:text-lg text-white leading-none">
-                      Horta Viva Pro
-                    </h3>
-                    <span className="bg-amber-300 text-stone-900 text-[10px] sm:text-[11px] font-black px-2 py-0.5 rounded-full shadow-xs">
-                      2,99€ / MÊS
-                    </span>
-                  </div>
-                  <p className="text-xs sm:text-sm text-emerald-100/95 mt-1 leading-snug">
-                    IA Botânica e Fotos Ilimitadas · Todas as tuas culturas e animais sem restrições.
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowProModal(true);
-                }}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-stone-900 font-extrabold text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-2xl shadow-md shadow-amber-950/20 active:scale-95 transition-all whitespace-nowrap"
-              >
-                <Sparkles className="w-4 h-4 text-amber-950" />
-                <span>Ver Benefícios & Aderir</span>
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Hero carousel (hidden during search) */}
         {searchResults === null && !loading && plants.length > 0 && (
           <HeroCarousel plants={plants} onSelect={setSelectedPlant} />
