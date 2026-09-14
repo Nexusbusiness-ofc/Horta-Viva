@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { Leaf, Loader2, Sprout, Camera, Sparkles } from "lucide-react";
+import { Leaf, Loader2, Sprout, Camera, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import SearchBar from "@/components/plant/SearchBar";
 import MonthSelector from "@/components/plant/MonthSelector";
@@ -71,24 +71,19 @@ export default function Home() {
               <p className="text-[11px] sm:text-xs text-stone-500 font-medium truncate">Agricultura & Guia de Cultivo</p>
             </div>
             <div className="ml-auto flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {/* Ícone / Botão Pro no topo do Home */}
+              {/* Ícone Pro no topo do Home (apenas a estrela para poupar espaço) */}
               <button
                 type="button"
                 onClick={() => setShowProModal(true)}
-                className={`shrink-0 flex items-center gap-1 sm:gap-1.5 text-xs font-black px-2.5 sm:px-3 py-2 rounded-xl shadow-md transition-all active:scale-95 ${
+                className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shadow-md transition-all active:scale-95 ${
                   isPro 
-                    ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-stone-900 border border-amber-300 shadow-amber-200/40" 
-                    : "bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-stone-900 border border-amber-300/80 shadow-amber-300/50 animate-pulse hover:animate-none"
+                    ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 border border-amber-300 shadow-amber-200/40" 
+                    : "bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-amber-950 border border-amber-300/80 shadow-amber-300/50 animate-pulse hover:animate-none"
                 }`}
-                title={isPro ? "⭐ Plano Pro Ativo" : "⭐ Ativar Horta Viva Pro (2,99€/mês)"}
+                title={isPro ? "⭐ Plano Pro Ativo" : "⭐ Horta Viva Pro (2,99€/mês)"}
+                aria-label="Horta Viva Pro"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-950 shrink-0" />
-                <span>Pro</span>
-                {!isPro && (
-                  <span className="text-[10px] sm:text-[11px] bg-black/15 text-stone-900 px-1.5 py-0.5 rounded-md font-black">
-                    2,99€
-                  </span>
-                )}
+                <Star className="w-5 h-5 fill-amber-950 text-amber-950 shrink-0" />
               </button>
               <AuthButton />
               <NavigationDrawer />
