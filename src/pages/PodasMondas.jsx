@@ -8,6 +8,7 @@ import MondaCard from "@/components/mondas/MondaCard";
 import MondaDetail from "@/components/mondas/MondaDetail";
 import { cachedList } from "@/lib/offlineCatalog";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
+import { ViewModeToggle, useViewMode } from "@/components/ui/ViewModeToggle";
 
 export default function PodasMondas() {
   const [tab, setTab] = useState("podas");
@@ -17,6 +18,7 @@ export default function PodasMondas() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todas");
   const [selected, setSelected] = useState(null);
+  const [viewMode, setViewMode] = useViewMode("hortaviva_podas_view_mode", "large");
 
   useEffect(() => {
     Promise.all([
@@ -117,6 +119,17 @@ export default function PodasMondas() {
           </div>
         )}
 
+        {/* Header com ViewModeToggle */}
+        <div className="flex items-center justify-between gap-3 pt-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-bold text-stone-700">
+              {tab === "podas" ? "✂️ Guias de Poda" : "🌱 Guias de Monda"}
+            </h2>
+            <span className="text-xs text-stone-400 font-medium">({filtered.length})</span>
+          </div>
+          <ViewModeToggle mode={viewMode} onChange={setViewMode} />
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 text-emerald-500 animate-spin" /></div>
         ) : filtered.length === 0 ? (
@@ -125,11 +138,11 @@ export default function PodasMondas() {
             <p className="text-stone-500">Nenhum resultado encontrado.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-3.5" : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"}>
             {filtered.map(item => (
               tab === "podas"
-                ? <PodaCard key={item.id} poda={item} onClick={() => setSelected(item)} />
-                : <MondaCard key={item.id} monda={item} onClick={() => setSelected(item)} />
+                ? <PodaCard key={item.id} poda={item} onClick={() => setSelected(item)} compact={viewMode === "grid"} />
+                : <MondaCard key={item.id} monda={item} onClick={() => setSelected(item)} compact={viewMode === "grid"} />
             ))}
           </div>
         )}

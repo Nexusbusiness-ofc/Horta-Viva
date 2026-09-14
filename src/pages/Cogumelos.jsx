@@ -7,6 +7,7 @@ import MushroomCard from "@/components/mushroom/MushroomCard";
 import MushroomDetail from "@/components/mushroom/MushroomDetail";
 import { cachedList } from "@/lib/offlineCatalog";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
+import { ViewModeToggle, useViewMode } from "@/components/ui/ViewModeToggle";
 
 const CATEGORIES = ["Todos", "Comestível", "Comestível com precaução", "Tóxico", "Mortal"];
 
@@ -24,6 +25,7 @@ export default function Cogumelos() {
   const [category, setCategory] = useState("Todos");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
+  const [viewMode, setViewMode] = useViewMode("hortaviva_mushroom_view_mode", "large");
 
   useEffect(() => {
     cachedList("mushrooms", () => base44.entities.Mushroom.list())
@@ -122,6 +124,15 @@ export default function Cogumelos() {
           <MonthSelector selectedMonth={selectedMonth} onSelect={setSelectedMonth} />
         </section>
 
+        {/* Header da lista com ViewModeToggle */}
+        <div className="flex items-center justify-between gap-3 pt-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-bold text-stone-700">🍄 Cogumelos Silvestres</h2>
+            <span className="text-xs text-stone-400 font-medium">({filtered.length})</span>
+          </div>
+          <ViewModeToggle mode={viewMode} onChange={setViewMode} />
+        </div>
+
         {/* Lista */}
         {loading ? (
           <div className="flex justify-center py-20">
@@ -133,9 +144,9 @@ export default function Cogumelos() {
             <p className="text-stone-500">Nenhum cogumelo encontrado.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-3.5" : "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"}>
             {filtered.map(m => (
-              <MushroomCard key={m.id} mushroom={m} onClick={() => setSelected(m)} />
+              <MushroomCard key={m.id} mushroom={m} onClick={() => setSelected(m)} compact={viewMode === "grid"} />
             ))}
           </div>
         )}

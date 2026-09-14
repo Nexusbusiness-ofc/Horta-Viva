@@ -3,9 +3,53 @@ import { Image } from "@/components/ui/image";
 
 const MONTH_SHORT = ["", "J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
-export default function MondaCard({ monda, onClick }) {
+export default function MondaCard({ monda, onClick, compact = false }) {
   const color = monda.color || "#84cc16";
   const months = monda.when_months || [];
+
+  if (compact) {
+    return (
+      <button
+        onClick={onClick}
+        className="group relative text-left bg-white rounded-2xl border border-stone-200/80 overflow-hidden shadow-xs hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] transition-all flex flex-col w-full"
+      >
+        <div className="h-1.5 w-full shrink-0" style={{ backgroundColor: color }} />
+        <div className="relative aspect-square w-full overflow-hidden bg-stone-50 shrink-0">
+          {monda.image_url ? (
+            <Image
+              src={monda.image_url}
+              fittingType="fill"
+              alt={`Monda de ${monda.name}`}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          ) : (
+            <div
+              className="w-full h-full flex items-center justify-center text-4xl"
+              style={{ background: `linear-gradient(135deg, ${color}25, ${color}08)` }}
+            >
+              {monda.emoji || "🌱"}
+            </div>
+          )}
+          <span className="absolute top-1.5 left-1.5 text-xl drop-shadow-xs">{monda.emoji}</span>
+        </div>
+
+        <div className="p-2 sm:p-2.5 flex-1 flex flex-col justify-between min-w-0">
+          <h3 className="font-bold text-stone-800 text-xs sm:text-sm leading-tight truncate group-hover:text-emerald-700 transition-colors">
+            {monda.name}
+          </h3>
+          <div className="flex items-center justify-between gap-1 mt-1 text-[10px]">
+            <span
+              className="font-medium px-1.5 py-0.5 rounded-full truncate"
+              style={{ backgroundColor: color + "18", color }}
+            >
+              {monda.category}
+            </span>
+            <span className="text-stone-400 font-medium">🌱 Monda</span>
+          </div>
+        </div>
+      </button>
+    );
+  }
   return (
     <button
       onClick={onClick}

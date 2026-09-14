@@ -10,12 +10,74 @@ function shortMonths(months, max = 4) {
   return labels.length > max ? labels.slice(0, max).join(" · ") + " …" : labels.join(" · ");
 }
 
-export default function PlantCard({ plant, onClick }) {
+export default function PlantCard({ plant, onClick, compact = false }) {
   const color = plant.color || "#84cc16";
 
   const currentMonth = new Date().getMonth() + 1;
   const isSowNow = (plant.sow_months || []).includes(currentMonth);
   const isHarvestNow = (plant.harvest_months || []).includes(currentMonth);
+
+  if (compact) {
+    return (
+      <button
+        onClick={onClick}
+        className="group relative text-left bg-white rounded-2xl border border-stone-200/80 overflow-hidden shadow-xs hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] transition-all flex flex-col w-full"
+      >
+        <div className="h-1.5 w-full shrink-0" style={{ backgroundColor: color }} />
+        <div className="relative aspect-square w-full overflow-hidden bg-stone-50 shrink-0">
+          {plant.image_url ? (
+            <Image
+              src={plant.image_url}
+              fittingType="fill"
+              alt={plant.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          ) : (
+            <div
+              className="w-full h-full flex items-center justify-center text-4xl"
+              style={{ background: `linear-gradient(135deg, ${color}25, ${color}08)` }}
+            >
+              {plant.emoji || "🌱"}
+            </div>
+          )}
+
+          {/* Badges pequenos */}
+          <div className="absolute top-1.5 left-1.5 flex flex-col gap-1">
+            {isSowNow && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white/95 text-green-700 shadow-xs flex items-center gap-0.5">
+                🌱 <span className="hidden sm:inline">Semear</span>
+              </span>
+            )}
+            {isHarvestNow && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white/95 text-orange-600 shadow-xs flex items-center gap-0.5">
+                🧺 <span className="hidden sm:inline">Colher</span>
+              </span>
+            )}
+          </div>
+
+          {plant.difficulty && (
+            <span className="absolute top-1.5 right-1.5 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-black/45 text-white backdrop-blur-xs">
+              {plant.difficulty}
+            </span>
+          )}
+        </div>
+
+        <div className="p-2 sm:p-2.5 flex-1 flex flex-col justify-between min-w-0">
+          <div>
+            <h3 className="font-bold text-stone-800 text-xs sm:text-sm leading-tight truncate group-hover:text-emerald-700 transition-colors">
+              {plant.name}
+            </h3>
+            <span
+              className="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full mt-1 truncate max-w-full"
+              style={{ backgroundColor: color + "1a", color }}
+            >
+              {plant.category}
+            </span>
+          </div>
+        </div>
+      </button>
+    );
+  }
 
   return (
     <button

@@ -12,6 +12,7 @@ import HeroCarousel from "@/components/home/HeroCarousel";
 import OnboardingProfile from "@/components/profile/OnboardingProfile";
 import AuthButton from "@/components/auth/AuthButton";
 import { cachedList } from "@/lib/offlineCatalog";
+import { ViewModeToggle, useViewMode } from "@/components/ui/ViewModeToggle";
 
 const MONTH_NAMES = ["", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
@@ -22,6 +23,7 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState(null);
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [aiQuery, setAiQuery] = useState(null);
+  const [viewMode, setViewMode] = useViewMode("hortaviva_plant_view_mode", "large");
 
   useEffect(() => {
     cachedList("plants", () => base44.entities.Plant.list())
@@ -139,6 +141,15 @@ export default function Home() {
           </div>
         )}
 
+        {/* Plants header with ViewModeToggle */}
+        <div className="flex items-center justify-between gap-3 pt-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-bold text-stone-700">🌱 Catálogo de Alimentos</h2>
+            <span className="text-xs text-stone-400 font-medium">({visiblePlants.length})</span>
+          </div>
+          <ViewModeToggle mode={viewMode} onChange={setViewMode} />
+        </div>
+
         {/* Plants grid */}
         {loading ? (
           <div className="flex justify-center py-20">
@@ -150,9 +161,9 @@ export default function Home() {
             <p className="text-stone-500">Nenhuma planta encontrada.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-3.5" : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"}>
             {visiblePlants.map(p => (
-              <PlantCard key={p.id} plant={p} onClick={() => setSelectedPlant(p)} />
+              <PlantCard key={p.id} plant={p} onClick={() => setSelectedPlant(p)} compact={viewMode === "grid"} />
             ))}
           </div>
         )}
