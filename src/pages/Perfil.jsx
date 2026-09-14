@@ -1,14 +1,16 @@
 import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { Link } from "react-router-dom";
-import { ArrowLeft, LogOut, Mail, Sprout, Cloud } from "lucide-react";
+import { ArrowLeft, LogOut, Mail, Sprout, Cloud, Sparkles, ArrowRight } from "lucide-react";
 import ProfileForm from "@/components/profile/ProfileForm";
 import SyncBackupModal from "@/components/quinta/SyncBackupModal";
 import { isGoogleConnected } from "@/lib/googleSync";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
+import { useSubscription } from "@/lib/subscription";
 
 export default function Perfil() {
   const { user, checkUserAuth, logout, navigateToLogin } = useAuth();
+  const { isPro } = useSubscription();
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [isGoogleLinked, setIsGoogleLinked] = useState(isGoogleConnected());
 
@@ -115,6 +117,47 @@ export default function Perfil() {
         <div className="bg-white rounded-3xl border border-stone-200/80 shadow-sm p-5">
           <h3 className="text-sm font-bold text-stone-700 mb-4">Editar perfil</h3>
           <ProfileForm user={user} onSaved={checkUserAuth} />
+        </div>
+
+        {/* Subscrição Horta Viva Pro */}
+        <div className="bg-white rounded-3xl border border-stone-200/80 shadow-sm p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                ⭐
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-stone-800">Horta Viva Pro</h3>
+                <p className="text-xs text-stone-500">
+                  {isPro ? "Acesso ilimitado ativo" : "Plano base ativo · 2,99€/mês"}
+                </p>
+              </div>
+            </div>
+            <span
+              className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
+                isPro
+                  ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                  : "bg-amber-100 text-amber-800 border-amber-300"
+              }`}
+            >
+              {isPro ? "Pro Ativo" : "Plano Base"}
+            </span>
+          </div>
+
+          <p className="text-xs text-stone-600 leading-relaxed">
+            {isPro
+              ? "Tens acesso ilimitado a identificações fotográficas por IA, canteiros de plantações e animais na Minha Quinta."
+              : "Desbloqueia identificações por foto ilimitadas com IA, plantações sem limites e animais ilimitados por apenas 2,99€/mês."}
+          </p>
+
+          <Link
+            to="/pro"
+            className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white font-bold text-xs sm:text-sm py-2.5 px-4 rounded-xl shadow-md shadow-amber-500/20 transition-all active:scale-95"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>{isPro ? "Gerir Subscrição Pro" : "Ver e Pagar Pro (2,99€/mês)"}</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
 
         {/* Sincronização Google Drive & Cópia de Segurança */}

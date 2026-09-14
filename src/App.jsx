@@ -23,6 +23,7 @@ import PodasMondas from './pages/PodasMondas';
 import IdentificarPlanta from './pages/IdentificarPlanta';
 import TarefasHoje from './pages/TarefasHoje';
 import Perfil from './pages/Perfil';
+import HortaVivaPro from './pages/HortaVivaPro';
 import InstallPrompt from '@/components/pwa/InstallPrompt';
 import BottomNav from '@/components/navigation/BottomNav';
 
@@ -63,6 +64,7 @@ const AuthenticatedApp = () => {
       <Route path="/identificar" element={<IdentificarPlanta />} />
       <Route path="/tarefas-hoje" element={<TarefasHoje />} />
       <Route path="/perfil" element={<Perfil />} />
+      <Route path="/pro" element={<HortaVivaPro />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

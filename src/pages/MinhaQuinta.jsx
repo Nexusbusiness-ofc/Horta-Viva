@@ -16,6 +16,7 @@ import { isGoogleConnected, autoSyncGoogleDrive } from "@/lib/googleSync";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
 import { useSubscription, FREE_PLANTATIONS_LIMIT, FREE_ANIMALS_LIMIT } from "@/lib/subscription";
 import UpgradeModal from "@/components/subscription/UpgradeModal";
+import ProSubscriptionView from "@/components/subscription/ProSubscriptionView";
 
 const FILTERS = ["Todas", "Plantada", "Em crescimento", "Pronta a colher", "Colhida"];
 
@@ -169,24 +170,22 @@ export default function MinhaQuinta() {
               <p className="text-xs text-stone-500 truncate">As tuas plantações e animais</p>
             </div>
             {isPro ? (
-              <span
-                className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border bg-gradient-to-r from-amber-50 to-emerald-50 text-emerald-800 border-emerald-300 shadow-sm"
-                title="Plano Pro Ilimitado"
+              <button
+                onClick={() => setTab("pro")}
+                className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border bg-gradient-to-r from-amber-50 to-emerald-50 text-emerald-800 border-emerald-300 shadow-sm hover:shadow transition-all"
+                title="Ver estado do plano Pro"
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>Pro</span>
-              </span>
+                <span>Pro Ativo</span>
+              </button>
             ) : (
               <button
-                onClick={() => {
-                  setUpgradeReason(tab === "animais" ? "animais" : "plantacoes");
-                  setShowUpgradeModal(true);
-                }}
-                className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold border bg-amber-50/60 text-amber-800 border-amber-200 hover:border-amber-300 shadow-sm transition-all active:scale-95"
-                title="Ver plano Horta Viva Pro"
+                onClick={() => setTab("pro")}
+                className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold border bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-900 border-amber-300 hover:border-amber-400 shadow-sm transition-all active:scale-95"
+                title="Ver e pagar o plano Horta Viva Pro"
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span className="text-[11px] font-bold">Pro (2,99€)</span>
+                <span className="text-[11px] font-extrabold">Pagar Pro (2,99€)</span>
               </button>
             )}
             <button
@@ -210,29 +209,31 @@ export default function MinhaQuinta() {
               <Camera className="w-4 h-4 text-cyan-700" />
               <span className="hidden sm:inline">Identificar</span>
             </Link>
-            <button
-              onClick={openAdd}
-              className="shrink-0 flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white text-sm font-medium px-3 sm:px-4 py-2 rounded-xl shadow-md shadow-emerald-200/50 hover:shadow-lg transition-all active:scale-95"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Adicionar</span>
-            </button>
+            {tab !== "pro" && (
+              <button
+                onClick={openAdd}
+                className="shrink-0 flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white text-sm font-medium px-3 sm:px-4 py-2 rounded-xl shadow-md shadow-emerald-200/50 hover:shadow-lg transition-all active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Adicionar</span>
+              </button>
+            )}
             <NavigationDrawer />
           </div>
 
-          {/* Separador Plantações / Animais */}
-          <div className="flex gap-2 mt-3">
+          {/* Separador Plantações / Animais / Plano Pro */}
+          <div className="flex gap-1.5 sm:gap-2 mt-3">
             <button
               onClick={() => setTab("plantacoes")}
-              className={`flex-1 flex items-center justify-center gap-2 text-sm font-semibold py-2 px-3 rounded-xl transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold py-2 px-2 sm:px-3 rounded-xl transition-all ${
                 tab === "plantacoes"
                   ? "bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white shadow-md"
-                  : "bg-white border border-stone-200 text-stone-600"
+                  : "bg-white border border-stone-200 text-stone-600 hover:border-emerald-200"
               }`}
             >
-              <Sprout className="w-4 h-4" /> 
+              <Sprout className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> 
               <span>Plantações</span>
-              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold transition-all ${
+              <span className={`text-[10px] sm:text-[11px] px-1.5 py-0.5 rounded-full font-bold transition-all ${
                 tab === "plantacoes" ? "bg-white/20 text-white" : "bg-stone-100 text-stone-600"
               }`}>
                 {isPro ? `${plantings.length}` : `${plantings.length}/${FREE_PLANTATIONS_LIMIT}`}
@@ -240,174 +241,191 @@ export default function MinhaQuinta() {
             </button>
             <button
               onClick={() => setTab("animais")}
-              className={`flex-1 flex items-center justify-center gap-2 text-sm font-semibold py-2 px-3 rounded-xl transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold py-2 px-2 sm:px-3 rounded-xl transition-all ${
                 tab === "animais"
                   ? "bg-gradient-to-r from-orange-500 via-amber-600 to-orange-700 text-white shadow-md"
-                  : "bg-white border border-stone-200 text-stone-600"
+                  : "bg-white border border-stone-200 text-stone-600 hover:border-orange-200"
               }`}
             >
-              <PawPrint className="w-4 h-4" /> 
+              <PawPrint className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> 
               <span>Animais</span>
-              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold transition-all ${
+              <span className={`text-[10px] sm:text-[11px] px-1.5 py-0.5 rounded-full font-bold transition-all ${
                 tab === "animais" ? "bg-white/20 text-white" : "bg-stone-100 text-stone-600"
               }`}>
                 {isPro ? `${myAnimals.length}` : `${myAnimals.length}/${FREE_ANIMALS_LIMIT}`}
               </span>
+            </button>
+            <button
+              onClick={() => setTab("pro")}
+              className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold py-2 px-2 sm:px-3 rounded-xl transition-all ${
+                tab === "pro"
+                  ? "bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-white shadow-md"
+                  : isPro
+                    ? "bg-emerald-50/70 border border-emerald-300 text-emerald-800 hover:bg-emerald-100/60"
+                    : "bg-amber-50/60 border border-amber-300 text-amber-800 hover:bg-amber-100/60"
+              }`}
+            >
+              <Sparkles className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${tab === "pro" ? "text-white" : "text-amber-500"}`} /> 
+              <span>{isPro ? "Pro Ativo" : "Pagar Pro"}</span>
             </button>
           </div>
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-5 space-y-5">
-        {/* Banner de Limite de Plantações */}
-        {!isPro && tab === "plantacoes" && plantings.length >= FREE_PLANTATIONS_LIMIT && (
-          <div className="bg-gradient-to-r from-amber-50 via-emerald-50/40 to-teal-50 border border-amber-200 rounded-3xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-200 flex items-center justify-center shrink-0 text-amber-600 text-lg">
-                🌱
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-stone-800">
-                    Limite gratuito atingido ({FREE_PLANTATIONS_LIMIT}/{FREE_PLANTATIONS_LIMIT} plantações)
-                  </h3>
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                    2,99€ / mês
-                  </span>
+        {tab === "pro" ? (
+          <ProSubscriptionView />
+        ) : (
+          <>
+            {/* Banner de Limite de Plantações */}
+            {!isPro && tab === "plantacoes" && plantings.length >= FREE_PLANTATIONS_LIMIT && (
+              <div className="bg-gradient-to-r from-amber-50 via-emerald-50/40 to-teal-50 border border-amber-200 rounded-3xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-200 flex items-center justify-center shrink-0 text-amber-600 text-lg">
+                    🌱
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-stone-800">
+                        Limite gratuito atingido ({FREE_PLANTATIONS_LIMIT}/{FREE_PLANTATIONS_LIMIT} plantações)
+                      </h3>
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                        2,99€ / mês
+                      </span>
+                    </div>
+                    <p className="text-xs text-stone-600 mt-0.5 max-w-md">
+                      No plano base podes registar até {FREE_PLANTATIONS_LIMIT} plantações ativas. Desbloqueia plantações ilimitadas e gere toda a tua quinta com o Horta Viva Pro!
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-stone-600 mt-0.5 max-w-md">
-                  No plano base podes registar até {FREE_PLANTATIONS_LIMIT} plantações ativas. Desbloqueia plantações ilimitadas e gere toda a tua quinta com o Horta Viva Pro!
-                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTab("pro");
+                  }}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md shadow-emerald-200/50 transition-all active:scale-95 whitespace-nowrap"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Ver e Pagar Pro (2,99€)
+                </button>
               </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setUpgradeReason("plantacoes");
-                setShowUpgradeModal(true);
-              }}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md shadow-emerald-200/50 transition-all active:scale-95 whitespace-nowrap"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              Desbloquear Pro Ilimitado
-            </button>
-          </div>
-        )}
+            )}
 
-        {/* Banner de Limite de Animais */}
-        {!isPro && tab === "animais" && myAnimals.length >= FREE_ANIMALS_LIMIT && (
-          <div className="bg-gradient-to-r from-amber-50 via-orange-50/40 to-amber-50 border border-amber-200 rounded-3xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-200 flex items-center justify-center shrink-0 text-amber-600 text-lg">
-                🐾
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-stone-800">
-                    Limite gratuito atingido ({FREE_ANIMALS_LIMIT}/{FREE_ANIMALS_LIMIT} animais)
-                  </h3>
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                    2,99€ / mês
-                  </span>
+            {/* Banner de Limite de Animais */}
+            {!isPro && tab === "animais" && myAnimals.length >= FREE_ANIMALS_LIMIT && (
+              <div className="bg-gradient-to-r from-amber-50 via-orange-50/40 to-amber-50 border border-amber-200 rounded-3xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-200 flex items-center justify-center shrink-0 text-amber-600 text-lg">
+                    🐾
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-stone-800">
+                        Limite gratuito atingido ({FREE_ANIMALS_LIMIT}/{FREE_ANIMALS_LIMIT} animais)
+                      </h3>
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                        2,99€ / mês
+                      </span>
+                    </div>
+                    <p className="text-xs text-stone-600 mt-0.5 max-w-md">
+                      No plano base podes registar até {FREE_ANIMALS_LIMIT} animais. Desbloqueia animais ilimitados e organiza todos os cuidados e tarefas diárias!
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-stone-600 mt-0.5 max-w-md">
-                  No plano base podes registar até {FREE_ANIMALS_LIMIT} animais. Desbloqueia animais ilimitados e organiza todos os cuidados e tarefas diárias!
-                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTab("pro");
+                  }}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 via-amber-600 to-orange-700 hover:from-orange-600 hover:to-amber-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md shadow-orange-200/50 transition-all active:scale-95 whitespace-nowrap"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Ver e Pagar Pro (2,99€)
+                </button>
               </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setUpgradeReason("animais");
-                setShowUpgradeModal(true);
-              }}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 via-amber-600 to-orange-700 hover:from-orange-600 hover:to-amber-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md shadow-orange-200/50 transition-all active:scale-95 whitespace-nowrap"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              Desbloquear Pro Ilimitado
-            </button>
-          </div>
-        )}
+            )}
 
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-          </div>
-        ) : tab === "plantacoes" ? (
-          plantings.length === 0 ? (
-            <div className="text-center py-20">
-              <div className="text-6xl mb-4">🌱</div>
-              <h2 className="text-lg font-semibold text-stone-700 mb-1">A tua quinta está vazia</h2>
-              <p className="text-sm text-stone-500 mb-6">Adiciona a tua primeira plantação para começar a acompanhar.</p>
-              <button
-                onClick={openAdd}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white font-medium px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-200/50 hover:shadow-xl transition-all active:scale-95"
-              >
-                <Plus className="w-4 h-4" /> Adicionar plantação
-              </button>
-            </div>
-          ) : (
-            <>
-              <TreatmentReminders />
-              <ReminderBanner plantings={plantings} />
-
-              {/* Filtros */}
-              <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
-                {FILTERS.map(f => (
+            {loading ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+              </div>
+            ) : tab === "plantacoes" ? (
+              plantings.length === 0 ? (
+                <div className="text-center py-20">
+                  <div className="text-6xl mb-4">🌱</div>
+                  <h2 className="text-lg font-semibold text-stone-700 mb-1">A tua quinta está vazia</h2>
+                  <p className="text-sm text-stone-500 mb-6">Adiciona a tua primeira plantação para começar a acompanhar.</p>
                   <button
-                    key={f}
-                    onClick={() => setFilter(f)}
-                    className={`shrink-0 text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 rounded-full transition-all ${
-                      filter === f
-                        ? "bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-sm"
-                        : "bg-white border border-stone-200 text-stone-600 hover:border-emerald-300"
-                    }`}
+                    onClick={openAdd}
+                    className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white font-medium px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-200/50 hover:shadow-xl transition-all active:scale-95"
                   >
-                    {f}
+                    <Plus className="w-4 h-4" /> Adicionar plantação
                   </button>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <>
+                  <TreatmentReminders />
+                  <ReminderBanner plantings={plantings} />
 
-              {filtered.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-sm text-stone-400">Nenhuma plantação neste estado.</p>
+                  {/* Filtros */}
+                  <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+                    {FILTERS.map(f => (
+                      <button
+                        key={f}
+                        onClick={() => setFilter(f)}
+                        className={`shrink-0 text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 rounded-full transition-all ${
+                          filter === f
+                            ? "bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-sm"
+                            : "bg-white border border-stone-200 text-stone-600 hover:border-emerald-300"
+                        }`}
+                      >
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+
+                  {filtered.length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-sm text-stone-400">Nenhuma plantação neste estado.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {filtered.map(p => (
+                        <PlantingCard key={p.id} planting={p} plants={plants} onUpdate={handleUpdate} onDelete={handleDelete} />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )
+            ) : (
+              // Separador Animais
+              myAnimals.length === 0 ? (
+                <div className="text-center py-20">
+                  <div className="text-6xl mb-4">🐾</div>
+                  <h2 className="text-lg font-semibold text-stone-700 mb-1">Sem animais registados</h2>
+                  <p className="text-sm text-stone-500 mb-6">Adiciona os animais que tens na quinta para receberes lembretes diários de alimentação e cuidados.</p>
+                  <button
+                    onClick={openAdd}
+                    className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 via-amber-600 to-orange-700 text-white font-medium px-5 py-2.5 rounded-xl shadow-lg shadow-orange-200/50 hover:shadow-xl transition-all active:scale-95"
+                  >
+                    <Plus className="w-4 h-4" /> Adicionar animal
+                  </button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filtered.map(p => (
-                    <PlantingCard key={p.id} planting={p} plants={plants} onUpdate={handleUpdate} onDelete={handleDelete} />
+                  {myAnimals.map(a => (
+                    <MyAnimalCard
+                      key={a.id}
+                      myAnimal={a}
+                      farmAnimal={farmAnimals.find(f => f.id === a.animal_id)}
+                      onDelete={handleAnimalDelete}
+                      onEdit={() => { setEditingAnimal(a); setShowAnimalForm(true); }}
+                    />
                   ))}
                 </div>
-              )}
-            </>
-          )
-        ) : (
-          // Separador Animais
-          myAnimals.length === 0 ? (
-            <div className="text-center py-20">
-              <div className="text-6xl mb-4">🐾</div>
-              <h2 className="text-lg font-semibold text-stone-700 mb-1">Sem animais registados</h2>
-              <p className="text-sm text-stone-500 mb-6">Adiciona os animais que tens na quinta para receberes lembretes diários de alimentação e cuidados.</p>
-              <button
-                onClick={openAdd}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 via-amber-600 to-orange-700 text-white font-medium px-5 py-2.5 rounded-xl shadow-lg shadow-orange-200/50 hover:shadow-xl transition-all active:scale-95"
-              >
-                <Plus className="w-4 h-4" /> Adicionar animal
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {myAnimals.map(a => (
-                <MyAnimalCard
-                  key={a.id}
-                  myAnimal={a}
-                  farmAnimal={farmAnimals.find(f => f.id === a.animal_id)}
-                  onDelete={handleAnimalDelete}
-                  onEdit={() => { setEditingAnimal(a); setShowAnimalForm(true); }}
-                />
-              ))}
-            </div>
-          )
+              )
+            )}
+          </>
         )}
       </main>
 
