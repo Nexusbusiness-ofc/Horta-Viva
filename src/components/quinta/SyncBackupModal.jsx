@@ -27,6 +27,7 @@ import {
   disconnectGoogleDrive,
   uploadToGoogleDrive,
   downloadFromGoogleDrive,
+  autoSyncGoogleDrive,
 } from "@/lib/googleSync";
 import { exportFarmData, importFarmData } from "@/lib/localStorageStore";
 
@@ -86,8 +87,8 @@ export default function SyncBackupModal({ isOpen, onClose, onDataChanged }) {
         title: "Ligado com sucesso! 🎉",
         description: "A tua conta Google está ligada ao Google Drive.",
       });
-      // Sincronizar automaticamente após ligar
-      await uploadToGoogleDrive();
+      // Sincronizar bidirecionalmente após ligar (descarregar primeiro e fundir sem perdas)
+      await autoSyncGoogleDrive(true);
       updateState();
       onDataChanged?.();
     } catch (e) {

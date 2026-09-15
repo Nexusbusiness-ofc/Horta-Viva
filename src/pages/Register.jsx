@@ -45,7 +45,7 @@ export default function Register() {
       setLoading(true);
       setError("");
       try {
-        await connectGoogleDrive({ prompt: "consent" });
+        await connectGoogleDrive({ prompt: "select_account" });
         await checkUserAuth();
         try {
           await downloadFromGoogleDrive(false);
@@ -57,13 +57,13 @@ export default function Register() {
         return;
       } catch (err) {
         console.warn("Google OAuth / Drive falhou:", err);
-        setError("Não foi possível concluir a ligação com a conta Google.");
+        setError(err?.message || "Não foi possível concluir a ligação com a conta Google.");
       } finally {
         setLoading(false);
       }
+      return;
     }
-    base44.auth.loginWithProvider("google", fromUrl);
-    await checkUserAuth();
+    setError("ID de Cliente Google não configurado.");
   };
 
   const handleGuest = async () => {

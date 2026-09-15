@@ -48,7 +48,7 @@ export default function Login() {
       setLoading(true);
       setError("");
       try {
-        await connectGoogleDrive({ prompt: "consent" });
+        await connectGoogleDrive({ prompt: "select_account" });
         await checkUserAuth();
         try {
           await downloadFromGoogleDrive(false);
@@ -59,14 +59,14 @@ export default function Login() {
         window.location.hash = `#${fromUrl.startsWith("/") ? fromUrl : "/" + fromUrl}`;
         return;
       } catch (err) {
-        console.warn("Google Drive OAuth falhou ou cancelado, fallback:", err);
-        setError("Não foi possível concluir a autenticação com a conta Google. Tenta novamente.");
+        console.warn("Google Drive OAuth falhou ou cancelado:", err);
+        setError(err?.message || "Não foi possível concluir a autenticação com a conta Google. Tenta novamente.");
       } finally {
         setLoading(false);
       }
+      return;
     }
-    base44.auth.loginWithProvider("google", fromUrl);
-    await checkUserAuth();
+    setError("ID de Cliente Google não configurado.");
   };
 
   const handleGuest = async () => {

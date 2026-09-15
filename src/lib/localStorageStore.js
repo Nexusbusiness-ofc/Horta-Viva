@@ -122,7 +122,17 @@ class LocalEntityStore {
     const items = this._getItems();
     const filtered = items.filter((i) => i.id !== id);
     this._setItems(filtered);
+    this._recordDeletion(id);
     return { id, success: true };
+  }
+
+  _recordDeletion(id) {
+    try {
+      const raw = localStorage.getItem("hortaviva_deleted_ids");
+      const deleted = raw ? JSON.parse(raw) : {};
+      deleted[id] = Date.now();
+      localStorage.setItem("hortaviva_deleted_ids", JSON.stringify(deleted));
+    } catch {}
   }
 }
 
@@ -429,53 +439,170 @@ export function exportFarmData() {
   const myAnimals = JSON.parse(localStorage.getItem(STORAGE_KEYS.MY_ANIMALS) || "[]");
   const reminders = JSON.parse(localStorage.getItem(STORAGE_KEYS.REMINDERS) || "[]");
   const user = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || "null");
+  const deletedIds = JSON.parse(localStorage.getItem("hortaviva_deleted_ids") || "{}");
 
   return {
-    version: 1,
+    version: 2,
     appName: "Horta Viva",
     exportedAt: new Date().toISOString(),
     user,
+    deletedIds,
     plantings,
     myAnimals,
     reminders,
   };
 }
 
-export function importFarmData(data) {
+export function mergeFarmData(local, remote) {
+  let deletedIds = {};
+  try {
+    const rawLocalDeleted = localStorage.getItem("hortaviva_deleted_ids");
+    const localDeleted = rawLocalDeleted ? JSON.parse(rawLocalDeleted) : {};
+    const remoteDeleted = remote && typeof remote.deletedIds === "object" ? remote.deletedIds : {};
+    deletedIds = { ...localDeleted, ...remoteDeleted };
+    const sixtyDaysAgo = Date.now() - 60 * 24 * 60 * 60 * 1000;
+    for (const k in deletedIds) {
+      if (Number(deletedIds[k]) < sixtyDaysAgo) delete deletedIds[k];
+    }
+    localStorage.setItem("hortaviva_deleted_ids", JSON.stringify(deletedIds));
+  } catch {}
+
+  const isDeleted = (id, itemDate) => {
+    if (!id || !deletedIds[id]) return false;
+    const deletedTime = Number(deletedIds[id]);
+    const itemTime = itemDate ? new Date(itemDate).getTime() : 0;
+    return deletedTime >= itemTime;
+  };
+
+  // 1. Fusão inteligente de plantações
+  const localPlantings = Array.isArray(local?.plantings) ? local.plantings : [];
+  const remotePlantings = Array.isArray(remote?.plantings) ? remote.plantings : [];
+  const plantingsMap = new Map();
+
+  for (const p of localPlantings) {
+    if (!p) continue;
+    const key = p.id || `${p.plant_name}_${p.planted_date}`;
+    if (!isDeleted(p.id, p.updated_date || p.created_date)) {
+      plantingsMap.set(key, p);
+    }
+  }
+
+  for (const p of remotePlantings) {
+    if (!p) continue;
+    const key = p.id || `${p.plant_name}_${p.planted_date}`;
+    if (isDeleted(p.id, p.updated_date || p.created_date)) {
+      plantingsMap.delete(key);
+      continue;
+    }
+    const existing = plantingsMap.get(key);
+    if (!existing) {
+      plantingsMap.set(key, p);
+    } else {
+      const localTime = new Date(existing.updated_date || existing.created_date || 0).getTime();
+      const remoteTime = new Date(p.updated_date || p.created_date || 0).getTime();
+      if (remoteTime > localTime) {
+        plantingsMap.set(key, { ...existing, ...p });
+      }
+    }
+  }
+
+  // 2. Fusão inteligente de animais
+  const localAnimals = Array.isArray(local?.myAnimals) ? local.myAnimals : [];
+  const remoteAnimals = Array.isArray(remote?.myAnimals) ? remote.myAnimals : [];
+  const animalsMap = new Map();
+
+  for (const a of localAnimals) {
+    if (!a) continue;
+    const key = a.id || `${a.name}_${a.animal_type}`;
+    if (!isDeleted(a.id, a.updated_date || a.created_date)) {
+      animalsMap.set(key, a);
+    }
+  }
+
+  for (const a of remoteAnimals) {
+    if (!a) continue;
+    const key = a.id || `${a.name}_${a.animal_type}`;
+    if (isDeleted(a.id, a.updated_date || a.created_date)) {
+      animalsMap.delete(key);
+      continue;
+    }
+    const existing = animalsMap.get(key);
+    if (!existing) {
+      animalsMap.set(key, a);
+    } else {
+      const localTime = new Date(existing.updated_date || existing.created_date || 0).getTime();
+      const remoteTime = new Date(a.updated_date || a.created_date || 0).getTime();
+      if (remoteTime > localTime) {
+        animalsMap.set(key, { ...existing, ...a });
+      }
+    }
+  }
+
+  // 3. Fusão de lembretes
+  const localReminders = Array.isArray(local?.reminders) ? local.reminders : [];
+  const remoteReminders = Array.isArray(remote?.reminders) ? remote.reminders : [];
+  const remindersMap = new Map();
+
+  for (const r of localReminders) {
+    if (r && r.id && !isDeleted(r.id, r.date)) remindersMap.set(r.id, r);
+  }
+  for (const r of remoteReminders) {
+    if (r && r.id && !isDeleted(r.id, r.date)) {
+      if (!remindersMap.has(r.id)) remindersMap.set(r.id, r);
+    }
+  }
+
+  return {
+    version: 2,
+    appName: "Horta Viva",
+    exportedAt: new Date().toISOString(),
+    user: remote?.user || local?.user,
+    deletedIds,
+    plantings: Array.from(plantingsMap.values()),
+    myAnimals: Array.from(animalsMap.values()),
+    reminders: Array.from(remindersMap.values()),
+  };
+}
+
+export function importFarmData(data, shouldMerge = true) {
   if (!data || typeof data !== "object") {
     throw new Error("Ficheiro de cópia de segurança inválido.");
   }
-  if (Array.isArray(data.plantings)) {
-    localStorage.setItem(STORAGE_KEYS.PLANTINGS, JSON.stringify(data.plantings));
+
+  const finalData = shouldMerge ? mergeFarmData(exportFarmData(), data) : data;
+
+  if (Array.isArray(finalData.plantings)) {
+    localStorage.setItem(STORAGE_KEYS.PLANTINGS, JSON.stringify(finalData.plantings));
   }
-  if (Array.isArray(data.myAnimals)) {
-    localStorage.setItem(STORAGE_KEYS.MY_ANIMALS, JSON.stringify(data.myAnimals));
+  if (Array.isArray(finalData.myAnimals)) {
+    localStorage.setItem(STORAGE_KEYS.MY_ANIMALS, JSON.stringify(finalData.myAnimals));
   }
-  if (Array.isArray(data.reminders)) {
-    localStorage.setItem(STORAGE_KEYS.REMINDERS, JSON.stringify(data.reminders));
+  if (Array.isArray(finalData.reminders)) {
+    localStorage.setItem(STORAGE_KEYS.REMINDERS, JSON.stringify(finalData.reminders));
   }
-  if (data.user && typeof data.user === "object") {
+  if (finalData.user && typeof finalData.user === "object") {
     const googleRaw = localStorage.getItem("hortaviva_google_user_info");
     if (googleRaw) {
       try {
         const g = JSON.parse(googleRaw);
         const mergedUser = {
-          ...data.user,
-          id: g.id || g.sub || data.user.id || "google_user",
-          full_name: g.name || data.user.full_name || "Agricultor Google",
-          email: g.email || data.user.email || "agricultor@gmail.com",
-          avatar_url: g.picture || data.user.avatar_url || "",
+          ...finalData.user,
+          id: g.id || g.sub || finalData.user.id || "google_user",
+          full_name: g.name || finalData.user.full_name || "Agricultor Google",
+          email: g.email || finalData.user.email || "agricultor@gmail.com",
+          avatar_url: g.picture || finalData.user.avatar_url || "",
           auth_provider: "google",
         };
         localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(mergedUser));
       } catch {
-        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user));
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(finalData.user));
       }
     } else {
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user));
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(finalData.user));
     }
     localStorage.removeItem(STORAGE_KEYS.LOGGED_OUT);
   }
+
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("hortaviva_remote_updated"));
     const finalUser = (() => {
@@ -485,11 +612,12 @@ export function importFarmData(data) {
       window.dispatchEvent(new CustomEvent("hortaviva_auth_changed", { detail: { user: finalUser } }));
     }
   }
+
   return {
     success: true,
-    plantingsCount: data.plantings?.length || 0,
-    animalsCount: data.myAnimals?.length || 0,
-    remindersCount: data.reminders?.length || 0,
+    plantingsCount: finalData.plantings?.length || 0,
+    animalsCount: finalData.myAnimals?.length || 0,
+    remindersCount: finalData.reminders?.length || 0,
   };
 }
 

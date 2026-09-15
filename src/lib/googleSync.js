@@ -1,4 +1,4 @@
-import { exportFarmData, importFarmData, localAuth } from "./localStorageStore.js";
+import { exportFarmData, importFarmData, mergeFarmData, localAuth } from "./localStorageStore.js";
 
 const STORAGE_KEYS = {
   CLIENT_ID: "hortaviva_google_client_id",
@@ -44,6 +44,12 @@ export function setGoogleClientId(clientId) {
 
 export function isGoogleConfigured() {
   return !!getGoogleClientId();
+}
+
+export function getSyncStatus() {
+  if (!isGoogleConnected()) return "disconnected";
+  if (!hasValidGoogleToken()) return "needs_reconnect";
+  return "connected";
 }
 
 // O utilizador tem a conta Google ligada se os dados do perfil existirem e nao tiver feito logout
@@ -110,6 +116,8 @@ function notifySyncState(status = "idle", detail = "") {
         status,
         detail,
         connected: isGoogleConnected(),
+        hasToken: hasValidGoogleToken(),
+        syncStatus: getSyncStatus(),
         lastSync: getLastSyncTime(),
         user: getGoogleUser(),
         isConfigured: isGoogleConfigured(),
@@ -120,7 +128,7 @@ function notifySyncState(status = "idle", detail = "") {
 
 // Iniciar sessão com a conta Google e obter permissão para o Google Drive
 export async function connectGoogleDrive(options = {}) {
-  const promptMode = options.prompt !== undefined ? options.prompt : "consent";
+  const promptMode = options.prompt !== undefined ? options.prompt : "select_account";
   const clientId = getGoogleClientId();
   if (!clientId) {
     throw new Error("ID de Cliente Google não configurado.");
@@ -133,6 +141,10 @@ export async function connectGoogleDrive(options = {}) {
       tokenClientInstance = window.google.accounts.oauth2.initTokenClient({
         client_id: clientId,
         scope: SCOPES,
+        error_callback: (err) => {
+          notifySyncState("error", err?.message || "Autorização cancelada");
+          reject(new Error(err?.message || "Autorização Google cancelada."));
+        },
         callback: async (tokenResponse) => {
           if (tokenResponse.error) {
             notifySyncState("error", tokenResponse.error);
@@ -227,18 +239,18 @@ export async function getValidAccessToken(interactive = false) {
     try {
       return await connectGoogleDrive({ prompt: "" });
     } catch (e) {
-      console.warn("[GoogleSync] Renovação silenciosa de token falhou:", e);
+      console.warn("[GoogleSync] Renovação silenciosa de token expirado falhou:", e?.message);
+      notifySyncState("needs_reconnect", "Sessão Google expirada");
       throw e;
     }
   }
-  return connectGoogleDrive({ prompt: "consent" });
+  return connectGoogleDrive({ prompt: "select_account" });
 }
 
 // Procurar ficheiro existente horta_viva_quinta.json no Google Drive
 async function findDriveFile(token) {
   const cachedId = localStorage.getItem(STORAGE_KEYS.DRIVE_FILE_ID);
   if (cachedId) {
-    // Validar se o ficheiro ainda existe
     try {
       const checkRes = await fetch(`https://www.googleapis.com/drive/v3/files/${cachedId}?fields=id,name,trashed`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -251,7 +263,7 @@ async function findDriveFile(token) {
   }
 
   const query = encodeURIComponent(`name='${DRIVE_FILE_NAME}' and trashed=false`);
-  const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name,modifiedTime)`, {
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&orderBy=modifiedTime desc&fields=files(id,name,modifiedTime)`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -271,12 +283,29 @@ export async function uploadToGoogleDrive(interactive = false) {
   notifySyncState("syncing", "A enviar quinta para o Google Drive...");
   try {
     const token = await getValidAccessToken(interactive);
-    const farmData = exportFarmData();
-    const jsonContent = JSON.stringify(farmData, null, 2);
     const existingFileId = await findDriveFile(token);
 
+    let farmData = exportFarmData();
+
+    // Se já existe ficheiro remoto, descarrega e funde antes de gravar para nunca perder dados de outro dispositivo
     if (existingFileId) {
-      // Atualizar ficheiro existente
+      try {
+        const remoteRes = await fetch(`https://www.googleapis.com/drive/v3/files/${existingFileId}?alt=media`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (remoteRes.ok) {
+          const remoteData = await remoteRes.json();
+          farmData = mergeFarmData(farmData, remoteData);
+          importFarmData(farmData, false);
+        }
+      } catch (mergeErr) {
+        console.warn("[GoogleSync] Aviso ao fundir dados remotos antes do upload:", mergeErr);
+      }
+    }
+
+    const jsonContent = JSON.stringify(farmData, null, 2);
+
+    if (existingFileId) {
       const updateRes = await fetch(
         `https://www.googleapis.com/upload/drive/v3/files/${existingFileId}?uploadType=media`,
         {
@@ -290,7 +319,6 @@ export async function uploadToGoogleDrive(interactive = false) {
       );
       if (!updateRes.ok) throw new Error("Erro ao atualizar ficheiro no Google Drive.");
     } else {
-      // Criar novo ficheiro com upload multipart
       const metadata = {
         name: DRIVE_FILE_NAME,
         mimeType: "application/json",
@@ -331,7 +359,7 @@ export async function uploadToGoogleDrive(interactive = false) {
     notifySyncState("synced", "Quinta guardada no Google Drive automaticamente.");
     return { success: true, syncedAt: now };
   } catch (e) {
-    notifySyncState("error", e.message);
+    notifySyncState(hasValidGoogleToken() ? "error" : "needs_reconnect", e.message);
     throw e;
   }
 }
@@ -356,47 +384,80 @@ export async function downloadFromGoogleDrive(interactive = false) {
     if (!res.ok) throw new Error("Erro ao ler ficheiro do Google Drive.");
     const remoteData = await res.json();
 
-    const result = importFarmData(remoteData);
+    const localData = exportFarmData();
+    const mergedData = mergeFarmData(localData, remoteData);
+    const result = importFarmData(mergedData, false);
+
     const now = new Date().toISOString();
     localStorage.setItem(STORAGE_KEYS.LAST_SYNC, now);
     notifySyncState("synced", "Dados da quinta sincronizados com o Google Drive.");
     return { success: true, ...result, syncedAt: now };
   } catch (e) {
-    notifySyncState("error", e.message);
+    notifySyncState(hasValidGoogleToken() ? "error" : "needs_reconnect", e.message);
     throw e;
   }
 }
 
 // Sincronização bidirecional inteligente
-export async function autoSyncGoogleDrive() {
-  if (!isGoogleConfigured() || !isGoogleConnected()) return;
+export async function autoSyncGoogleDrive(interactive = false) {
+  if (!isGoogleConfigured() || !isGoogleConnected()) return { skipped: true };
   try {
-    const token = await getValidAccessToken(false);
+    const token = await getValidAccessToken(interactive);
     const fileId = await findDriveFile(token);
+
     if (fileId) {
-      // Obter data de modificação no Drive
-      const metaRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=modifiedTime`, {
+      const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (metaRes.ok) {
-        const meta = await metaRes.json();
-        const driveModified = new Date(meta.modifiedTime).getTime();
-        const lastSync = new Date(getLastSyncTime() || 0).getTime();
+      if (res.ok) {
+        const remoteData = await res.json();
+        const localData = exportFarmData();
+        const mergedData = mergeFarmData(localData, remoteData);
 
-        if (driveModified > lastSync + 5000) {
-          console.log("[GoogleSync] Versão mais recente encontrada no Drive, a descarregar...");
-          await downloadFromGoogleDrive(false);
-          if (typeof window !== "undefined") {
-            window.dispatchEvent(new CustomEvent("hortaviva_remote_updated"));
-          }
-          return;
+        importFarmData(mergedData, false);
+
+        const remotePlantingsCount = remoteData?.plantings?.length || 0;
+        const remoteAnimalsCount = remoteData?.myAnimals?.length || 0;
+        const mergedPlantingsCount = mergedData.plantings?.length || 0;
+        const mergedAnimalsCount = mergedData.myAnimals?.length || 0;
+
+        // Se local continha itens novos que a nuvem não tinha, atualiza a nuvem com os dados fundidos
+        if (mergedPlantingsCount > remotePlantingsCount || mergedAnimalsCount > remoteAnimalsCount) {
+          const jsonContent = JSON.stringify(mergedData, null, 2);
+          await fetch(
+            `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
+            {
+              method: "PATCH",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: jsonContent,
+            }
+          );
         }
+
+        const now = new Date().toISOString();
+        localStorage.setItem(STORAGE_KEYS.LAST_SYNC, now);
+        notifySyncState("synced", "Quinta sincronizada automaticamente.");
+
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("hortaviva_remote_updated"));
+        }
+        return { success: true, syncedAt: now };
       }
     }
-    // Caso contrário, enviar as alterações locais para o Drive
-    await uploadToGoogleDrive(false);
+
+    // Se ainda não existe ficheiro no Drive, cria o primeiro ficheiro
+    return await uploadToGoogleDrive(interactive);
   } catch (e) {
-    console.warn("[GoogleSync] Falha na sincronização automática em segundo plano:", e?.message);
+    console.warn("[GoogleSync] Sincronização em segundo plano pausada:", e?.message);
+    if (!hasValidGoogleToken()) {
+      notifySyncState("needs_reconnect", "Sessão expirada. Clica para sincronizar.");
+    } else {
+      notifySyncState("error", e?.message || "Erro na sincronização.");
+    }
+    if (interactive) throw e;
   }
 }
 
@@ -407,7 +468,7 @@ if (typeof window !== "undefined") {
     if (!isGoogleConnected()) return;
     if (autoSyncDebounceTimer) clearTimeout(autoSyncDebounceTimer);
     autoSyncDebounceTimer = setTimeout(() => {
-      autoSyncGoogleDrive().catch((err) => {
+      autoSyncGoogleDrive(false).catch((err) => {
         console.warn("[GoogleSync] Falha na auto-gravação:", err);
       });
     }, 1200);

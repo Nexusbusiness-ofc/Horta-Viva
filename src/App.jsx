@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -26,9 +27,43 @@ import Perfil from './pages/Perfil';
 import HortaVivaPro from './pages/HortaVivaPro';
 import InstallPrompt from '@/components/pwa/InstallPrompt';
 import BottomNav from '@/components/navigation/BottomNav';
+import { isGoogleConnected, hasValidGoogleToken, autoSyncGoogleDrive } from '@/lib/googleSync';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+
+  useEffect(() => {
+    if (isGoogleConnected()) {
+      autoSyncGoogleDrive(false).catch(() => {});
+    }
+
+    const handleFocus = () => {
+      if (isGoogleConnected() && hasValidGoogleToken()) {
+        autoSyncGoogleDrive(false).catch(() => {});
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && isGoogleConnected() && hasValidGoogleToken()) {
+        autoSyncGoogleDrive(false).catch(() => {});
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible" && isGoogleConnected() && hasValidGoogleToken()) {
+        autoSyncGoogleDrive(false).catch(() => {});
+      }
+    }, 45000);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, Loader2, ArrowLeft, Sprout, PawPrint, Camera, Cloud, Sparkles } from "lucide-react";
+import { Plus, Loader2, ArrowLeft, Sprout, PawPrint, Camera, Cloud, Sparkles, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import PlantingForm from "@/components/quinta/PlantingForm";
 import PlantingCard from "@/components/quinta/PlantingCard";
@@ -12,7 +12,7 @@ import SyncBackupModal from "@/components/quinta/SyncBackupModal";
 import { getAutoStatus } from "@/lib/plantingCare";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { cachedList } from "@/lib/offlineCatalog";
-import { isGoogleConnected, autoSyncGoogleDrive } from "@/lib/googleSync";
+import { isGoogleConnected, autoSyncGoogleDrive, getSyncStatus } from "@/lib/googleSync";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
 import { useSubscription, FREE_PLANTATIONS_LIMIT, FREE_ANIMALS_LIMIT } from "@/lib/subscription";
 import UpgradeModal from "@/components/subscription/UpgradeModal";
@@ -33,6 +33,8 @@ export default function MinhaQuinta() {
   const [filter, setFilter] = useState("Todas");
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [isSynced, setIsSynced] = useState(isGoogleConnected());
+  const [syncStatus, setSyncStatus] = useState(getSyncStatus());
+  const [syncingNow, setSyncingNow] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState("plantacoes");
   const { isPro } = useSubscription();
@@ -75,8 +77,9 @@ export default function MinhaQuinta() {
 
   useEffect(() => {
     load();
-    const handleSyncChange = () => {
+    const handleSyncChange = (e) => {
       setIsSynced(isGoogleConnected());
+      setSyncStatus(e?.detail?.syncStatus || getSyncStatus());
     };
     const handleRemoteUpdate = () => {
       load();
@@ -85,7 +88,10 @@ export default function MinhaQuinta() {
     window.addEventListener("hortaviva_remote_updated", handleRemoteUpdate);
 
     if (isGoogleConnected()) {
-      autoSyncGoogleDrive().catch(() => {});
+      autoSyncGoogleDrive(false).then(() => {
+        setIsSynced(isGoogleConnected());
+        setSyncStatus(getSyncStatus());
+      }).catch(() => {});
     }
 
     return () => {
@@ -93,6 +99,20 @@ export default function MinhaQuinta() {
       window.removeEventListener("hortaviva_remote_updated", handleRemoteUpdate);
     };
   }, []);
+
+  const handleManualSync = async () => {
+    setSyncingNow(true);
+    try {
+      await autoSyncGoogleDrive(true);
+      await load();
+    } catch (err) {
+      console.warn("Sincronização manual falhou:", err);
+    } finally {
+      setSyncingNow(false);
+      setIsSynced(isGoogleConnected());
+      setSyncStatus(getSyncStatus());
+    }
+  };
 
   const handleUpdate = async (id, data) => {
     await base44.entities.Planting.update(id, data);
@@ -189,17 +209,31 @@ export default function MinhaQuinta() {
               </button>
             )}
             <button
-              onClick={() => setShowSyncModal(true)}
-              title="Sincronização & Cópias de Segurança (Google / Pen Drive)"
+              onClick={syncStatus === "needs_reconnect" ? handleManualSync : () => setShowSyncModal(true)}
+              title={
+                syncStatus === "needs_reconnect"
+                  ? "Sessão expirada. Clica para sincronizar as plantações do telemóvel."
+                  : isSynced
+                  ? "Nuvem ativa · Dados sincronizados com o Google Drive"
+                  : "Sincronização & Cópias de Segurança (Google / Pen Drive)"
+              }
               className={`shrink-0 flex items-center gap-1.5 text-xs font-semibold px-2.5 sm:px-3 py-2 rounded-xl border transition-all ${
-                isSynced
+                syncStatus === "needs_reconnect"
+                  ? "bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100 shadow-sm animate-pulse"
+                  : isSynced
                   ? "bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100 shadow-sm"
                   : "bg-white border-stone-200 text-stone-600 hover:border-emerald-300 shadow-sm"
               }`}
             >
-              <Cloud className={`w-4 h-4 ${isSynced ? "text-emerald-600" : "text-stone-400"}`} />
-              <span className="hidden sm:inline">{isSynced ? "Nuvem ativa" : "Sincronizar"}</span>
-              {isSynced && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+              {syncingNow ? (
+                <Loader2 className="w-4 h-4 animate-spin text-amber-600" />
+              ) : (
+                <Cloud className={`w-4 h-4 ${syncStatus === "needs_reconnect" ? "text-amber-600" : isSynced ? "text-emerald-600" : "text-stone-400"}`} />
+              )}
+              <span className="hidden sm:inline">
+                {syncingNow ? "A sincronizar..." : syncStatus === "needs_reconnect" ? "Atualizar Nuvem" : isSynced ? "Nuvem ativa" : "Sincronizar"}
+              </span>
+              {isSynced && syncStatus !== "needs_reconnect" && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
             </button>
             <Link
               to="/identificar"
@@ -273,6 +307,32 @@ export default function MinhaQuinta() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-5 space-y-5">
+        {/* Banner de Sincronização Pendente / Reconexão Google */}
+        {syncStatus === "needs_reconnect" && (
+          <div className="bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border border-amber-300/80 rounded-3xl p-4 sm:p-4.5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-300 flex items-center justify-center shrink-0 text-amber-700">
+                <RefreshCw className="w-5 h-5 text-amber-600 animate-spin-slow" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-amber-950">Sessão da nuvem em pausa</h3>
+                <p className="text-xs text-amber-800/90 mt-0.5">
+                  Clica para carregar e atualizar automaticamente as plantações do teu telemóvel.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleManualSync}
+              disabled={syncingNow}
+              className="shrink-0 w-full sm:w-auto bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+              {syncingNow ? <Loader2 className="w-4 h-4 animate-spin" /> : <Cloud className="w-4 h-4" />}
+              <span>{syncingNow ? "A sincronizar..." : "Sincronizar Agora"}</span>
+            </button>
+          </div>
+        )}
+
         {tab === "pro" ? (
           <ProSubscriptionView />
         ) : (
