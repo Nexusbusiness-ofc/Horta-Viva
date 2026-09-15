@@ -5,24 +5,33 @@ import {
 } from "lucide-react";
 import { 
   STRIPE_PAYMENT_LINK, 
+  STRIPE_PLUS_PAYMENT_LINK,
   useSubscription, 
   activateProSubscription, 
   FREE_PLANTATIONS_LIMIT,
   FREE_ANIMALS_LIMIT,
   FREE_AI_LIMIT,
-  FREE_IDENTIFICATION_LIMIT
+  FREE_IDENTIFICATION_LIMIT,
+  PLUS_PLANTATIONS_LIMIT,
+  PLUS_ANIMALS_LIMIT,
+  PLUS_PHOTO_LIMIT,
+  PLUS_AI_LIMIT
 } from "@/lib/subscription";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function ProSubscriptionView({ onSubscribed }) {
-  const { isPro, usageCount } = useSubscription();
+  const { isPro, isPlus, tier, usageCount } = useSubscription();
   const [emailInput, setEmailInput] = useState("");
   const [restoring, setRestoring] = useState(false);
   const [showFaq, setShowFaq] = useState(null);
   const { toast } = useToast();
 
-  const handleSubscribe = () => {
+  const handleSubscribePro = () => {
     window.open(STRIPE_PAYMENT_LINK, "_blank", "noopener,noreferrer");
+  };
+
+  const handleSubscribePlus = () => {
+    window.open(STRIPE_PLUS_PAYMENT_LINK, "_blank", "noopener,noreferrer");
   };
 
   const handleRestore = (e) => {
@@ -34,8 +43,8 @@ export default function ProSubscriptionView({ onSubscribed }) {
       activateProSubscription({ email: input });
       setRestoring(false);
       toast({
-        title: "🎉 Subscrição Pro ativada!",
-        description: "Acesso Pro desbloqueado com sucesso neste dispositivo.",
+        title: "🎉 Subscrição ativada!",
+        description: "Acesso desbloqueado com sucesso neste dispositivo.",
       });
       setEmailInput("");
       if (onSubscribed) onSubscribed();
@@ -44,20 +53,20 @@ export default function ProSubscriptionView({ onSubscribed }) {
 
   const faqs = [
     {
-      q: "O que está incluído no Horta Viva Pro?",
-      a: "Inteligência Artificial ilimitada (Assistente Botânico e identificação de plantas por fotografia), plantações ilimitadas na Minha Quinta (o plano base tem limite de 3), e animais ilimitados com lembretes diários de cuidados e tarefas (o plano base tem limite de 2)."
+      q: "Qual é a diferença entre o Plano Plus (1,99€) e o Pro (2,99€)?",
+      a: "O Plano Plus (1,99€/mês) oferece até 6 plantações e 5 animais na Minha Quinta, 3 fotos com IA por mês e 4 conversas com o Assistente IA por mês. O Plano Pro (2,99€/mês) oferece acesso totalmente ILIMITADO a todas as ferramentas (plantações, animais, fotos e IA sem limites)."
     },
     {
-      q: "Como funciona a cobrança de 2,99€ / mês?",
-      a: "A subscrição é processada de forma 100% segura através da plataforma internacional Stripe. É uma mensalidade de 2,99€ renovada automaticamente, sem qualquer fidelização ou taxa oculta."
+      q: "Como funciona a renovação mensal?",
+      a: "O pagamento é processado com total segurança através da Stripe. A mensalidade (1,99€ ou 2,99€) renova automaticamente mês a mês, sem taxas ocultas e sem fidelização."
     },
     {
       q: "Posso cancelar quando quiser?",
-      a: "Sim! Não há período de fidelização. Podes cancelar a subscrição a qualquer momento com apenas 1 clique ou através do e-mail de confirmação da Stripe."
+      a: "Sim! Não há qualquer período de fidelização. Podes cancelar a subscrição a qualquer momento diretamente pelo recibo de compra da Stripe com apenas 1 clique."
     },
     {
       q: "Posso utilizar a subscrição noutro telemóvel ou tablet?",
-      a: "Com certeza! Basta acederes a esta aba no teu outro dispositivo e introduzires o e-mail que usaste na compra no campo 'Restaurar Subscrição'."
+      a: "Com certeza! Basta acederes a esta página no teu outro dispositivo e introduzires o e-mail usado na compra no campo 'Restaurar Subscrição'."
     }
   ];
 
@@ -71,41 +80,41 @@ export default function ProSubscriptionView({ onSubscribed }) {
         <div className="relative z-10">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-extrabold uppercase tracking-wider text-emerald-100 mb-4 shadow-xs">
             <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>Horta Viva Pro</span>
+            <span>Planos Horta Viva</span>
           </div>
 
           <h2 className="text-2xl sm:text-3xl font-black leading-tight tracking-tight">
-            Cultiva a tua horta sem limites
+            Cultiva a tua horta com poder inteligente
           </h2>
           <p className="text-sm sm:text-base text-emerald-100/90 mt-2 max-w-lg leading-relaxed">
-            Identifica qualquer planta ou praga por foto e gere todas as tuas plantações e animais na Minha Quinta.
+            Identifica plantas e pragas por foto com Inteligência Artificial e gere todas as tuas plantações e animais na Minha Quinta.
           </p>
 
-          <div className="mt-6 flex flex-wrap items-baseline gap-2 bg-black/20 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 w-fit">
-            <span className="text-3xl sm:text-4xl font-extrabold text-white">2,99€</span>
-            <span className="text-sm font-medium text-emerald-100">/ mês</span>
-            <span className="text-xs bg-emerald-500/80 text-white font-bold px-2 py-0.5 rounded-full ml-2">
-              Cancela quando quiseres
-            </span>
-          </div>
-
-          {/* Botão de Ação */}
-          <div className="mt-6">
-            {isPro ? (
-              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/30 text-white font-bold text-sm">
-                <span className="text-lg">⭐</span>
-                <span>Tens o Plano Pro Ativo! Aproveita todos os recursos sem limites.</span>
+          {/* Estado atual se ativo */}
+          {isPro ? (
+            <div className="mt-6 flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/30 text-white font-bold text-sm">
+              <span className="text-lg">⭐</span>
+              <span>Tens o Plano Pro Ativo! Aproveita todos os recursos sem limites.</span>
+            </div>
+          ) : isPlus ? (
+            <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white/20 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/30 text-white">
+              <div>
+                <p className="font-bold text-sm">🌱 Tens o Plano Plus Ativo (1,99€/mês)</p>
+                <p className="text-xs text-emerald-100">Até 6 plantações, 5 animais, 3 fotos IA e 4 consultas IA/mês.</p>
               </div>
-            ) : (
               <button
-                onClick={handleSubscribe}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-stone-900 font-extrabold text-base px-6 py-4 rounded-2xl shadow-xl shadow-amber-900/20 active:scale-[0.98] transition-all"
+                onClick={handleSubscribePro}
+                className="bg-amber-400 hover:bg-amber-300 text-stone-900 font-extrabold text-xs px-3.5 py-2 rounded-xl shadow transition-all"
               >
-                <span>Subscrever Pro por 2,99€ / mês</span>
-                <ArrowRight className="w-5 h-5 stroke-[2.5]" />
+                Fazer Upgrade para Pro (2,99€)
               </button>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-emerald-100 font-medium">
+              <span className="bg-white/20 px-2.5 py-1 rounded-full">Plano Plus: 1,99€ / mês</span>
+              <span className="bg-amber-400/30 text-amber-200 px-2.5 py-1 rounded-full font-bold">Plano Pro: 2,99€ / mês</span>
+            </div>
+          )}
 
           <div className="mt-4 flex items-center gap-2 text-xs text-emerald-100/80">
             <ShieldCheck className="w-4 h-4 text-emerald-200" />
@@ -113,6 +122,132 @@ export default function ProSubscriptionView({ onSubscribed }) {
           </div>
         </div>
       </div>
+
+      {/* Cartões dos 2 Planos de Compra */}
+      {!isPro && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Card Plano Plus */}
+          <div className={`bg-white rounded-3xl p-5 sm:p-6 border-2 shadow-sm flex flex-col justify-between relative transition-all ${
+            isPlus ? "border-emerald-500 bg-emerald-50/30 ring-2 ring-emerald-400/20" : "border-stone-200 hover:border-emerald-300"
+          }`}>
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-full">
+                  Plano Plus
+                </span>
+                {isPlus && (
+                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-300 px-2 py-0.5 rounded-md">
+                    ✓ Ativo
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-3">
+                <span className="text-3xl font-black text-stone-900">1,99€</span>
+                <span className="text-xs text-stone-500 font-medium"> / mês</span>
+              </div>
+              <p className="text-xs text-stone-500 mt-1">
+                Perfeito para quem tem uma horta familiar e animais domésticos.
+              </p>
+
+              <div className="mt-4 space-y-2.5 text-xs text-stone-700">
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0 stroke-[2.5]" />
+                  <span><strong>Até 6 plantações</strong> na Minha Quinta</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0 stroke-[2.5]" />
+                  <span><strong>Até 5 animais</strong> com lembretes diários</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0 stroke-[2.5]" />
+                  <span><strong>3 identificações de fotos com IA</strong> / mês</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0 stroke-[2.5]" />
+                  <span><strong>4 utilizações do Assistente IA</strong> / mês</span>
+                </div>
+                <div className="flex items-center gap-2 text-stone-500">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0 stroke-[2.5]" />
+                  <span>Acesso integral ao Catálogo Botânico</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-stone-100">
+              {isPlus ? (
+                <div className="text-center py-2 text-xs font-bold text-emerald-700 bg-emerald-50 rounded-xl">
+                  Plano Plus Ativo
+                </div>
+              ) : (
+                <button
+                  onClick={handleSubscribePlus}
+                  className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-sm py-3 px-4 rounded-xl shadow-md shadow-emerald-600/20 active:scale-95 transition-all"
+                >
+                  <span>Subscrever Plus (1,99€)</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Card Plano Pro */}
+          <div className="bg-gradient-to-b from-amber-50/60 to-white rounded-3xl p-5 sm:p-6 border-2 border-amber-400 shadow-md flex flex-col justify-between relative transition-all ring-2 ring-amber-300/30">
+            <span className="absolute -top-3 right-4 text-[11px] font-black bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-900 px-3 py-0.5 rounded-full shadow-sm">
+              ⭐ MAIS ESCOLHIDO
+            </span>
+
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider text-amber-900 bg-amber-200/80 px-2.5 py-1 rounded-full">
+                  Horta Viva Pro
+                </span>
+              </div>
+
+              <div className="mt-3">
+                <span className="text-3xl font-black text-stone-900">2,99€</span>
+                <span className="text-xs text-stone-500 font-medium"> / mês</span>
+              </div>
+              <p className="text-xs text-stone-600 mt-1">
+                A experiência definitiva sem qualquer tipo de restrição.
+              </p>
+
+              <div className="mt-4 space-y-2.5 text-xs text-stone-800">
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-amber-600 shrink-0 stroke-[2.5]" />
+                  <span><strong>Plantações Ilimitadas</strong></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-amber-600 shrink-0 stroke-[2.5]" />
+                  <span><strong>Animais Ilimitados</strong></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-amber-600 shrink-0 stroke-[2.5]" />
+                  <span><strong>Fotos com IA Ilimitadas</strong></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-amber-600 shrink-0 stroke-[2.5]" />
+                  <span><strong>Assistente de IA Ilimitado</strong></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-amber-600 shrink-0 stroke-[2.5]" />
+                  <span>Diagnóstico prioritário de pragas & doenças</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-amber-100">
+              <button
+                onClick={handleSubscribePro}
+                className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-stone-950 font-black text-sm py-3 px-4 rounded-xl shadow-md shadow-amber-500/30 active:scale-95 transition-all"
+              >
+                <span>Subscrever Pro (2,99€)</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cartões de Benefícios Principais */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -122,13 +257,14 @@ export default function ProSubscriptionView({ onSubscribed }) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-stone-800 text-sm">Inteligência Artificial (IA)</h3>
-              <span className="text-[10px] font-extrabold bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded-full">PRO</span>
+              <h3 className="font-bold text-stone-800 text-sm">Fotos & Identificação IA</h3>
             </div>
             <p className="text-xs text-stone-500 mt-1 leading-relaxed">
-              Conversa com o Assistente IA da horta e fotografa plantas ou folhas para diagnósticos botânicos imediatos.
+              Fotografa plantas, folhas ou flores e recebe fichas botânicas completas com dicas de cultivo.
             </p>
-            <p className="text-[11px] text-stone-400 mt-1 font-medium">Plano Base: {FREE_AI_LIMIT} utilizações gratuitas de IA</p>
+            <p className="text-[11px] text-stone-400 mt-1 font-medium">
+              Base: {FREE_IDENTIFICATION_LIMIT} usos · Plus: {PLUS_PHOTO_LIMIT}/mês · Pro: Ilimitado
+            </p>
           </div>
         </div>
 
@@ -138,13 +274,14 @@ export default function ProSubscriptionView({ onSubscribed }) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-stone-800 text-sm">Plantações Ilimitadas</h3>
-              <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">PRO</span>
+              <h3 className="font-bold text-stone-800 text-sm">Plantações na Minha Quinta</h3>
             </div>
             <p className="text-xs text-stone-500 mt-1 leading-relaxed">
-              Adiciona quantos canteiros e culturas quiseres à tua quinta, com histórico de sementeira e colheita.
+              Organiza os teus canteiros com datas de sementeira, rega e previsão de colheita.
             </p>
-            <p className="text-[11px] text-stone-400 mt-1 font-medium">Plano Base: máximo {FREE_PLANTATIONS_LIMIT} plantações</p>
+            <p className="text-[11px] text-stone-400 mt-1 font-medium">
+              Base: {FREE_PLANTATIONS_LIMIT} canteiros · Plus: {PLUS_PLANTATIONS_LIMIT} canteiros · Pro: Ilimitado
+            </p>
           </div>
         </div>
 
@@ -154,13 +291,14 @@ export default function ProSubscriptionView({ onSubscribed }) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-stone-800 text-sm">Animais Ilimitados</h3>
-              <span className="text-[10px] font-extrabold bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full">PRO</span>
+              <h3 className="font-bold text-stone-800 text-sm">Animais da Quinta</h3>
             </div>
             <p className="text-xs text-stone-500 mt-1 leading-relaxed">
-              Regista todas as espécies de animais da tua quinta e recebe tarefas diárias automáticas de cuidados.
+              Regista animais da quinta e obtém tarefas automáticas diárias de alimentação e higiene.
             </p>
-            <p className="text-[11px] text-stone-400 mt-1 font-medium">Plano Base: máximo {FREE_ANIMALS_LIMIT} animais</p>
+            <p className="text-[11px] text-stone-400 mt-1 font-medium">
+              Base: {FREE_ANIMALS_LIMIT} animais · Plus: {PLUS_ANIMALS_LIMIT} animais · Pro: Ilimitado
+            </p>
           </div>
         </div>
 
@@ -170,67 +308,75 @@ export default function ProSubscriptionView({ onSubscribed }) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-stone-800 text-sm">Pragas & Doenças</h3>
-              <span className="text-[10px] font-extrabold bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">PRO</span>
+              <h3 className="font-bold text-stone-800 text-sm">Assistente IA & Pragas</h3>
             </div>
             <p className="text-xs text-stone-500 mt-1 leading-relaxed">
-              Diagnóstico imediato por IA botânica com dicas de tratamento biológico e convencional para salvar as culturas.
+              Conversa com a IA sobre o que plantar, tratamentos biológicos e dúvidas de agricultura em Portugal.
             </p>
-            <p className="text-[11px] text-stone-400 mt-1 font-medium">Incluído no plano Pro</p>
+            <p className="text-[11px] text-stone-400 mt-1 font-medium">
+              Base: {FREE_AI_LIMIT} usos · Plus: {PLUS_AI_LIMIT}/mês · Pro: Ilimitado
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Tabela de Comparação */}
+      {/* Tabela de Comparação dos 3 Planos */}
       <div className="bg-white rounded-3xl border border-stone-200/80 shadow-xs overflow-hidden">
         <div className="p-4 sm:p-5 border-b border-stone-100 bg-stone-50/60">
           <h3 className="text-sm sm:text-base font-bold text-stone-800">
             Comparação dos Planos
           </h3>
-          <p className="text-xs text-stone-500">Tudo o que ganhas ao ativar o Horta Viva Pro</p>
+          <p className="text-xs text-stone-500">Compara os recursos incluídos em cada opção</p>
         </div>
 
         <div className="divide-y divide-stone-100 text-xs sm:text-sm">
-          <div className="grid grid-cols-3 p-3.5 sm:p-4 bg-stone-50/30 font-bold text-stone-500 text-[11px] uppercase tracking-wider">
-            <span>Funcionalidade</span>
-            <span className="text-center">Plano Base</span>
-            <span className="text-center text-emerald-700 font-extrabold">Horta Viva Pro</span>
+          <div className="grid grid-cols-4 p-3 sm:p-4 bg-stone-50/40 font-bold text-stone-500 text-[10px] sm:text-[11px] uppercase tracking-wider">
+            <span>Recurso</span>
+            <span className="text-center">Base (0€)</span>
+            <span className="text-center text-emerald-700">Plus (1,99€)</span>
+            <span className="text-center text-amber-700">Pro (2,99€)</span>
           </div>
 
-          <div className="grid grid-cols-3 p-3.5 sm:p-4 items-center">
-            <span className="font-semibold text-stone-800">Inteligência Artificial (IA & Fotos)</span>
-            <span className="text-center text-stone-500 font-medium">{FREE_AI_LIMIT} utilizações</span>
-            <span className="text-center font-bold text-emerald-700 bg-emerald-50 py-1 px-2 rounded-lg">Ilimitado</span>
+          <div className="grid grid-cols-4 p-3 sm:p-4 items-center">
+            <span className="font-semibold text-stone-800">Plantações</span>
+            <span className="text-center text-stone-500">Até 3</span>
+            <span className="text-center font-bold text-emerald-700">Até 6</span>
+            <span className="text-center font-black text-amber-800 bg-amber-50 py-1 rounded-md">Ilimitado</span>
           </div>
 
-          <div className="grid grid-cols-3 p-3.5 sm:p-4 items-center">
-            <span className="font-semibold text-stone-800">Plantações na Minha Quinta</span>
-            <span className="text-center text-stone-500 font-medium">Até 3</span>
-            <span className="text-center font-bold text-emerald-700 bg-emerald-50 py-1 px-2 rounded-lg">Ilimitado</span>
+          <div className="grid grid-cols-4 p-3 sm:p-4 items-center">
+            <span className="font-semibold text-stone-800">Animais</span>
+            <span className="text-center text-stone-500">Até 2</span>
+            <span className="text-center font-bold text-emerald-700">Até 5</span>
+            <span className="text-center font-black text-amber-800 bg-amber-50 py-1 rounded-md">Ilimitado</span>
           </div>
 
-          <div className="grid grid-cols-3 p-3.5 sm:p-4 items-center">
-            <span className="font-semibold text-stone-800">Animais na Minha Quinta</span>
-            <span className="text-center text-stone-500 font-medium">Até 2</span>
-            <span className="text-center font-bold text-emerald-700 bg-emerald-50 py-1 px-2 rounded-lg">Ilimitado</span>
+          <div className="grid grid-cols-4 p-3 sm:p-4 items-center">
+            <span className="font-semibold text-stone-800">Fotos com IA</span>
+            <span className="text-center text-stone-500">{FREE_IDENTIFICATION_LIMIT} fotos</span>
+            <span className="text-center font-bold text-emerald-700">{PLUS_PHOTO_LIMIT} / mês</span>
+            <span className="text-center font-black text-amber-800 bg-amber-50 py-1 rounded-md">Ilimitado</span>
           </div>
 
-          <div className="grid grid-cols-3 p-3.5 sm:p-4 items-center">
-            <span className="font-semibold text-stone-800">Catálogo Botânico (50+ espécies)</span>
-            <span className="text-center text-emerald-600 font-semibold">✓ Incluído</span>
-            <span className="text-center text-emerald-600 font-semibold">✓ Incluído</span>
+          <div className="grid grid-cols-4 p-3 sm:p-4 items-center">
+            <span className="font-semibold text-stone-800">Assistente IA</span>
+            <span className="text-center text-stone-500">{FREE_AI_LIMIT} usos</span>
+            <span className="text-center font-bold text-emerald-700">{PLUS_AI_LIMIT} / mês</span>
+            <span className="text-center font-black text-amber-800 bg-amber-50 py-1 rounded-md">Ilimitado</span>
           </div>
 
-          <div className="grid grid-cols-3 p-3.5 sm:p-4 items-center">
-            <span className="font-semibold text-stone-800">Lembretes & Tarefas de Hoje</span>
-            <span className="text-center text-emerald-600 font-semibold">✓ Incluído</span>
-            <span className="text-center text-emerald-600 font-semibold">✓ Incluído</span>
+          <div className="grid grid-cols-4 p-3 sm:p-4 items-center">
+            <span className="font-semibold text-stone-800">Catálogo (50+ espécies)</span>
+            <span className="text-center text-emerald-600 font-semibold">✓</span>
+            <span className="text-center text-emerald-600 font-semibold">✓</span>
+            <span className="text-center text-emerald-600 font-semibold">✓</span>
           </div>
 
-          <div className="grid grid-cols-3 p-3.5 sm:p-4 items-center bg-emerald-50/30">
+          <div className="grid grid-cols-4 p-3 sm:p-4 items-center bg-stone-50/50">
             <span className="font-bold text-stone-800">Preço</span>
-            <span className="text-center font-bold text-stone-600">Grátis</span>
-            <span className="text-center font-extrabold text-emerald-700 text-sm sm:text-base">2,99€ / mês</span>
+            <span className="text-center font-semibold text-stone-600">0,00€</span>
+            <span className="text-center font-bold text-emerald-700">1,99€ / mês</span>
+            <span className="text-center font-black text-amber-700 text-sm">2,99€ / mês</span>
           </div>
         </div>
       </div>
@@ -242,7 +388,7 @@ export default function ProSubscriptionView({ onSubscribed }) {
           <h3 className="text-sm font-bold text-stone-800">Já subscreveste noutro telemóvel?</h3>
         </div>
         <p className="text-xs text-stone-500 mb-3.5">
-          Se já compraste a subscrição de 2,99€/mês, insere o teu e-mail da compra para ativar o Pro neste dispositivo:
+          Se já realizaste o pagamento através da Stripe, insere o teu e-mail de compra para sincronizar a subscrição neste dispositivo:
         </p>
         <form onSubmit={handleRestore} className="flex flex-col sm:flex-row gap-2">
           <input

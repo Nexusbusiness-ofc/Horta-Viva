@@ -10,7 +10,7 @@ const SECTIONS = [
   { to: "/tarefas-hoje", emoji: "📋", label: "Tarefas de hoje", desc: "Rega, podas e animais", color: "#0d9488" },
   { to: "/minha-quinta", emoji: "🌱", label: "Minha Quinta", desc: "As tuas plantações", color: "#16a34a" },
   { to: "/perfil", emoji: "👨‍🌾", label: "O meu perfil", desc: "Foto e dados da quinta", color: "#9333ea" },
-  { to: "/pro", emoji: "⭐", label: "Horta Viva Pro", desc: "Acesso ilimitado (2,99€/mês)", color: "#f59e0b" },
+  { to: "/pro", emoji: "⭐", label: "Horta Viva Pro", desc: "Planos a partir de 1,99€/mês", color: "#f59e0b" },
   { to: "/resumo-mensal", emoji: "📊", label: "Resumo mensal", desc: "Visão geral do mês", color: "#4f46e5" },
   { to: "/calendario-curas", emoji: "🌿", label: "Curas & Tratamentos", desc: "Produtos fitofarmacêuticos", color: "#7c3aed" },
   { to: "/podas-mondas", emoji: "✂️", label: "Podas & Mondas", desc: "Guias de poda e monda", color: "#15803d" },

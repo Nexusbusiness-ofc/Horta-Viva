@@ -6,7 +6,7 @@ import ProSubscriptionView from "@/components/subscription/ProSubscriptionView";
 import { useSubscription } from "@/lib/subscription";
 
 export default function HortaVivaPro() {
-  const { isPro } = useSubscription();
+  const { isPro, isPlus } = useSubscription();
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-emerald-50 via-green-50/40 to-lime-50/50">
@@ -25,18 +25,20 @@ export default function HortaVivaPro() {
               ⭐
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-bold text-stone-800 leading-none truncate">Horta Viva Pro</h1>
-              <p className="text-xs text-stone-500 truncate">Acesso ilimitado a fotos, plantações e animais</p>
+              <h1 className="text-xl font-bold text-stone-800 leading-none truncate">Horta Viva Pro & Plus</h1>
+              <p className="text-xs text-stone-500 truncate">Planos inteligentes para a tua horta e animais</p>
             </div>
             <span
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border shadow-xs ${
                 isPro 
                   ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                  : isPlus
+                  ? "bg-emerald-50 text-emerald-800 border-emerald-300"
                   : "bg-amber-50 text-amber-800 border-amber-300"
               }`}
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>{isPro ? "Ativo" : "2,99€ / mês"}</span>
+              <span>{isPro ? "Pro Ativo" : isPlus ? "Plus Ativo" : "A partir de 1,99€"}</span>
             </span>
             <NavigationDrawer />
           </div>

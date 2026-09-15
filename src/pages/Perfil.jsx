@@ -10,7 +10,7 @@ import { useSubscription } from "@/lib/subscription";
 
 export default function Perfil() {
   const { user, checkUserAuth, logout, navigateToLogin } = useAuth();
-  const { isPro } = useSubscription();
+  const { isPro, isPlus } = useSubscription();
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [isGoogleLinked, setIsGoogleLinked] = useState(isGoogleConnected());
 
@@ -119,7 +119,7 @@ export default function Perfil() {
           <ProfileForm user={user} onSaved={checkUserAuth} />
         </div>
 
-        {/* Subscrição Horta Viva Pro */}
+        {/* Subscrição Horta Viva */}
         <div className="bg-white rounded-3xl border border-stone-200/80 shadow-sm p-5 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -127,9 +127,15 @@ export default function Perfil() {
                 ⭐
               </div>
               <div>
-                <h3 className="text-sm font-bold text-stone-800">Horta Viva Pro</h3>
+                <h3 className="text-sm font-bold text-stone-800">
+                  {isPro ? "Horta Viva Pro" : isPlus ? "Horta Viva Plus" : "Plano Gratuito"}
+                </h3>
                 <p className="text-xs text-stone-500">
-                  {isPro ? "Acesso ilimitado ativo" : "Plano base ativo · 2,99€/mês"}
+                  {isPro
+                    ? "Acesso ilimitado ativo"
+                    : isPlus
+                    ? "Plano Plus ativo (1,99€/mês)"
+                    : "Plano Base gratuito"}
                 </p>
               </div>
             </div>
@@ -137,17 +143,21 @@ export default function Perfil() {
               className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
                 isPro
                   ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                  : isPlus
+                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                   : "bg-amber-100 text-amber-800 border-amber-300"
               }`}
             >
-              {isPro ? "Pro Ativo" : "Plano Base"}
+              {isPro ? "Pro Ativo" : isPlus ? "Plus (1,99€)" : "Plano Base"}
             </span>
           </div>
 
           <p className="text-xs text-stone-600 leading-relaxed">
             {isPro
               ? "Tens acesso ilimitado a IA botânica, identificações por foto, canteiros de plantações e animais na Minha Quinta."
-              : "Desbloqueia identificações por foto ilimitadas com IA, assistente sem limites, plantações e animais por apenas 2,99€/mês."}
+              : isPlus
+              ? "O teu plano Plus inclui até 6 plantações, 5 animais, 3 fotos IA/mês e 4 consultas do assistente IA/mês."
+              : "Desbloqueia mais recursos com o Plano Plus (1,99€/mês) ou acesso total sem limites com o Pro (2,99€/mês)."}
           </p>
 
           <Link
@@ -155,7 +165,7 @@ export default function Perfil() {
             className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white font-bold text-xs sm:text-sm py-2.5 px-4 rounded-xl shadow-md shadow-amber-500/20 transition-all active:scale-95"
           >
             <Sparkles className="w-4 h-4" />
-            <span>{isPro ? "Ver Detalhes do Plano Pro" : "Ver e Pagar Pro (2,99€/mês)"}</span>
+            <span>{isPro ? "Ver Detalhes do Plano Pro" : isPlus ? "Ver e Gerir Planos / Upgrade Pro" : "Ver e Escolher Plano (a partir de 1,99€)"}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

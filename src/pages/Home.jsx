@@ -27,7 +27,7 @@ export default function Home() {
   const [aiQuery, setAiQuery] = useState(null);
   const [showProModal, setShowProModal] = useState(false);
   const [viewMode, setViewMode] = useViewMode("hortaviva_plant_view_mode", "large");
-  const { isPro } = useSubscription();
+  const { isPro, isPlus } = useSubscription();
 
   useEffect(() => {
     cachedList("plants", () => base44.entities.Plant.list())
@@ -78,12 +78,14 @@ export default function Home() {
                 className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shadow-md transition-all active:scale-95 ${
                   isPro 
                     ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 border border-amber-300 shadow-amber-200/40" 
+                    : isPlus
+                    ? "bg-gradient-to-r from-emerald-400 to-teal-500 text-white border border-emerald-300 shadow-emerald-200/40"
                     : "bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-amber-950 border border-amber-300/80 shadow-amber-300/50 animate-pulse hover:animate-none"
                 }`}
-                title={isPro ? "⭐ Plano Pro Ativo" : "⭐ Horta Viva Pro (2,99€/mês)"}
-                aria-label="Horta Viva Pro"
+                title={isPro ? "⭐ Plano Pro Ativo (Ilimitado)" : isPlus ? "🌱 Plano Plus Ativo (1,99€/mês)" : "⭐ Planos Horta Viva (a partir de 1,99€/mês)"}
+                aria-label="Planos Horta Viva"
               >
-                <Star className="w-5 h-5 fill-amber-950 text-amber-950 shrink-0" />
+                <Star className={`w-5 h-5 shrink-0 ${isPlus ? "fill-white text-white" : "fill-amber-950 text-amber-950"}`} />
               </button>
               <AuthButton />
               <NavigationDrawer />

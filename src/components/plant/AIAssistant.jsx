@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Sparkles, Send, Loader2, Camera } from "lucide-react";
 import { Link } from "react-router-dom";
 import { visionBase44 } from "@/api/visionClient";
-import { useSubscription, incrementAIUsage } from "@/lib/subscription";
+import { useSubscription, incrementAIUsage, PLUS_AI_LIMIT, FREE_AI_LIMIT } from "@/lib/subscription";
 import UpgradeModal from "@/components/subscription/UpgradeModal";
 
 export default function AIAssistant({ query, plants, onClearQuery }) {
@@ -11,7 +11,7 @@ export default function AIAssistant({ query, plants, onClearQuery }) {
   const [loading, setLoading] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const scrollRef = useRef(null);
-  const { isPro, remainingFreeAI, canUseAI } = useSubscription();
+  const { isPro, isPlus, remainingAI, remainingFreeAI, canUseAI, aiLimit } = useSubscription();
 
   useEffect(() => {
     if (query) {
@@ -40,7 +40,9 @@ export default function AIAssistant({ query, plants, onClearQuery }) {
         { role: "user", text: question },
         {
           role: "assistant",
-          text: "⭐ **Limite de 2 utilizações gratuitas de IA atingido.**\n\nJá utilizaste os teus 2 usos gratuitos de IA. Para continuares a conversar com o Assistente IA da Horta e identificares plantas por foto sem limites, ativa o **Horta Viva Pro** por apenas 2,99€/mês.",
+          text: isPlus
+            ? `⭐ **Limite mensal de ${PLUS_AI_LIMIT} utilizações da IA atingido.**\n\nJá utilizaste as tuas ${PLUS_AI_LIMIT} consultas de IA deste mês no Plano Plus. Para conversares com o Assistente IA sem restrições e identificares plantas por foto sem limites, atualiza para o **Horta Viva Pro** por 2,99€/mês.`
+            : `⭐ **Limite de ${FREE_AI_LIMIT} utilizações gratuitas de IA atingido.**\n\nJá utilizaste os teus 2 usos gratuitos de IA. Escolhe o **Plano Plus** (1,99€/mês com 4 consultas e 3 fotos) ou o **Horta Viva Pro** (2,99€/mês com acesso ilimitado)!`,
         }
       ]);
       return;
@@ -128,6 +130,16 @@ Responde de forma clara, prática e direta em português europeu. Se a pergunta 
             >
               ⭐ Pro Ilimitado
             </span>
+          ) : isPlus ? (
+            <button
+              type="button"
+              onClick={() => setShowUpgradeModal(true)}
+              className="flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white text-xs font-medium px-2.5 py-1 rounded-xl transition-all shadow-2xs"
+              title="Quota de IA mensal do Plano Plus"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>{remainingAI} de {PLUS_AI_LIMIT} usos/mês</span>
+            </button>
           ) : (
             <button
               type="button"
@@ -139,7 +151,7 @@ Responde de forma clara, prática e direta em português europeu. Se a pergunta 
               {remainingFreeAI > 0 ? (
                 <span>{remainingFreeAI} {remainingFreeAI === 1 ? "uso grátis" : "usos grátis"}</span>
               ) : (
-                <span className="font-bold text-amber-200">Ativar Pro</span>
+                <span className="font-bold text-amber-200">Planos (1,99€)</span>
               )}
             </button>
           )}
@@ -197,13 +209,23 @@ Responde de forma clara, prática e direta em português europeu. Se a pergunta 
       </div>
 
       {/* Banner de limite de IA atingido */}
-      {!isPro && remainingFreeAI === 0 && (
-        <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-emerald-50 border-t border-amber-200/80 px-4 py-3 flex items-center justify-between gap-3">
+      {!isPro && remainingAI === 0 && (
+        <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-emerald-50 border-t border-amber-200/80 px-4 py-3 flex items-center justify-between gap-3 animate-in fade-in">
           <div className="flex items-center gap-2.5 min-w-0">
             <span className="text-amber-600 text-lg">⭐</span>
             <div className="min-w-0">
-              <p className="text-xs font-bold text-stone-800 leading-tight">Usos gratuitos de IA esgotados (2/2)</p>
-              <p className="text-[11px] text-stone-500 truncate">Ativa o Horta Viva Pro para conversares e identificares sem limites.</p>
+              <p className="text-xs font-bold text-stone-800 leading-tight">
+                {isPlus
+                  ? `Limite mensal de IA atingido (${PLUS_AI_LIMIT}/${PLUS_AI_LIMIT})`
+                  : `Usos gratuitos de IA esgotados (${FREE_AI_LIMIT}/${FREE_AI_LIMIT})`
+                }
+              </p>
+              <p className="text-[11px] text-stone-500 truncate">
+                {isPlus
+                  ? "Atualiza para o Horta Viva Pro (2,99€/mês) para conversas e fotos sem limites."
+                  : "Ativa o Plano Plus (1,99€/mês) ou Pro (2,99€/mês) para continuares a conversar com a IA."
+                }
+              </p>
             </div>
           </div>
           <button
@@ -211,7 +233,7 @@ Responde de forma clara, prática e direta em português europeu. Se a pergunta 
             onClick={() => setShowUpgradeModal(true)}
             className="shrink-0 bg-gradient-to-r from-amber-500 to-emerald-600 hover:from-amber-600 hover:to-emerald-700 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl shadow-xs transition-all active:scale-95 whitespace-nowrap"
           >
-            Ativar Pro (2,99€)
+            {isPlus ? "Upgrade Pro (2,99€)" : "Ver Planos (1,99€)"}
           </button>
         </div>
       )}
