@@ -8,7 +8,20 @@ import { cachedList } from "@/lib/offlineCatalog";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
 import { ViewModeToggle, useViewMode } from "@/components/ui/ViewModeToggle";
 
-const CATEGORIES = ["Todos", "Aves", "Coelhos", "Caprinos", "Ovinos", "Suínos", "Bovinos", "Equídeos", "Apicultura"];
+const CATEGORIES = [
+  "Todos",
+  "Aves",
+  "Coelhos",
+  "Caprinos",
+  "Ovinos",
+  "Suínos",
+  "Bovinos",
+  "Equídeos",
+  "Apicultura",
+  "Guarda & Pastoreio",
+  "Solo & Auxiliares",
+  "Aquacultura"
+];
 
 export default function Animais() {
   const [animals, setAnimals] = useState([]);
