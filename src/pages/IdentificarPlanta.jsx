@@ -9,7 +9,7 @@ import { findPlantInCatalog } from "@/lib/aiService";
 import { identifyPlantWithGemini } from "@/api/geminiClient";
 import { DEFAULT_PLANTS } from "@/lib/plantsData";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
-import { useSubscription, incrementPhotoUsage, activateProSubscription, activatePlusSubscription, PLUS_PHOTO_LIMIT, FREE_IDENTIFICATION_LIMIT } from "@/lib/subscription";
+import { useSubscription, incrementPhotoUsage, PLUS_PHOTO_LIMIT, FREE_IDENTIFICATION_LIMIT } from "@/lib/subscription";
 import UpgradeModal from "@/components/subscription/UpgradeModal";
 
 const SCHEMA = {
@@ -68,29 +68,6 @@ export default function IdentificarPlanta() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  React.useEffect(() => {
-    const hash = window.location.hash || "";
-    const search = window.location.search || "";
-    if (hash.includes("payment=success") || search.includes("payment=success")) {
-      const isPlusTier = hash.includes("tier=plus") || search.includes("tier=plus");
-      if (isPlusTier) {
-        activatePlusSubscription();
-        toast({
-          title: "🎉 Horta Viva Plus Ativado!",
-          description: "O teu plano Plus (1,99€/mês) foi ativado com sucesso: 3 fotos com IA/mês, 4 chats IA/mês, até 6 plantações e 5 animais!",
-        });
-      } else {
-        activateProSubscription();
-        toast({
-          title: "🎉 Horta Viva Pro Ativado!",
-          description: "A tua subscrição foi confirmada com sucesso. Tens agora identificações ilimitadas de plantas por foto!",
-        });
-      }
-      if (window.history?.replaceState) {
-        window.history.replaceState({}, document.title, window.location.pathname + "#/identificar");
-      }
-    }
-  }, [toast]);
 
   const handleFile = (e) => {
     const file = e.target.files?.[0];

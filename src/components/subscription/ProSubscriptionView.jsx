@@ -13,6 +13,7 @@ import {
   getCheckoutUrl,
   validateAndActivateSubscription,
   useSubscription, 
+  resetSubscriptionToFree,
   FREE_PLANTATIONS_LIMIT,
   FREE_ANIMALS_LIMIT,
   FREE_AI_LIMIT,
@@ -30,6 +31,16 @@ export default function ProSubscriptionView({ onSubscribed }) {
   const [restoring, setRestoring] = useState(false);
   const [showFaq, setShowFaq] = useState(null);
   const { toast } = useToast();
+
+  const handleResetToFree = async () => {
+    if (window.confirm("Pretendes repor esta conta para o Plano Base Gratuito?")) {
+      await resetSubscriptionToFree();
+      toast({
+        title: "Plano Base Reposto ✅",
+        description: "Esta conta está agora no Plano Base Gratuito.",
+      });
+    }
+  };
 
   const handleSubscribePro = () => {
     window.open(getCheckoutUrl("pro"), "_blank", "noopener,noreferrer");
@@ -102,7 +113,7 @@ export default function ProSubscriptionView({ onSubscribed }) {
     },
     {
       q: "Posso utilizar a subscrição noutro telemóvel ou tablet?",
-      a: "Com certeza! Basta acederes a esta página no teu outro dispositivo e introduzires o e-mail usado na compra no campo 'Restaurar Subscrição'."
+      a: "Com certeza! A tua subscrição fica associada à tua Conta Google. Basta iniciares sessão com a mesma conta Google no teu telemóvel, tablet ou computador, e o teu plano é sincronizado automaticamente."
     }
   ];
 
@@ -128,9 +139,18 @@ export default function ProSubscriptionView({ onSubscribed }) {
 
           {/* Estado atual se ativo */}
           {isPro ? (
-            <div className="mt-6 flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/30 text-white font-bold text-sm">
-              <span className="text-lg">⭐</span>
-              <span>Tens o Plano Pro Ativo! Aproveita todos os recursos sem limites.</span>
+            <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white/20 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/30 text-white font-bold text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">⭐</span>
+                <span>Tens o Plano Pro Ativo! Aproveita todos os recursos sem limites.</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleResetToFree}
+                className="text-emerald-100 hover:text-white underline text-xs font-normal"
+              >
+                Repor Plano Base
+              </button>
             </div>
           ) : isPlus ? (
             <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white/20 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/30 text-white">
@@ -138,12 +158,21 @@ export default function ProSubscriptionView({ onSubscribed }) {
                 <p className="font-bold text-sm">🌱 Tens o Plano Plus Ativo (1,99€/mês)</p>
                 <p className="text-xs text-emerald-100">Até 6 plantações, 5 animais, 3 fotos IA e 4 consultas IA/mês.</p>
               </div>
-              <button
-                onClick={handleSubscribePro}
-                className="bg-amber-400 hover:bg-amber-300 text-stone-900 font-extrabold text-xs px-3.5 py-2 rounded-xl shadow transition-all"
-              >
-                Fazer Upgrade para Pro (2,99€)
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSubscribePro}
+                  className="bg-amber-400 hover:bg-amber-300 text-stone-900 font-extrabold text-xs px-3.5 py-2 rounded-xl shadow transition-all"
+                >
+                  Fazer Upgrade para Pro (2,99€)
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetToFree}
+                  className="text-emerald-100 hover:text-white underline text-xs font-normal"
+                >
+                  Repor Base
+                </button>
+              </div>
             </div>
           ) : (
             <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-emerald-100 font-medium">

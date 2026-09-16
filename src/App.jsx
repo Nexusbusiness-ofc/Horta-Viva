@@ -57,6 +57,28 @@ const AuthenticatedApp = () => {
       if (isGoogleConnected()) {
         autoSyncGoogleDrive(false).catch(() => {});
       }
+      try {
+        if (window.history && window.history.replaceState) {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("payment");
+          url.searchParams.delete("tier");
+          url.searchParams.delete("session_id");
+          if (url.hash.includes("payment=success") || url.hash.includes("tier=")) {
+            const hashParts = url.hash.split("?");
+            if (hashParts.length > 1) {
+              const hashParams = new URLSearchParams(hashParts[1]);
+              hashParams.delete("payment");
+              hashParams.delete("tier");
+              hashParams.delete("session_id");
+              const remaining = hashParams.toString();
+              url.hash = hashParts[0] + (remaining ? "?" + remaining : "");
+            }
+          }
+          window.history.replaceState(null, "", url.toString());
+        }
+      } catch (cleanErr) {
+        console.warn("Erro ao limpar parâmetros de pagamento da URL:", cleanErr);
+      }
     }
   }, [toast]);
 

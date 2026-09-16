@@ -6,11 +6,13 @@ import ProfileForm from "@/components/profile/ProfileForm";
 import SyncBackupModal from "@/components/quinta/SyncBackupModal";
 import { isGoogleConnected } from "@/lib/googleSync";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
-import { useSubscription } from "@/lib/subscription";
+import { useSubscription, resetSubscriptionToFree } from "@/lib/subscription";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function Perfil() {
   const { user, checkUserAuth, logout, navigateToLogin } = useAuth();
   const { isPro, isPlus } = useSubscription();
+  const { toast } = useToast();
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [isGoogleLinked, setIsGoogleLinked] = useState(isGoogleConnected());
 
@@ -168,6 +170,24 @@ export default function Perfil() {
             <span>{isPro ? "Ver Detalhes do Plano Pro" : isPlus ? "Ver e Gerir Planos / Upgrade Pro" : "Ver e Escolher Plano (a partir de 1,99€)"}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
+
+          {(isPro || isPlus) && (
+            <button
+              type="button"
+              onClick={async () => {
+                if (window.confirm("Tens a certeza de que pretendes repor esta conta para o Plano Base Gratuito? A subscrição desta conta e a respetiva cópia no Google Drive serão removidas.")) {
+                  await resetSubscriptionToFree();
+                  toast({
+                    title: "Plano Base Reposto ✅",
+                    description: "Esta conta está agora no Plano Base Gratuito.",
+                  });
+                }
+              }}
+              className="w-full text-stone-500 hover:text-red-600 text-[11px] font-medium py-1.5 transition-colors text-center block"
+            >
+              Repor Plano Base Gratuito nesta Conta
+            </button>
+          )}
         </div>
 
         {/* Sincronização Google Drive & Cópia de Segurança */}

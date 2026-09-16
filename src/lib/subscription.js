@@ -169,30 +169,33 @@ function getActiveGoogleId() {
 export function getUserTier() {
   try {
     const isLoggedOut = localStorage.getItem("hortaviva_logged_out") === "true";
+    if (isLoggedOut) return "free";
+
     const raw = localStorage.getItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
     if (!raw) return "free";
     const sub = JSON.parse(raw);
     if (!sub || sub.active !== true) return "free";
 
-    // 1. Chave Master de Administrador ("hortaviva") funciona sempre
-    if (sub.is_master || sub.plan === "lifetime") return "pro";
-
-    // 2. Se o utilizador fez logout explícito, subscrições regulares ficam inativas
-    if (isLoggedOut) return "free";
-
-    // 3. Validação de posse por conta autenticada
+    // Validação de posse por conta autenticada
     const activeEmail = getActiveUserEmail();
     const activeGoogleId = getActiveGoogleId();
     const subEmail = (sub.google_email || sub.customer_email || "").toLowerCase().trim();
     const subGoogleId = sub.google_id || null;
 
-    // Se a subscrição estiver associada a um email e a sessão atual for de outro email, não ativar
-    if (subEmail && activeEmail && subEmail !== activeEmail) {
-      return "free";
-    }
-    // Se a subscrição estiver associada a um Google ID e a sessão for de outro Google ID, não ativar
-    if (subGoogleId && activeGoogleId && subGoogleId !== activeGoogleId) {
-      return "free";
+    // Se temos um utilizador autenticado ativo (Google ou Quinta)
+    if (activeEmail) {
+      // A subscrição DEVE pertencer a este email. Se não coincidir, a conta não tem Pro!
+      if (!subEmail || subEmail !== activeEmail) {
+        return "free";
+      }
+      if (subGoogleId && activeGoogleId && subGoogleId !== activeGoogleId) {
+        return "free";
+      }
+    } else {
+      // Se não há utilizador autenticado ativo (sessão anónima ou desconectada)
+      if (subEmail) {
+        return "free";
+      }
     }
 
     if (sub.tier === "plus" || sub.plan === "plus" || sub.price === "1.99€") return "plus";
@@ -230,16 +233,12 @@ export function isPaidSubscriber() {
 export function getSubscriptionDetails() {
   try {
     const isLoggedOut = localStorage.getItem("hortaviva_logged_out") === "true";
+    if (isLoggedOut) return null;
+
     const raw = localStorage.getItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
     if (!raw) return null;
     const sub = JSON.parse(raw);
     if (!sub || !sub.active) return null;
-
-    // Chave Master funciona sempre
-    if (sub.is_master || sub.plan === "lifetime") return sub;
-
-    // Se fez logout explícito
-    if (isLoggedOut) return null;
 
     // Validação de titularidade da conta
     const activeEmail = getActiveUserEmail();
@@ -247,8 +246,12 @@ export function getSubscriptionDetails() {
     const subEmail = (sub.google_email || sub.customer_email || "").toLowerCase().trim();
     const subGoogleId = sub.google_id || null;
 
-    if (subEmail && activeEmail && subEmail !== activeEmail) return null;
-    if (subGoogleId && activeGoogleId && subGoogleId !== activeGoogleId) return null;
+    if (activeEmail) {
+      if (!subEmail || subEmail !== activeEmail) return null;
+      if (subGoogleId && activeGoogleId && subGoogleId !== activeGoogleId) return null;
+    } else {
+      if (subEmail) return null;
+    }
 
     return sub;
   } catch {
@@ -377,6 +380,25 @@ export function cancelSubscription() {
 export const cancelProSubscription = cancelSubscription;
 
 /**
+ * Redefine o plano atual para Gratuito tanto localmente como na nuvem Google Drive.
+ */
+export async function resetSubscriptionToFree() {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
+    emitSubscriptionChange();
+    try {
+      const { uploadToGoogleDrive, isGoogleConnected } = await import("./googleSync.js");
+      if (isGoogleConnected()) {
+        await uploadToGoogleDrive(false, { forceResetSubscription: true });
+      }
+    } catch {}
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Verifica se o utilizador pode efetuar mais uma identificação de planta por fotografia.
  * - Pro: ilimitado
  * - Plus (1,99€): até 3 fotos por mês
@@ -477,12 +499,13 @@ export function validateAndActivateSubscription(codeOrEmail) {
   }
 
   if (trimmed === "hortaviva") {
-    activateProSubscription({ email: "hortaviva", is_master: true });
+    const currentEmail = getActiveUserEmail() || "master@hortaviva.local";
+    activateProSubscription({ email: currentEmail, is_master: true, source: "master_code" });
     return {
       success: true,
       tier: "pro",
       isMaster: true,
-      message: "Acesso Master de Administrador ativado com sucesso!",
+      message: `Acesso Master de Administrador ativado para ${currentEmail}!`,
     };
   }
 
@@ -510,10 +533,15 @@ export function useSubscription() {
   };
 
   useEffect(() => {
+    syncState();
     window.addEventListener("hortaviva_subscription_changed", syncState);
+    window.addEventListener("hortaviva_auth_changed", syncState);
+    window.addEventListener("hortaviva_sync_change", syncState);
     window.addEventListener("storage", syncState);
     return () => {
       window.removeEventListener("hortaviva_subscription_changed", syncState);
+      window.removeEventListener("hortaviva_auth_changed", syncState);
+      window.removeEventListener("hortaviva_sync_change", syncState);
       window.removeEventListener("storage", syncState);
     };
   }, []);
@@ -592,5 +620,6 @@ export function useSubscription() {
     activatePro: activateProSubscription,
     cancelSubscription: cancelProSubscription,
     cancelPro: cancelProSubscription,
+    resetSubscriptionToFree,
   };
 }

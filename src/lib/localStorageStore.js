@@ -259,9 +259,25 @@ export const localAuth = {
       localStorage.removeItem(STORAGE_KEYS.LOGGED_OUT);
     } catch {}
 
+    // Garantir que a subscrição em localStorage pertence estritamente a este novo perfil Google
+    try {
+      const rawSub = localStorage.getItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
+      if (rawSub) {
+        const sub = JSON.parse(rawSub);
+        const subEmail = (sub.google_email || sub.customer_email || "").toLowerCase().trim();
+        const profileEmail = (googleProfile?.email || "").toLowerCase().trim();
+        if (!profileEmail || !subEmail || subEmail !== profileEmail) {
+          localStorage.removeItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
+        }
+      }
+    } catch {
+      localStorage.removeItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
+    }
+
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("hortaviva_auth_changed", { detail: { user } }));
       window.dispatchEvent(new CustomEvent("hortaviva_sync_change", { detail: { status: "synced", connected: true, user } }));
+      window.dispatchEvent(new CustomEvent("hortaviva_subscription_changed"));
     }
     return user;
   },
@@ -315,10 +331,16 @@ export const localAuth = {
 
   loginAsGuest: (fromUrl = "/") => {
     try {
+      localStorage.removeItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(DEFAULT_USER));
       localStorage.setItem(STORAGE_KEYS.TOKEN, `guest_token_${Date.now()}`);
       localStorage.removeItem(STORAGE_KEYS.LOGGED_OUT);
     } catch {}
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hortaviva_auth_changed", { detail: { user: DEFAULT_USER } }));
+      window.dispatchEvent(new CustomEvent("hortaviva_subscription_changed"));
+    }
 
     const target = fromUrl && fromUrl.startsWith("/") ? fromUrl : "/";
     window.location.hash = `#${target}`;
@@ -343,10 +365,29 @@ export const localAuth = {
     };
 
     try {
+      const rawSub = localStorage.getItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
+      if (rawSub) {
+        const sub = JSON.parse(rawSub);
+        const subEmail = (sub.google_email || sub.customer_email || "").toLowerCase().trim();
+        const activeEmail = (user.email || "").toLowerCase().trim();
+        if (!activeEmail || !subEmail || subEmail !== activeEmail) {
+          localStorage.removeItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
+        }
+      }
+    } catch {
+      localStorage.removeItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
+    }
+
+    try {
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
       localStorage.setItem(STORAGE_KEYS.TOKEN, `token_${Date.now()}`);
       localStorage.removeItem(STORAGE_KEYS.LOGGED_OUT);
     } catch {}
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hortaviva_auth_changed", { detail: { user } }));
+      window.dispatchEvent(new CustomEvent("hortaviva_subscription_changed"));
+    }
 
     return user;
   },
@@ -373,16 +414,7 @@ export const localAuth = {
 
   logout: (redirectUrl) => {
     try {
-      // Se não for chave master de admin, remove a subscrição ao sair da conta
-      const rawSub = localStorage.getItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
-      let isMaster = false;
-      try {
-        if (rawSub) isMaster = JSON.parse(rawSub)?.is_master === true;
-      } catch {}
-
-      if (!isMaster) {
-        localStorage.removeItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
-      }
+      localStorage.removeItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
 
       localStorage.removeItem(STORAGE_KEYS.TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER);
@@ -457,13 +489,28 @@ export const localIntegrations = {
   },
 };
 
-export function exportFarmData() {
+export function exportFarmData(options = {}) {
   const plantings = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLANTINGS) || "[]");
   const myAnimals = JSON.parse(localStorage.getItem(STORAGE_KEYS.MY_ANIMALS) || "[]");
   const reminders = JSON.parse(localStorage.getItem(STORAGE_KEYS.REMINDERS) || "[]");
   const user = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || "null");
   const deletedIds = JSON.parse(localStorage.getItem("hortaviva_deleted_ids") || "{}");
-  const subscription = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRO_SUBSCRIPTION) || "null");
+  
+  let subscription = null;
+  if (!options?.forceResetSubscription) {
+    try {
+      const rawSub = localStorage.getItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
+      if (rawSub) {
+        const parsed = JSON.parse(rawSub);
+        const activeEmail = (user?.email || "").toLowerCase().trim();
+        const subEmail = (parsed.google_email || parsed.customer_email || "").toLowerCase().trim();
+        // A subscrição só é exportada se pertencer comprovadamente a este utilizador e não for código master de teste
+        if (parsed.active && !parsed.is_master && parsed.plan !== "lifetime" && activeEmail && subEmail === activeEmail) {
+          subscription = parsed;
+        }
+      }
+    } catch {}
+  }
 
   return {
     version: 3,
@@ -478,7 +525,7 @@ export function exportFarmData() {
   };
 }
 
-export function mergeFarmData(local, remote) {
+export function mergeFarmData(local, remote, options = {}) {
   let deletedIds = {};
   try {
     const rawLocalDeleted = localStorage.getItem("hortaviva_deleted_ids");
@@ -583,18 +630,20 @@ export function mergeFarmData(local, remote) {
 
   const isSubValidForUser = (sub) => {
     if (!sub || sub.active !== true) return false;
-    if (sub.is_master || sub.plan === "lifetime") return true;
+    // NUNCA aceitar licenças master de teste ("hortaviva") a partir de ficheiros da nuvem
+    if (sub.is_master === true || sub.plan === "lifetime" || sub.customer_email === "master@hortaviva.local") {
+      return false;
+    }
     const subEmail = (sub.google_email || sub.customer_email || "").toLowerCase().trim();
     const subGoogleId = sub.google_id || null;
     if (subEmail && activeEmail) return subEmail === activeEmail;
     if (subGoogleId && activeGoogleId) return subGoogleId === activeGoogleId;
-    if (sub.source === "stripe_checkout" && !subEmail) return true;
     return false;
   };
 
   const getSubRank = (sub) => {
     if (!sub || sub.active !== true) return 0;
-    if (sub.is_master || sub.plan === "lifetime") return 3;
+    if (sub.plan === "lifetime") return 3;
     if (sub.tier === "pro" || sub.plan === "pro") return 2;
     if (sub.tier === "plus" || sub.plan === "plus") return 1;
     return 1;
@@ -606,7 +655,9 @@ export function mergeFarmData(local, remote) {
   const remoteRank = getSubRank(remoteSub);
 
   let mergedSubscription = null;
-  if (remoteRank > localRank) {
+  if (options?.forceResetSubscription) {
+    mergedSubscription = null;
+  } else if (remoteRank > localRank) {
     mergedSubscription = remoteSub;
   } else if (localRank > remoteRank) {
     mergedSubscription = localSub;
@@ -670,21 +721,13 @@ export function importFarmData(data, shouldMerge = true) {
     localStorage.removeItem(STORAGE_KEYS.LOGGED_OUT);
   }
 
-  // Sincronizar subscrição Pro/Plus da nuvem garantindo isolamento entre contas
-  const currentRawSub = localStorage.getItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
-  let isMasterLocal = false;
-  try {
-    if (currentRawSub) {
-      isMasterLocal = JSON.parse(currentRawSub)?.is_master === true;
-    }
-  } catch {}
-
+  // Sincronizar subscrição Pro/Plus da nuvem garantindo isolamento estrito entre contas
   if (finalData.subscription && typeof finalData.subscription === "object" && finalData.subscription.active === true) {
     localStorage.setItem(STORAGE_KEYS.PRO_SUBSCRIPTION, JSON.stringify(finalData.subscription));
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("hortaviva_subscription_changed", { detail: finalData.subscription }));
     }
-  } else if (!isMasterLocal) {
+  } else {
     localStorage.removeItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("hortaviva_subscription_changed", { detail: null }));
