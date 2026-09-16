@@ -27,6 +27,7 @@ import Perfil from './pages/Perfil';
 import HortaVivaPro from './pages/HortaVivaPro';
 import InstallPrompt from '@/components/pwa/InstallPrompt';
 import BottomNav from '@/components/navigation/BottomNav';
+import BackToTopButton from '@/components/navigation/BackToTopButton';
 import { isGoogleConnected, hasValidGoogleToken, autoSyncGoogleDrive } from '@/lib/googleSync';
 
 const AuthenticatedApp = () => {
@@ -115,6 +116,7 @@ function App() {
           <ScrollToTop />
           <AuthenticatedApp />
           <BottomNav />
+          <BackToTopButton />
           <InstallPrompt />
         </Router>
         <Toaster />
