@@ -23,17 +23,11 @@ const STORAGE_KEYS = {
   MONTHLY_USAGE: "hortaviva_monthly_usage_v2",
 };
 
-// Códigos aceites para ativação do modo Administrador / Master
+// Único código aceite para ativação do modo Administrador / Master: H_Viva
 export const VALID_ADMIN_CODES = new Set([
-  "hortaviva",
-  "hortavivapro",
-  "admin",
-  "administrador",
-  "hortaviva_admin",
-  "hortaviva2026",
-  "hortaviva_master",
-  "master",
+  "h_viva",
 ]);
+
 
 
 /**
@@ -345,7 +339,7 @@ export function activatePlusSubscription(details = {}) {
 
 /**
  * Ativa a subscrição Pro (2,99€ / mês ou Vitalício para administrador).
- * Requer validação por checkout Stripe, sincronização Google ou código master ("hortaviva").
+ * Requer validação por checkout Stripe, sincronização Google ou código master ("H_Viva").
  */
 export function activateProSubscription(details = {}) {
   try {
