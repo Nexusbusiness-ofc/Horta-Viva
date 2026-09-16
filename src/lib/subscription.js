@@ -23,6 +23,19 @@ const STORAGE_KEYS = {
   MONTHLY_USAGE: "hortaviva_monthly_usage_v2",
 };
 
+// Códigos aceites para ativação do modo Administrador / Master
+export const VALID_ADMIN_CODES = new Set([
+  "hortaviva",
+  "hortavivapro",
+  "admin",
+  "administrador",
+  "hortaviva_admin",
+  "hortaviva2026",
+  "hortaviva_master",
+  "master",
+]);
+
+
 /**
  * Retorna a chave do mês atual no formato "AAAA-MM" (ex: "2026-09").
  */
@@ -176,6 +189,17 @@ export function getUserTier() {
     const sub = JSON.parse(raw);
     if (!sub || sub.active !== true) return "free";
 
+    // Master / Administrador local neste dispositivo
+    if (sub.is_master === true || sub.plan === "lifetime") {
+      const activeEmail = getActiveUserEmail();
+      const subEmail = (sub.google_email || sub.customer_email || "").toLowerCase().trim();
+      // Válido se o email coincide com a sessão atual, ou se foi ativado globalmente/master, ou se anónimo
+      if (!activeEmail || !subEmail || subEmail === "master@hortaviva.local" || subEmail === activeEmail) {
+        return "pro";
+      }
+      return "free";
+    }
+
     // Validação de posse por conta autenticada
     const activeEmail = getActiveUserEmail();
     const activeGoogleId = getActiveGoogleId();
@@ -239,6 +263,16 @@ export function getSubscriptionDetails() {
     if (!raw) return null;
     const sub = JSON.parse(raw);
     if (!sub || !sub.active) return null;
+
+    // Master / Administrador local
+    if (sub.is_master === true || sub.plan === "lifetime") {
+      const activeEmail = getActiveUserEmail();
+      const subEmail = (sub.google_email || sub.customer_email || "").toLowerCase().trim();
+      if (!activeEmail || !subEmail || subEmail === "master@hortaviva.local" || subEmail === activeEmail) {
+        return sub;
+      }
+      return null;
+    }
 
     // Validação de titularidade da conta
     const activeEmail = getActiveUserEmail();
@@ -317,7 +351,10 @@ export function activateProSubscription(details = {}) {
   try {
     const emailRaw = (details.email || "").trim().toLowerCase();
     const normalized = emailRaw.replace(/\s+/g, "");
-    const isMaster = normalized === "hortaviva";
+    const isMaster =
+      details.is_master === true ||
+      details.source === "master_code" ||
+      VALID_ADMIN_CODES.has(normalized);
 
     // Se pedir expressamente plus e não for master
     if (!isMaster && (details.tier === "plus" || details.plan === "plus")) {
@@ -330,6 +367,7 @@ export function activateProSubscription(details = {}) {
       details.source === "stripe_checkout" ||
       details.source === "google_sync" ||
       details.source === "cloud_sync" ||
+      details.source === "master_code" ||
       Boolean(details.session_id);
 
     if (!isVerified) {
@@ -343,6 +381,10 @@ export function activateProSubscription(details = {}) {
       if (rawUser) googleUser = JSON.parse(rawUser);
     } catch {}
 
+    const currentEmail = getActiveUserEmail();
+    const googleId = details.google_id || googleUser?.id || googleUser?.sub || null;
+    const targetEmail = details.email || googleUser?.email || currentEmail || (isMaster ? "master@hortaviva.local" : null);
+
     const subData = {
       active: true,
       plan: isMaster ? "lifetime" : (details.plan || "pro"),
@@ -351,12 +393,13 @@ export function activateProSubscription(details = {}) {
       currency: "eur",
       is_master: isMaster,
       activated_at: details.activated_at || new Date().toISOString(),
-      session_id: details.session_id || null,
-      customer_email: isMaster ? "master@hortaviva.local" : (details.email || googleUser?.email || null),
-      google_id: details.google_id || googleUser?.id || null,
-      google_email: details.google_email || googleUser?.email || null,
+      session_id: details.session_id || (isMaster ? "master_admin" : null),
+      customer_email: targetEmail,
+      google_id: googleId,
+      google_email: details.google_email || googleUser?.email || targetEmail,
     };
     localStorage.setItem(STORAGE_KEYS.PRO_SUBSCRIPTION, JSON.stringify(subData));
+    localStorage.removeItem(STORAGE_KEYS.LOGGED_OUT);
     emitSubscriptionChange();
     return true;
   } catch {
@@ -480,6 +523,7 @@ export function getCheckoutUrl(targetTier = "pro") {
 function emitSubscriptionChange() {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("hortaviva_subscription_changed"));
+    window.dispatchEvent(new CustomEvent("hortaviva_auth_changed"));
     window.dispatchEvent(
       new CustomEvent("hortaviva_data_changed", {
         detail: { storageKey: STORAGE_KEYS.PRO_SUBSCRIPTION },
@@ -490,7 +534,7 @@ function emitSubscriptionChange() {
 
 /**
  * Validação segura de código de ativação.
- * Apenas o código de administrador master ("hortaviva") permite ativação direta sem Google.
+ * Aceita códigos de administrador/master e ativa o plano Pro com acesso total.
  */
 export function validateAndActivateSubscription(codeOrEmail) {
   const trimmed = (codeOrEmail || "").trim().toLowerCase().replace(/\s+/g, "");
@@ -498,21 +542,30 @@ export function validateAndActivateSubscription(codeOrEmail) {
     return { success: false, error: "Introduz um código de ativação válido." };
   }
 
-  if (trimmed === "hortaviva") {
+  if (VALID_ADMIN_CODES.has(trimmed)) {
     const currentEmail = getActiveUserEmail() || "master@hortaviva.local";
-    activateProSubscription({ email: currentEmail, is_master: true, source: "master_code" });
-    return {
-      success: true,
-      tier: "pro",
-      isMaster: true,
-      message: `Acesso Master de Administrador ativado para ${currentEmail}!`,
-    };
+    const googleId = getActiveGoogleId();
+    const ok = activateProSubscription({
+      email: currentEmail,
+      google_id: googleId,
+      is_master: true,
+      source: "master_code",
+      verified: true,
+    });
+    if (ok) {
+      return {
+        success: true,
+        tier: "pro",
+        isMaster: true,
+        message: `Acesso de Administrador ativado com sucesso!`,
+      };
+    }
   }
 
   return {
     success: false,
     needsGoogle: true,
-    error: "Por motivos de segurança, subscrições regulares são vinculadas e restauradas através da tua Conta Google. Usa o botão 'Sincronizar com a Conta Google'.",
+    error: "Código de ativação inválido. Se subscreveste através da Stripe, usa o botão 'Sincronizar com a Conta Google'.",
   };
 }
 
