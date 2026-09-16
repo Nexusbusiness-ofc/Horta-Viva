@@ -2,7 +2,8 @@ import React, { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, Camera, Loader2, Sparkles, Sun, Droplets, Sprout, 
-  Bug, Calendar, Leaf, RotateCcw, X, BookOpen, Search
+  Bug, Calendar, Leaf, RotateCcw, X, BookOpen, Search,
+  CheckCircle2, AlertTriangle, AlertCircle, ShieldCheck, Scissors, ListChecks
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { findPlantInCatalog } from "@/lib/aiService";
@@ -21,6 +22,17 @@ const SCHEMA = {
     category: { type: "string" },
     confidence: { type: "string", enum: ["alta", "média", "baixa"] },
     description: { type: "string" },
+    health_status: { type: "string", enum: ["saudavel", "alerta", "doente"] },
+    health_assessment: { type: "string" },
+    detected_diseases: { type: "string" },
+    action_water: { type: "string" },
+    action_harvest: { type: "string" },
+    action_treatment: { type: "string" },
+    action_pruning: { type: "string" },
+    immediate_actions: {
+      type: "array",
+      items: { type: "string" }
+    },
     sun: { type: "string" },
     water: { type: "string" },
     soil: { type: "string" },
@@ -29,29 +41,54 @@ const SCHEMA = {
     common_pests: { type: "string" },
     tips: { type: "string" },
   },
-  required: ["identified", "name"],
+  required: [
+    "identified", 
+    "name", 
+    "health_status", 
+    "health_assessment", 
+    "action_water", 
+    "action_harvest", 
+    "action_treatment"
+  ],
 };
 
-const PLANT_IDENTIFICATION_PROMPT = `Analisa cuidadosamente a fotografia e identifica a planta, árvore, flor, folha, fruto, legume, erva aromática, praga ou doença vegetal que estiver presente. Não limites a identificação a uma lista ou catálogo: identifica qualquer espécie que reconheças. Responde em português de Portugal e devolve apenas os dados pedidos. Se não houver uma planta ou praga suficientemente visível, define "identified" como false e "name" como "Não identificado". Caso identifiques, indica o nome comum, nome científico, categoria, confiança, descrição breve, exposição solar, necessidades de rega, solo, época de plantação e de colheita em Portugal, pragas/doenças comuns e dicas práticas de cultivo ou tratamento.`;
+const PLANT_IDENTIFICATION_PROMPT = `És o Assistente Agrícola e Fitossanitário especialista da Horta Viva.
+Analisa cuidadosamente a fotografia e identifica a planta, árvore, flor, folha, fruto, legume, erva aromática ou cultura/plantação presente, bem como o seu estado fitossanitário real.
+Responde em português de Portugal estritamente com os dados pedidos no esquema JSON.
+Se não houver uma planta ou cultura visível, define "identified" como false e "name" como "Não identificado".
+
+Caso identifiques a planta ou plantação:
+1. Identificação botânica: nome comum em Portugal, nome científico, categoria e nível de confiança.
+2. Diagnóstico de Saúde e Doenças (análise visual da fotografia):
+   - "health_status": "saudavel" se a planta estiver vigorosa sem sinais de pragas ou infeções; "alerta" se houver sinais ligeiros de stresse hídrico, carência nutricional, folhas murchas ou início de praga; "doente" se apresentar sinais visíveis de doença fúngica (míldio, oídio, ferrugem, etc.), bacteriose, necrose, podridão ou pragas ativas (pulgões, ácaros, lagartas, etc.).
+   - "health_assessment": Diagnóstico clínico detalhado do estado vegetativo, folhas, caules, flores ou frutos visíveis na imagem.
+   - "detected_diseases": Nome das pragas, doenças ou carências identificadas na foto (ou "Nenhuma doença ou praga visível" se estiver saudável).
+3. O que deves fazer à planta / plantação (Ações práticas e imediatas para o agricultor):
+   - "action_water": Instrução direta sobre rega (ex.: se deve regar agora, se o solo parece seco, se deve espaçar regas, se deve evitar molhar as folhas para travar fungos, melhor hora para regar).
+   - "action_harvest": Avaliação de colheita e maturação (se a planta/fruto está no ponto de colher, como colher ou quanto tempo falta esperar).
+   - "action_treatment": Tratamento biológico ou ecológico recomendado (ex.: sabão potássico, calda bordalesa, infusão de alho/urtiga, óleo de neem, bicarbonato de sódio, ou medidas preventivas).
+   - "action_pruning": Poda e manutenção (se precisa de retirar folhas secas/doentes, desladroar, arejar ou sachar).
+   - "immediate_actions": Lista de 2 a 4 passos práticos e prioritários que o agricultor deve fazer logo a seguir.
+4. Ficha de cultivo adaptada a Portugal: sol, rega habitual, solo ideal, época de plantação e colheita, pragas comuns da espécie e dicas práticas.`;
 
 function combineWithCatalog(aiResult) {
   const catalogResult = findPlantInCatalog(aiResult.name);
   if (!catalogResult) return aiResult;
 
-  // Quando a espécie existe no catálogo, os cuidados apresentados são os que
-  // já foram definidos para a Horta Viva; a identificação científica da IA é preservada.
+  // Preserva a identificação da IA e todo o diagnóstico fitossanitário específico da foto,
+  // enriquecendo com a base de dados botânica da Horta Viva quando disponível.
   return {
     ...aiResult,
     name: catalogResult.name,
     category: catalogResult.category || aiResult.category,
-    description: catalogResult.description || aiResult.description,
+    description: aiResult.description || catalogResult.description,
     sun: catalogResult.sun || aiResult.sun,
     water: catalogResult.water || aiResult.water,
     soil: catalogResult.soil || aiResult.soil,
     when_to_plant: catalogResult.when_to_plant || aiResult.when_to_plant,
     when_to_harvest: catalogResult.when_to_harvest || aiResult.when_to_harvest,
-    common_pests: catalogResult.common_pests || aiResult.common_pests,
-    tips: catalogResult.tips || aiResult.tips,
+    common_pests: aiResult.common_pests || catalogResult.common_pests,
+    tips: aiResult.tips || catalogResult.tips,
   };
 }
 
@@ -465,17 +502,20 @@ function ResultCard({ result, preview, confidenceColor, onReset, onChooseCatalog
     );
   }
 
+  const isSick = r.health_status === "doente";
+  const isWarning = r.health_status === "alerta";
+
   return (
     <div className="bg-white rounded-3xl border border-stone-200/80 overflow-hidden shadow-sm space-y-4 animate-in fade-in duration-300">
       {/* Cabeçalho */}
       <div className="p-5 bg-gradient-to-br from-teal-50 via-cyan-50 to-emerald-50 border-b border-teal-100/60">
         <div className="flex items-start gap-4">
           {preview && (
-            <img src={preview} alt="" className="w-20 h-20 rounded-2xl object-cover shrink-0 border border-stone-200 shadow-sm" />
+            <img src={preview} alt="" className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover shrink-0 border border-stone-200 shadow-sm" />
           )}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-xl font-bold text-stone-800 leading-tight">{r.name || "—"}</h2>
+              <h2 className="text-xl sm:text-2xl font-black text-stone-800 leading-tight">{r.name || "—"}</h2>
               {r.confidence && (
                 <span className={`text-xs font-semibold rounded-full px-2.5 py-0.5 ${confidenceColor(r.confidence)}`}>
                   confiança {r.confidence}
@@ -483,7 +523,7 @@ function ResultCard({ result, preview, confidenceColor, onReset, onChooseCatalog
               )}
             </div>
             {r.scientific_name && (
-              <p className="text-xs italic text-teal-800 font-medium mt-0.5">{r.scientific_name}</p>
+              <p className="text-xs sm:text-sm italic text-teal-800 font-medium mt-0.5">{r.scientific_name}</p>
             )}
             {r.category && (
               <span className="inline-block mt-2 text-xs font-semibold bg-white text-teal-700 border border-teal-200 rounded-full px-3 py-0.5 shadow-2xs">
@@ -494,41 +534,167 @@ function ResultCard({ result, preview, confidenceColor, onReset, onChooseCatalog
         </div>
       </div>
 
-      <div className="px-5 pb-5 space-y-4">
+      <div className="px-5 pb-5 space-y-5">
         {r.description && (
-          <p className="text-sm text-stone-600 leading-relaxed bg-stone-50/70 p-3.5 rounded-2xl border border-stone-100">
+          <p className="text-xs sm:text-sm text-stone-600 leading-relaxed bg-stone-50/70 p-3.5 rounded-2xl border border-stone-100">
             {r.description}
           </p>
         )}
 
-        {/* Cuidados */}
-        {(r.sun || r.water || r.soil) && (
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            {r.sun && <InfoTile icon={<Sun className="w-4 h-4" />} color="#f59e0b" label="Sol" value={r.sun} />}
-            {r.water && <InfoTile icon={<Droplets className="w-4 h-4" />} color="#0ea5e9" label="Rega" value={r.water} />}
-            {r.soil && <InfoTile icon={<Sprout className="w-4 h-4" />} color="#16a34a" label="Solo" value={r.soil} />}
-          </div>
-        )}
+        {/* 1. DIAGNÓSTICO FITOSSANITÁRIO & DOENÇAS */}
+        <div className={`rounded-2xl border p-4 sm:p-5 space-y-3 transition-all ${
+          isSick 
+            ? "bg-rose-50/70 border-rose-200/90" 
+            : isWarning 
+            ? "bg-amber-50/70 border-amber-200/90" 
+            : "bg-emerald-50/70 border-emerald-200/90"
+        }`}>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2.5">
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-2xs ${
+                isSick ? "bg-rose-100 text-rose-700" : isWarning ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"
+              }`}>
+                {isSick ? <Bug className="w-5 h-5" /> : isWarning ? <AlertTriangle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-stone-800">Diagnóstico Fitossanitário & Saúde</h3>
+                <p className="text-[11px] text-stone-500">Análise de doenças e pragas na foto</p>
+              </div>
+            </div>
 
-        {/* Épocas */}
-        {(r.when_to_plant || r.when_to_harvest) && (
+            <span className={`text-xs font-extrabold px-3 py-1 rounded-full border shadow-2xs ${
+              isSick 
+                ? "bg-rose-100 text-rose-800 border-rose-300" 
+                : isWarning 
+                ? "bg-amber-100 text-amber-800 border-amber-300" 
+                : "bg-emerald-100 text-emerald-800 border-emerald-300"
+            }`}>
+              {isSick ? "🚨 Doença / Praga Detetada" : isWarning ? "⚠️ Sinais de Alerta / Atenção" : "🌱 Planta Saudável"}
+            </span>
+          </div>
+
+          {/* Doenças detetadas */}
+          {r.detected_diseases && (
+            <div className="bg-white/95 p-3 rounded-xl border border-stone-200/70 text-xs shadow-2xs">
+              <span className="font-bold text-stone-700 block mb-0.5">Pragas / Doenças Observadas:</span>
+              <p className={`font-semibold ${isSick ? "text-rose-700" : isWarning ? "text-amber-800" : "text-emerald-700"}`}>
+                {r.detected_diseases}
+              </p>
+            </div>
+          )}
+
+          {/* Parecer detalhado da IA */}
+          {r.health_assessment && (
+            <p className="text-xs text-stone-700 leading-relaxed bg-white/50 p-2.5 rounded-xl border border-stone-100/80">
+              {r.health_assessment}
+            </p>
+          )}
+        </div>
+
+        {/* 2. O QUE DEVES FAZER À PLANTAÇÃO (PLANO DE AÇÃO IMEDIATO) */}
+        <div className="bg-gradient-to-br from-stone-50 via-teal-50/20 to-emerald-50/20 rounded-2xl border border-stone-200/80 p-4 sm:p-5 space-y-3.5 shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-teal-100 text-teal-800 flex items-center justify-center shrink-0 shadow-2xs">
+              <ListChecks className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-stone-800">O Que Deves Fazer Agora</h3>
+              <p className="text-[11px] text-stone-500">Recomendações práticas e imediatas para o cultivo</p>
+            </div>
+          </div>
+
+          {/* Ações Imediatas Prioritárias (Checklist) */}
+          {Array.isArray(r.immediate_actions) && r.immediate_actions.length > 0 && (
+            <div className="bg-white p-3.5 rounded-xl border border-teal-100/90 shadow-2xs space-y-2">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-teal-800 block">
+                Passos Imediatos Recomendados:
+              </span>
+              <ul className="space-y-1.5 text-xs text-stone-700">
+                {r.immediate_actions.map((act, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <span className="w-4 h-4 rounded-full bg-teal-100 text-teal-800 text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
+                      {idx + 1}
+                    </span>
+                    <span className="leading-snug">{act}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Grelha de Ações: Rega, Colheita, Tratamento, Poda */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {r.when_to_plant && <InfoRow icon={<Calendar className="w-4 h-4" />} color="#16a34a" label="Quando plantar" value={r.when_to_plant} />}
-            {r.when_to_harvest && <InfoRow icon={<Calendar className="w-4 h-4" />} color="#ea580c" label="Quando colher" value={r.when_to_harvest} />}
+            {r.action_water && (
+              <ActionCard 
+                icon={<Droplets className="w-4 h-4" />}
+                iconBg="bg-sky-100 text-sky-700 border-sky-200"
+                title="Rega"
+                content={r.action_water}
+              />
+            )}
+            {r.action_harvest && (
+              <ActionCard 
+                icon={<Sprout className="w-4 h-4" />}
+                iconBg="bg-amber-100 text-amber-700 border-amber-200"
+                title="Colheita"
+                content={r.action_harvest}
+              />
+            )}
+            {r.action_treatment && (
+              <ActionCard 
+                icon={<ShieldCheck className="w-4 h-4" />}
+                iconBg="bg-emerald-100 text-emerald-700 border-emerald-200"
+                title="Tratamento Biológico & Pragas"
+                content={r.action_treatment}
+              />
+            )}
+            {r.action_pruning && (
+              <ActionCard 
+                icon={<Scissors className="w-4 h-4" />}
+                iconBg="bg-purple-100 text-purple-700 border-purple-200"
+                title="Poda & Manutenção"
+                content={r.action_pruning}
+              />
+            )}
           </div>
-        )}
+        </div>
 
-        {/* Pragas */}
-        {r.common_pests && (
-          <InfoBlock icon={<Bug className="w-4 h-4" />} color="#dc2626" label="Pragas e doenças comuns" value={r.common_pests} />
-        )}
+        {/* 3. GUIA DE CULTIVO & CARACTERÍSTICAS GERAIS */}
+        <div className="space-y-3 pt-1">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-stone-500">
+            Ficha Botânica & Condições Ideais
+          </h4>
 
-        {/* Dicas */}
-        {r.tips && (
-          <InfoBlock icon={<Sparkles className="w-4 h-4" />} color="#7c3aed" label="Dicas de cultivo" value={r.tips} />
-        )}
+          {/* Cuidados gerais */}
+          {(r.sun || r.water || r.soil) && (
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              {r.sun && <InfoTile icon={<Sun className="w-4 h-4" />} color="#f59e0b" label="Sol" value={r.sun} />}
+              {r.water && <InfoTile icon={<Droplets className="w-4 h-4" />} color="#0ea5e9" label="Rega habitual" value={r.water} />}
+              {r.soil && <InfoTile icon={<Sprout className="w-4 h-4" />} color="#16a34a" label="Solo ideal" value={r.soil} />}
+            </div>
+          )}
 
-        <div className="flex flex-col sm:flex-row gap-2 pt-2">
+          {/* Épocas */}
+          {(r.when_to_plant || r.when_to_harvest) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {r.when_to_plant && <InfoRow icon={<Calendar className="w-4 h-4" />} color="#16a34a" label="Quando plantar em Portugal" value={r.when_to_plant} />}
+              {r.when_to_harvest && <InfoRow icon={<Calendar className="w-4 h-4" />} color="#ea580c" label="Época típica de colheita" value={r.when_to_harvest} />}
+            </div>
+          )}
+
+          {/* Pragas comuns da espécie */}
+          {r.common_pests && (
+            <InfoBlock icon={<Bug className="w-4 h-4" />} color="#dc2626" label="Pragas comuns nesta espécie" value={r.common_pests} />
+          )}
+
+          {/* Dicas */}
+          {r.tips && (
+            <InfoBlock icon={<Sparkles className="w-4 h-4" />} color="#7c3aed" label="Dicas de cultivo da Horta Viva" value={r.tips} />
+          )}
+        </div>
+
+        {/* Botões de Ação */}
+        <div className="flex flex-col sm:flex-row gap-2 pt-3 border-t border-stone-100">
           <button 
             onClick={onReset} 
             className="flex-1 flex items-center justify-center gap-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs sm:text-sm font-semibold py-3 rounded-xl transition-colors"
@@ -543,6 +709,20 @@ function ResultCard({ result, preview, confidenceColor, onReset, onChooseCatalog
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ActionCard({ icon, iconBg, title, content }) {
+  return (
+    <div className="bg-white p-3 rounded-xl border border-stone-200/80 shadow-2xs space-y-1.5">
+      <div className="flex items-center gap-2">
+        <div className={`w-6 h-6 rounded-lg flex items-center justify-center border text-xs shrink-0 ${iconBg}`}>
+          {icon}
+        </div>
+        <span className="text-xs font-bold text-stone-800">{title}</span>
+      </div>
+      <p className="text-xs text-stone-600 leading-relaxed">{content}</p>
     </div>
   );
 }
