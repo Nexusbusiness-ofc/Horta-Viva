@@ -43,7 +43,7 @@ export default function BottomNav() {
     <div className="fixed bottom-3 sm:bottom-4 inset-x-0 z-40 flex justify-center px-3 sm:px-4 pointer-events-none select-none">
       <nav
         aria-label="Navegação rápida"
-        className="pointer-events-auto flex items-center justify-around w-full max-w-md bg-white/92 backdrop-blur-xl border border-emerald-200/70 shadow-2xl shadow-emerald-950/20 rounded-3xl p-1.5 sm:p-2 ring-1 ring-emerald-900/5 transition-all duration-300"
+        className="pointer-events-auto flex items-center justify-around w-full max-w-md bg-white/70 backdrop-blur-md border border-white/80 shadow-2xl shadow-emerald-950/15 rounded-3xl p-1.5 sm:p-2 ring-1 ring-emerald-900/5 transition-all duration-300"
       >
         {NAV_ITEMS.map((item) => {
           const isActive =

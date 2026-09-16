@@ -258,14 +258,11 @@ export async function getValidAccessToken(interactive = false) {
     return localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
   }
   if (!interactive) {
-    // Tentar renovar silenciosamente em segundo plano sem abrir popup
-    try {
-      return await connectGoogleDrive({ prompt: "" });
-    } catch (e) {
-      console.warn("[GoogleSync] Renovação silenciosa de token expirado falhou:", e?.message);
-      notifySyncState("needs_reconnect", "Sessão Google expirada");
-      throw e;
-    }
+    // O Google pode mostrar o seletor de contas mesmo com prompt vazio. Em segundo
+    // plano, mantemos a sessão local e esperamos por uma ação explícita do utilizador.
+    const error = new Error("Sessão Google expirada. Liga novamente a conta para sincronizar.");
+    notifySyncState("needs_reconnect", "Sessão Google expirada");
+    throw error;
   }
   return connectGoogleDrive({ prompt: "select_account" });
 }
