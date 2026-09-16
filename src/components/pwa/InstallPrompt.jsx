@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Download, X, Share2, PlusSquare, Smartphone, Check, Sparkles, MoreVertical } from "lucide-react";
+import { Download, X, Share2, PlusSquare } from "lucide-react";
 
 // Estado global para guardar o evento de instalação capturado
 let globalDeferredPrompt = null;

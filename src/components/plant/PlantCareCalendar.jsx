@@ -1,5 +1,5 @@
 import React from "react";
-import { getPlantCurasGuide, TREATMENTS, SEASON_LABEL, seasonOf } from "@/lib/careSchedule";
+import { getPlantCurasGuide, SEASON_LABEL, seasonOf } from "@/lib/careSchedule";
 import { Bug, ShieldCheck, Clock, FlaskConical } from "lucide-react";
 import ReminderForm from "@/components/quinta/ReminderForm";
 

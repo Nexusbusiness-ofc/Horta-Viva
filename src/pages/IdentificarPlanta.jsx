@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, Camera, Loader2, Sparkles, Sun, Droplets, Sprout, 
   Bug, Calendar, Leaf, RotateCcw, X, BookOpen, Search,
-  CheckCircle2, AlertTriangle, AlertCircle, ShieldCheck, Scissors, ListChecks
+  CheckCircle2, AlertTriangle, ShieldCheck, Scissors, ListChecks
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { findPlantInCatalog } from "@/lib/aiService";

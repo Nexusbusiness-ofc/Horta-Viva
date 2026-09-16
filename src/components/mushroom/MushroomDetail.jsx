@@ -26,8 +26,8 @@ function Section({ icon: Icon, title, children, color }) {
 }
 
 export default function MushroomDetail({ mushroom, onClose }) {
-  if (!mushroom) return null;
   const [imageFailed, setImageFailed] = React.useState(false);
+  if (!mushroom) return null;
   const ed = EDIBILITY_STYLES[mushroom.edibility] || EDIBILITY_STYLES["Comestível"];
   const isDanger = mushroom.edibility === "Tóxico" || mushroom.edibility === "Mortal";
   const months = (mushroom.season_months || []).map(m => MONTH_NAMES[m]).join(" · ");

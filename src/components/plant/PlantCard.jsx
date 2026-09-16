@@ -1,5 +1,5 @@
 import React from "react";
-import { Sprout, Calendar, Sun, Droplets } from "lucide-react";
+import { Sprout, Sun, Droplets } from "lucide-react";
 import { Image } from "@/components/ui/image";
 
 const MONTH_SHORT = ["", "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];

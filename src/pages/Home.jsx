@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { Leaf, Loader2, Sprout, Camera, Star } from "lucide-react";
+import { Loader2, Sprout, Camera, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import SearchBar from "@/components/plant/SearchBar";
 import MonthSelector from "@/components/plant/MonthSelector";

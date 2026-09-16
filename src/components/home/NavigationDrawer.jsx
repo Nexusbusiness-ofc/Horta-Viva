@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, Smartphone } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { IconResumo, IconQuinta, IconCuras, IconPodas, IconAnimais, IconCogumelos, IconIdentificar, IconTarefas, IconPerfil } from "@/components/home/SectionIcons";
 import { usePWAInstall, IOSInstructionsModal } from "@/components/pwa/InstallPrompt";
 
 const SECTIONS = [

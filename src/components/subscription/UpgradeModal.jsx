@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Sparkles, Check, Lock, ShieldCheck, ArrowRight, ExternalLink, X, Sprout, PawPrint, Camera, MessageSquare, RefreshCw, Loader2 } from "lucide-react";
+import { Sparkles, Check, ShieldCheck, ArrowRight, X, RefreshCw, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import GoogleIcon from "@/components/GoogleIcon";
 import { syncSubscriptionWithGoogleAccount } from "@/lib/googleSync";
@@ -12,8 +12,7 @@ import {
   PLUS_PHOTO_LIMIT,
   PLUS_AI_LIMIT,
   FREE_PLANTATIONS_LIMIT,
-  FREE_ANIMALS_LIMIT,
-  FREE_AI_LIMIT
+  FREE_ANIMALS_LIMIT
 } from "@/lib/subscription";
 
 export default function UpgradeModal({ 

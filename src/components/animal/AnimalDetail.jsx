@@ -29,8 +29,8 @@ function Section({ icon: Icon, title, children, color }) {
 }
 
 export default function AnimalDetail({ animal, onClose }) {
-  if (!animal) return null;
   const [imageFailed, setImageFailed] = React.useState(false);
+  if (!animal) return null;
   const diff = DIFFICULTY_STYLES[animal.difficulty] || DIFFICULTY_STYLES["Fácil"];
   const effort = EFFORT_STYLES[animal.daily_effort] || EFFORT_STYLES["Médio"];
   const color = animal.color || "#c2410c";

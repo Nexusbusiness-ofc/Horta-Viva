@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Sun, Droplets, Sprout, Calendar, Package, Shovel, Heart, ClipboardList } from "lucide-react";
-import { cn } from "@/lib/utils";
 import PlantCareCalendar from "@/components/plant/PlantCareCalendar";
 import { Image } from "@/components/ui/image";
 
