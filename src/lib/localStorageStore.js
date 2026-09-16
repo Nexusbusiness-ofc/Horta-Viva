@@ -721,8 +721,24 @@ export function importFarmData(data, shouldMerge = true) {
     localStorage.removeItem(STORAGE_KEYS.LOGGED_OUT);
   }
 
+  // Uma licença master é local de propósito e não é incluída nas cópias Google.
+  // Não a podemos apagar quando a sincronização recebe uma cópia sem subscrição.
+  let localMasterSubscription = null;
+  try {
+    const rawSubscription = localStorage.getItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
+    const subscription = rawSubscription ? JSON.parse(rawSubscription) : null;
+    if (subscription?.active === true && (subscription.is_master === true || subscription.source === "master_code")) {
+      localMasterSubscription = subscription;
+    }
+  } catch {}
+
   // Sincronizar subscrição Pro/Plus da nuvem garantindo isolamento estrito entre contas
-  if (finalData.subscription && typeof finalData.subscription === "object" && finalData.subscription.active === true) {
+  if (localMasterSubscription) {
+    localStorage.setItem(STORAGE_KEYS.PRO_SUBSCRIPTION, JSON.stringify(localMasterSubscription));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hortaviva_subscription_changed", { detail: localMasterSubscription }));
+    }
+  } else if (finalData.subscription && typeof finalData.subscription === "object" && finalData.subscription.active === true) {
     localStorage.setItem(STORAGE_KEYS.PRO_SUBSCRIPTION, JSON.stringify(finalData.subscription));
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("hortaviva_subscription_changed", { detail: finalData.subscription }));
@@ -752,4 +768,3 @@ export function importFarmData(data, shouldMerge = true) {
     subscriptionRestored: Boolean(finalData.subscription?.active),
   };
 }
-

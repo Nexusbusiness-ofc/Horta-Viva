@@ -394,9 +394,6 @@ export function activateProSubscription(details = {}) {
     localStorage.setItem(STORAGE_KEYS.PRO_SUBSCRIPTION, JSON.stringify(subData));
     localStorage.removeItem(STORAGE_KEYS.LOGGED_OUT);
     localStorage.removeItem("hortaviva_logged_out");
-    localStorage.removeItem("hortaviva_monthly_usage_v2");
-    localStorage.removeItem("hortaviva_photo_identifications_count");
-    localStorage.removeItem("hortaviva_ai_usage_count");
     emitSubscriptionChange();
     return true;
   } catch {
