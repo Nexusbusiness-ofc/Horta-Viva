@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Sparkles, Send, Loader2, Camera } from "lucide-react";
 import { Link } from "react-router-dom";
-import { visionBase44 } from "@/api/visionClient";
+import { askGeminiAgriculturalAI } from "@/api/geminiClient";
 import { useSubscription, incrementAIUsage, PLUS_AI_LIMIT, FREE_AI_LIMIT } from "@/lib/subscription";
 import UpgradeModal from "@/components/subscription/UpgradeModal";
 
@@ -66,10 +66,7 @@ Pergunta do utilizador: "${question}"
 
 Responde de forma clara, prática e direta em português europeu. Se a pergunta for sobre o que plantar agora, usa os dados acima para recomendar plantas cujos meses de sementeira ou plantação incluem o mês atual. Se for sobre uma planta específica, dá instruções práticas. Se não souberes exactamente, usa o teu conhecimento geral sobre hortas em Portugal. Sê conciso mas completo.`;
 
-      const res = await visionBase44.integrations.Core.InvokeLLM({
-        prompt,
-        model: "gemini_3_flash",
-      });
+      const res = await askGeminiAgriculturalAI(prompt);
 
       setMessages(prev => [...prev, { role: "assistant", text: res }]);
 

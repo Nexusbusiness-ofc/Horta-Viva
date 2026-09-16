@@ -24,14 +24,14 @@ export function hasGeminiKey() {
 }
 
 /**
- * Converte um dataURL (data:image/jpeg;base64,...) em formato inline_data do Gemini
+ * Converte um dataURL (data:image/jpeg;base64,...) em formato inlineData do Gemini
  */
 function parseDataUrl(dataUrl) {
   if (typeof dataUrl !== "string") return null;
   const match = dataUrl.match(/^data:([^;]+);base64,(.*)$/);
   if (!match) return null;
   return {
-    mime_type: match[1],
+    mimeType: match[1],
     data: match[2],
   };
 }
@@ -43,7 +43,7 @@ export async function callGemini({
   prompt,
   fileUrls = [],
   responseJsonSchema = null,
-  model = "gemini-2.5-flash",
+  model = "gemini-3.6-flash",
 }) {
   const apiKey = getStoredGeminiKey();
   if (!apiKey) {
@@ -58,7 +58,7 @@ export async function callGemini({
   for (const url of fileUrls) {
     const inline = parseDataUrl(url);
     if (inline) {
-      parts.push({ inline_data: inline });
+      parts.push({ inlineData: inline });
     }
   }
 
@@ -71,12 +71,13 @@ export async function callGemini({
 
   if (responseJsonSchema) {
     payload.generationConfig = {
-      response_mime_type: "application/json",
+      responseMimeType: "application/json",
+      responseSchema: responseJsonSchema,
     };
   }
 
-  // Tentar primeiro gemini-2.5-flash, depois gemini-1.5-flash se houver erro de modelo
-  const modelsToTry = [model, "gemini-2.5-flash", "gemini-1.5-flash"];
+  // Tentar primeiro gemini-3.6-flash
+  const modelsToTry = [model, "gemini-3.6-flash"];
   const uniqueModels = [...new Set(modelsToTry)];
 
   let lastError = null;

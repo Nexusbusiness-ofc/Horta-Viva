@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { findPlantInCatalog } from "@/lib/aiService";
-import { visionBase44 } from "@/api/visionClient";
+import { identifyPlantWithGemini } from "@/api/geminiClient";
 import { DEFAULT_PLANTS } from "@/lib/plantsData";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
 import { useSubscription, incrementPhotoUsage, activateProSubscription, activatePlusSubscription, PLUS_PHOTO_LIMIT, FREE_IDENTIFICATION_LIMIT } from "@/lib/subscription";
@@ -112,13 +112,11 @@ export default function IdentificarPlanta() {
     setLoading(true);
     setResult(null);
     try {
-      const { file_url } = await visionBase44.integrations.Core.UploadFile({ file: image });
-      const aiResult = await visionBase44.integrations.Core.InvokeLLM({
-        prompt: PLANT_IDENTIFICATION_PROMPT,
-        model: "gemini_3_flash",
-        file_urls: [file_url],
-        response_json_schema: SCHEMA,
-      });
+      const aiResult = await identifyPlantWithGemini(
+        image,
+        PLANT_IDENTIFICATION_PROMPT,
+        SCHEMA
+      );
       setResult(combineWithCatalog(aiResult));
       if (!isPro) {
         const updatedCount = incrementPhotoUsage();
