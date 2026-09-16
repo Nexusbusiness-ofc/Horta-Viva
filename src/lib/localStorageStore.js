@@ -9,6 +9,7 @@ const STORAGE_KEYS = {
   USER: "hortaviva_current_user",
   TOKEN: "base44_access_token",
   LOGGED_OUT: "hortaviva_logged_out",
+  PRO_SUBSCRIPTION: "hortaviva_pro_subscription",
 };
 
 export const DEFAULT_USER = {
@@ -440,12 +441,14 @@ export function exportFarmData() {
   const reminders = JSON.parse(localStorage.getItem(STORAGE_KEYS.REMINDERS) || "[]");
   const user = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || "null");
   const deletedIds = JSON.parse(localStorage.getItem("hortaviva_deleted_ids") || "{}");
+  const subscription = JSON.parse(localStorage.getItem(STORAGE_KEYS.PRO_SUBSCRIPTION) || "null");
 
   return {
-    version: 2,
+    version: 3,
     appName: "Horta Viva",
     exportedAt: new Date().toISOString(),
     user,
+    subscription,
     deletedIds,
     plantings,
     myAnimals,
@@ -552,11 +555,39 @@ export function mergeFarmData(local, remote) {
     }
   }
 
+  // 4. Fusão inteligente de subscrição Pro / Plus
+  const getSubRank = (sub) => {
+    if (!sub || sub.active !== true) return 0;
+    if (sub.is_master || sub.plan === "lifetime") return 3;
+    if (sub.tier === "pro" || sub.plan === "pro") return 2;
+    if (sub.tier === "plus" || sub.plan === "plus") return 1;
+    return 1;
+  };
+
+  let mergedSubscription = null;
+  const localSub = local?.subscription || null;
+  const remoteSub = remote?.subscription || null;
+  const localRank = getSubRank(localSub);
+  const remoteRank = getSubRank(remoteSub);
+
+  if (remoteRank > localRank) {
+    mergedSubscription = remoteSub;
+  } else if (localRank > remoteRank) {
+    mergedSubscription = localSub;
+  } else if (localRank > 0 && remoteRank > 0) {
+    const localTime = localSub.activated_at ? new Date(localSub.activated_at).getTime() : 0;
+    const remoteTime = remoteSub.activated_at ? new Date(remoteSub.activated_at).getTime() : 0;
+    mergedSubscription = remoteTime >= localTime ? remoteSub : localSub;
+  } else {
+    mergedSubscription = localSub || remoteSub || null;
+  }
+
   return {
-    version: 2,
+    version: 3,
     appName: "Horta Viva",
     exportedAt: new Date().toISOString(),
     user: remote?.user || local?.user,
+    subscription: mergedSubscription,
     deletedIds,
     plantings: Array.from(plantingsMap.values()),
     myAnimals: Array.from(animalsMap.values()),
@@ -603,6 +634,16 @@ export function importFarmData(data, shouldMerge = true) {
     localStorage.removeItem(STORAGE_KEYS.LOGGED_OUT);
   }
 
+  // Sincronizar subscrição Pro/Plus da nuvem
+  if (finalData.subscription && typeof finalData.subscription === "object") {
+    if (finalData.subscription.active === true) {
+      localStorage.setItem(STORAGE_KEYS.PRO_SUBSCRIPTION, JSON.stringify(finalData.subscription));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("hortaviva_subscription_changed", { detail: finalData.subscription }));
+      }
+    }
+  }
+
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("hortaviva_remote_updated"));
     const finalUser = (() => {
@@ -618,6 +659,7 @@ export function importFarmData(data, shouldMerge = true) {
     plantingsCount: finalData.plantings?.length || 0,
     animalsCount: finalData.myAnimals?.length || 0,
     remindersCount: finalData.reminders?.length || 0,
+    subscriptionRestored: Boolean(finalData.subscription?.active),
   };
 }
 

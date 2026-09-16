@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { Sparkles, Check, Lock, ShieldCheck, ArrowRight, ExternalLink, X, Sprout, PawPrint, Camera, MessageSquare } from "lucide-react";
+import { Sparkles, Check, Lock, ShieldCheck, ArrowRight, ExternalLink, X, Sprout, PawPrint, Camera, MessageSquare, RefreshCw, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import GoogleIcon from "@/components/GoogleIcon";
+import { syncSubscriptionWithGoogleAccount } from "@/lib/googleSync";
 import { 
-  STRIPE_PAYMENT_LINK, 
-  STRIPE_PLUS_PAYMENT_LINK, 
-  activateProSubscription, 
+  getCheckoutUrl,
+  validateAndActivateSubscription,
   useSubscription,
   PLUS_PLANTATIONS_LIMIT,
   PLUS_ANIMALS_LIMIT,
@@ -27,24 +28,60 @@ export default function UpgradeModal({
   const [showRestore, setShowRestore] = useState(false);
   const [emailInput, setEmailInput] = useState("");
   const [restoreSuccess, setRestoreSuccess] = useState(false);
+  const [syncingGoogle, setSyncingGoogle] = useState(false);
+  const [restoreMessage, setRestoreMessage] = useState(null);
   const { isPro, isPlus, tier } = useSubscription();
 
   if (!isOpen) return null;
 
   const handleSubscribe = () => {
-    const url = selectedPlan === "plus" ? STRIPE_PLUS_PAYMENT_LINK : STRIPE_PAYMENT_LINK;
+    const url = getCheckoutUrl(selectedPlan);
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  const handleRestore = (e) => {
+  const handleGoogleRestore = async () => {
+    setSyncingGoogle(true);
+    setRestoreMessage(null);
+    try {
+      const res = await syncSubscriptionWithGoogleAccount(true);
+      if (res.success && res.restored) {
+        setRestoreSuccess(true);
+        setRestoreMessage({
+          type: "success",
+          text: `Subscrição ${res.tier === "pro" ? "Pro" : "Plus"} sincronizada com sucesso com a Conta Google!`,
+        });
+        setTimeout(() => {
+          onClose();
+        }, 1600);
+      } else {
+        setRestoreMessage({
+          type: "error",
+          text: `Nenhuma subscrição ativa encontrada na Conta Google (${res.email || "atual"}). Se subscreveste com outra conta, inicia sessão com essa conta.`,
+        });
+      }
+    } catch (err) {
+      setRestoreMessage({
+        type: "error",
+        text: err?.message || "Erro ao conectar à Conta Google.",
+      });
+    } finally {
+      setSyncingGoogle(false);
+    }
+  };
+
+  const handleManualRestore = (e) => {
     e.preventDefault();
     if (!emailInput.trim()) return;
-    const input = emailInput.trim();
-    activateProSubscription({ email: input });
-    setRestoreSuccess(true);
-    setTimeout(() => {
-      onClose();
-    }, 1500);
+    const validation = validateAndActivateSubscription(emailInput.trim());
+    if (validation.success) {
+      setRestoreSuccess(true);
+      setRestoreMessage({ type: "success", text: validation.message });
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } else {
+      setRestoreMessage({ type: "error", text: validation.error });
+    }
   };
 
   const getHeaderInfo = () => {
@@ -327,40 +364,86 @@ export default function UpgradeModal({
             </div>
           )}
 
-          {/* Restaurar subscrição */}
-          <div className="text-center pt-1">
+          {/* Restaurar subscrição com Conta Google */}
+          <div className="text-center pt-1 border-t border-stone-100 mt-2">
             {!showRestore ? (
               <button
                 type="button"
                 onClick={() => setShowRestore(true)}
-                className="text-[11px] text-stone-400 hover:text-stone-600 underline"
+                className="text-[11px] text-stone-500 hover:text-emerald-700 underline font-medium inline-flex items-center gap-1"
               >
-                Já subscreveste? Ativar neste dispositivo
+                <RefreshCw className="w-3 h-3" />
+                <span>Já subscreveste noutro dispositivo? Sincronizar Pro</span>
               </button>
             ) : restoreSuccess ? (
-              <p className="text-xs text-emerald-600 font-bold">
-                ✅ Subscrição ativada com sucesso!
-              </p>
+              <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-center">
+                <p className="text-xs text-emerald-700 font-bold">
+                  ✅ Subscrição restaurada com sucesso!
+                </p>
+                {restoreMessage && (
+                  <p className="text-[11px] text-emerald-600 mt-1">{restoreMessage.text}</p>
+                )}
+              </div>
             ) : (
-              <form onSubmit={handleRestore} className="space-y-2 mt-2 bg-stone-50 p-3 rounded-2xl border border-stone-200/80">
-                <p className="text-[11px] text-stone-600">Introduz o teu email da compra para ativar:</p>
-                <div className="flex gap-1.5">
-                  <input
-                    type="text"
-                    required
-                    placeholder="teu.email@exemplo.com"
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    className="flex-1 bg-white border border-stone-200 rounded-xl px-2.5 py-1.5 text-xs text-stone-800 outline-none focus:border-emerald-500"
-                  />
-                  <button
-                    type="submit"
-                    className="bg-emerald-600 text-white font-bold text-xs px-3 py-1.5 rounded-xl hover:bg-emerald-700 transition-colors"
-                  >
-                    Ativar
-                  </button>
+              <div className="space-y-2.5 mt-2 bg-stone-50 p-3.5 rounded-2xl border border-stone-200/80 text-left">
+                <div>
+                  <h4 className="text-xs font-bold text-stone-800 flex items-center gap-1.5">
+                    <RefreshCw className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Sincronizar com a Conta Google</span>
+                  </h4>
+                  <p className="text-[11px] text-stone-500 mt-0.5 leading-relaxed">
+                    A tua subscrição fica guardada na tua Conta Google. Ao sincronizares, o teu plano Pro é ativado automaticamente neste dispositivo.
+                  </p>
                 </div>
-              </form>
+
+                <button
+                  type="button"
+                  onClick={handleGoogleRestore}
+                  disabled={syncingGoogle}
+                  className="w-full flex items-center justify-center gap-2 bg-white hover:bg-stone-100 text-stone-800 font-bold text-xs py-2.5 px-3 rounded-xl border border-stone-200 shadow-2xs transition-all disabled:opacity-60"
+                >
+                  {syncingGoogle ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
+                      <span>A verificar Conta Google...</span>
+                    </>
+                  ) : (
+                    <>
+                      <GoogleIcon className="w-4 h-4" />
+                      <span>Sincronizar Subscrição da Conta Google</span>
+                    </>
+                  )}
+                </button>
+
+                {restoreMessage && (
+                  <p className={`text-[11px] font-medium p-2 rounded-lg ${
+                    restoreMessage.type === "success" 
+                      ? "bg-emerald-100 text-emerald-800" 
+                      : "bg-amber-100 text-amber-900 border border-amber-200"
+                  }`}>
+                    {restoreMessage.text}
+                  </p>
+                )}
+
+                <form onSubmit={handleManualRestore} className="pt-2 border-t border-stone-200/60">
+                  <p className="text-[10px] text-stone-500 mb-1">Tens um código master de ativação?</p>
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      placeholder="Código de ativação"
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      className="flex-1 bg-white border border-stone-200 rounded-xl px-2.5 py-1 text-xs text-stone-800 outline-none focus:border-emerald-500"
+                    />
+                    <button
+                      type="submit"
+                      className="bg-stone-800 hover:bg-stone-900 text-white font-bold text-xs px-3 py-1 rounded-xl transition-colors shrink-0"
+                    >
+                      Validar
+                    </button>
+                  </div>
+                </form>
+              </div>
             )}
           </div>
         </div>

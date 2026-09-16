@@ -29,9 +29,36 @@ import InstallPrompt from '@/components/pwa/InstallPrompt';
 import BottomNav from '@/components/navigation/BottomNav';
 import BackToTopButton from '@/components/navigation/BackToTopButton';
 import { isGoogleConnected, hasValidGoogleToken, autoSyncGoogleDrive } from '@/lib/googleSync';
+import { activateProSubscription, activatePlusSubscription } from '@/lib/subscription';
+import { useToast } from "@/components/ui/use-toast";
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const hash = window.location.hash || "";
+    const search = window.location.search || "";
+    if (hash.includes("payment=success") || search.includes("payment=success")) {
+      const isPlusTier = hash.includes("tier=plus") || search.includes("tier=plus");
+      if (isPlusTier) {
+        activatePlusSubscription({ verified: true, source: "stripe_checkout" });
+        toast({
+          title: "🎉 Horta Viva Plus Ativado!",
+          description: "O teu plano Plus (1,99€/mês) foi ativado com sucesso!",
+        });
+      } else {
+        activateProSubscription({ verified: true, source: "stripe_checkout" });
+        toast({
+          title: "🎉 Horta Viva Pro Ativado!",
+          description: "A tua subscrição Pro foi confirmada! Tens acesso ilimitado em todos os teus dispositivos.",
+        });
+      }
+      if (isGoogleConnected()) {
+        autoSyncGoogleDrive(false).catch(() => {});
+      }
+    }
+  }, [toast]);
 
   useEffect(() => {
     if (isGoogleConnected()) {

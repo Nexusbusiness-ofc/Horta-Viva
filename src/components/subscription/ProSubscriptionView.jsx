@@ -1,13 +1,18 @@
 import React, { useState } from "react";
 import { 
   Sparkles, Check, ArrowRight, ShieldCheck, Camera, 
-  Sprout, PawPrint, Bug, RefreshCw, ChevronDown, ChevronUp
+  Sprout, PawPrint, Bug, RefreshCw, ChevronDown, ChevronUp, Loader2
 } from "lucide-react";
+import GoogleIcon from "@/components/GoogleIcon";
 import { 
-  STRIPE_PAYMENT_LINK, 
-  STRIPE_PLUS_PAYMENT_LINK,
+  syncSubscriptionWithGoogleAccount, 
+  isGoogleConnected, 
+  getGoogleUser 
+} from "@/lib/googleSync";
+import { 
+  getCheckoutUrl,
+  validateAndActivateSubscription,
   useSubscription, 
-  activateProSubscription, 
   FREE_PLANTATIONS_LIMIT,
   FREE_ANIMALS_LIMIT,
   FREE_AI_LIMIT,
@@ -27,28 +32,59 @@ export default function ProSubscriptionView({ onSubscribed }) {
   const { toast } = useToast();
 
   const handleSubscribePro = () => {
-    window.open(STRIPE_PAYMENT_LINK, "_blank", "noopener,noreferrer");
+    window.open(getCheckoutUrl("pro"), "_blank", "noopener,noreferrer");
   };
 
   const handleSubscribePlus = () => {
-    window.open(STRIPE_PLUS_PAYMENT_LINK, "_blank", "noopener,noreferrer");
+    window.open(getCheckoutUrl("plus"), "_blank", "noopener,noreferrer");
+  };
+
+  const handleGoogleSyncRestore = async () => {
+    setRestoring(true);
+    try {
+      const res = await syncSubscriptionWithGoogleAccount(true);
+      if (res.success && res.restored) {
+        toast({
+          title: `🎉 Subscrição ${res.tier === "pro" ? "Pro" : "Plus"} Sincronizada!`,
+          description: `A tua subscrição foi restaurada com sucesso através da Conta Google (${res.email}).`,
+        });
+        if (onSubscribed) onSubscribed();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Nenhuma subscrição encontrada",
+          description: `Não foi encontrada nenhuma subscrição Pro ou Plus ativa na Conta Google (${res.email || "atual"}). Se compraste com outra conta, inicia sessão com essa conta.`,
+        });
+      }
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Erro na sincronização Google",
+        description: err?.message || String(err),
+      });
+    } finally {
+      setRestoring(false);
+    }
   };
 
   const handleRestore = (e) => {
     e.preventDefault();
     if (!emailInput.trim()) return;
-    const input = emailInput.trim();
-    setRestoring(true);
-    setTimeout(() => {
-      activateProSubscription({ email: input });
-      setRestoring(false);
+    const validation = validateAndActivateSubscription(emailInput.trim());
+    if (validation.success) {
       toast({
-        title: "🎉 Subscrição ativada!",
-        description: "Acesso desbloqueado com sucesso neste dispositivo.",
+        title: "🎉 Código Validado!",
+        description: validation.message,
       });
       setEmailInput("");
       if (onSubscribed) onSubscribed();
-    }, 600);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Código ou Email Não Válido",
+        description: validation.error,
+      });
+    }
   };
 
   const faqs = [
@@ -381,31 +417,94 @@ export default function ProSubscriptionView({ onSubscribed }) {
         </div>
       </div>
 
-      {/* Secção de Restauro de Subscrição */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-stone-200/80 shadow-xs">
-        <div className="flex items-center gap-2 mb-2">
-          <RefreshCw className="w-4 h-4 text-teal-600" />
-          <h3 className="text-sm font-bold text-stone-800">Já subscreveste noutro telemóvel?</h3>
+      {/* Secção de Restauro e Sincronização via Conta Google */}
+      <div className="bg-gradient-to-br from-white to-emerald-50/30 rounded-3xl p-5 sm:p-6 border border-emerald-100/80 shadow-xs space-y-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 shrink-0">
+            <RefreshCw className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm sm:text-base font-bold text-stone-800">
+              Sincronização com a Conta Google (Multi-dispositivo)
+            </h3>
+            <p className="text-xs text-stone-500">
+              Usa o teu plano Pro ou Plus em qualquer telemóvel, tablet ou computador.
+            </p>
+          </div>
         </div>
-        <p className="text-xs text-stone-500 mb-3.5">
-          Se já realizaste o pagamento através da Stripe, insere o teu e-mail de compra para sincronizar a subscrição neste dispositivo:
+
+        <p className="text-xs text-stone-600 leading-relaxed">
+          A tua subscrição Pro ou Plus fica vinculada à tua <strong>Conta Google</strong>. Sempre que iniciares sessão com a mesma conta Google noutro dispositivo, o teu plano é sincronizado e ativado de imediato sem teres de pagar novamente.
         </p>
-        <form onSubmit={handleRestore} className="flex flex-col sm:flex-row gap-2">
-          <input
-            type="text"
-            required
-            placeholder="teu.email@exemplo.com"
-            value={emailInput}
-            onChange={(e) => setEmailInput(e.target.value)}
-            className="flex-1 bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-stone-800 outline-none focus:border-emerald-500 transition-colors"
-          />
-          <button
-            type="submit"
-            disabled={restoring}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl transition-all active:scale-95 disabled:opacity-50 whitespace-nowrap"
-          >
-            {restoring ? "A verificar..." : "Ativar neste dispositivo"}
-          </button>
+
+        {isGoogleConnected() ? (
+          <div className="bg-white p-3.5 rounded-2xl border border-emerald-200/80 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-stone-500">Conta Google ativa:</span>
+              <span className="font-bold text-emerald-800">{getGoogleUser()?.email || "Ligada"}</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleGoogleSyncRestore}
+              disabled={restoring}
+              className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs sm:text-sm py-2.5 px-4 rounded-xl shadow-xs transition-all active:scale-95 disabled:opacity-50"
+            >
+              {restoring ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>A sincronizar com a Conta Google...</span>
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Sincronizar Subscrição da Conta Google</span>
+                </>
+              )}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={handleGoogleSyncRestore}
+              disabled={restoring}
+              className="w-full inline-flex items-center justify-center gap-2 bg-white hover:bg-stone-50 text-stone-800 font-bold text-xs sm:text-sm py-3 px-4 rounded-xl border border-stone-200 shadow-2xs transition-all active:scale-95 disabled:opacity-50"
+            >
+              {restoring ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
+                  <span>A ligar à Conta Google...</span>
+                </>
+              ) : (
+                <>
+                  <GoogleIcon className="w-4 h-4" />
+                  <span>Entrar com a Conta Google para Sincronizar Pro</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
+        <form onSubmit={handleRestore} className="pt-2 border-t border-stone-200/60">
+          <p className="text-[11px] text-stone-500 mb-1.5 font-medium">
+            Tens um código master de ativação de administrador?
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Código de ativação"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              className="flex-1 bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-stone-800 outline-none focus:border-emerald-500 transition-colors"
+            />
+            <button
+              type="submit"
+              disabled={restoring}
+              className="bg-stone-800 hover:bg-stone-900 text-white font-bold text-xs sm:text-sm px-4 py-2 rounded-xl transition-all active:scale-95 disabled:opacity-50 shrink-0"
+            >
+              Validar Código
+            </button>
+          </div>
         </form>
       </div>
 

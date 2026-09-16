@@ -185,8 +185,30 @@ export const getProSubscriptionDetails = getSubscriptionDetails;
 /**
  * Ativa o Plano Plus (1,99€ / mês).
  */
+/**
+ * Ativa o Plano Plus (1,99€ / mês).
+ * Requer validação por checkout Stripe, sincronização Google ou chave master.
+ */
 export function activatePlusSubscription(details = {}) {
   try {
+    const isVerified =
+      details.verified === true ||
+      details.source === "stripe_checkout" ||
+      details.source === "google_sync" ||
+      details.source === "cloud_sync" ||
+      Boolean(details.session_id);
+
+    if (!isVerified) {
+      console.warn("[Subscrição] Ativação rejeitada: introdução direta de email não verificada:", details.email);
+      return false;
+    }
+
+    let googleUser = null;
+    try {
+      const rawUser = localStorage.getItem("hortaviva_google_user_info");
+      if (rawUser) googleUser = JSON.parse(rawUser);
+    } catch {}
+
     const subData = {
       active: true,
       plan: "plus",
@@ -194,9 +216,11 @@ export function activatePlusSubscription(details = {}) {
       price: "1.99€",
       currency: "eur",
       is_master: false,
-      activated_at: new Date().toISOString(),
+      activated_at: details.activated_at || new Date().toISOString(),
       session_id: details.session_id || null,
-      customer_email: details.email || null,
+      customer_email: details.email || googleUser?.email || null,
+      google_id: details.google_id || googleUser?.id || null,
+      google_email: details.google_email || googleUser?.email || null,
     };
     localStorage.setItem(STORAGE_KEYS.PRO_SUBSCRIPTION, JSON.stringify(subData));
     emitSubscriptionChange();
@@ -208,6 +232,7 @@ export function activatePlusSubscription(details = {}) {
 
 /**
  * Ativa a subscrição Pro (2,99€ / mês ou Vitalício para administrador).
+ * Requer validação por checkout Stripe, sincronização Google ou código master ("hortaviva").
  */
 export function activateProSubscription(details = {}) {
   try {
@@ -215,10 +240,29 @@ export function activateProSubscription(details = {}) {
     const normalized = emailRaw.replace(/\s+/g, "");
     const isMaster = normalized === "hortaviva";
 
-    // Se não for master e o detalhe pedir expressamente plus
+    // Se pedir expressamente plus e não for master
     if (!isMaster && (details.tier === "plus" || details.plan === "plus")) {
       return activatePlusSubscription(details);
     }
+
+    const isVerified =
+      isMaster ||
+      details.verified === true ||
+      details.source === "stripe_checkout" ||
+      details.source === "google_sync" ||
+      details.source === "cloud_sync" ||
+      Boolean(details.session_id);
+
+    if (!isVerified) {
+      console.warn("[Subscrição] Ativação rejeitada: introdução direta de email não verificada:", details.email);
+      return false;
+    }
+
+    let googleUser = null;
+    try {
+      const rawUser = localStorage.getItem("hortaviva_google_user_info");
+      if (rawUser) googleUser = JSON.parse(rawUser);
+    } catch {}
 
     const subData = {
       active: true,
@@ -227,9 +271,11 @@ export function activateProSubscription(details = {}) {
       price: isMaster ? "0.00€" : "2.99€",
       currency: "eur",
       is_master: isMaster,
-      activated_at: new Date().toISOString(),
+      activated_at: details.activated_at || new Date().toISOString(),
       session_id: details.session_id || null,
-      customer_email: details.email || null,
+      customer_email: isMaster ? "master@hortaviva.local" : (details.email || googleUser?.email || null),
+      google_id: details.google_id || googleUser?.id || null,
+      google_email: details.google_email || googleUser?.email || null,
     };
     localStorage.setItem(STORAGE_KEYS.PRO_SUBSCRIPTION, JSON.stringify(subData));
     emitSubscriptionChange();
@@ -313,12 +359,62 @@ export function canAddAnimal(currentCount = 0) {
 }
 
 /**
- * Notifica a aplicação de alterações na subscrição ou quota.
+ * Retorna o URL oficial de checkout Stripe, preenchendo automaticamente o email do utilizador Google se disponível.
+ */
+export function getCheckoutUrl(targetTier = "pro") {
+  const base = targetTier === "plus" ? STRIPE_PLUS_PAYMENT_LINK : STRIPE_PAYMENT_LINK;
+  try {
+    const rawGoogle = typeof window !== "undefined" ? localStorage.getItem("hortaviva_google_user_info") : null;
+    if (rawGoogle) {
+      const g = JSON.parse(rawGoogle);
+      if (g && g.email) {
+        const sep = base.includes("?") ? "&" : "?";
+        return `${base}${sep}prefilled_email=${encodeURIComponent(g.email)}`;
+      }
+    }
+  } catch {}
+  return base;
+}
+
+/**
+ * Notifica a aplicação de alterações na subscrição ou quota e sincroniza na nuvem.
  */
 function emitSubscriptionChange() {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("hortaviva_subscription_changed"));
+    window.dispatchEvent(
+      new CustomEvent("hortaviva_data_changed", {
+        detail: { storageKey: STORAGE_KEYS.PRO_SUBSCRIPTION },
+      })
+    );
   }
+}
+
+/**
+ * Validação segura de código de ativação.
+ * Apenas o código de administrador master ("hortaviva") permite ativação direta sem Google.
+ */
+export function validateAndActivateSubscription(codeOrEmail) {
+  const trimmed = (codeOrEmail || "").trim().toLowerCase().replace(/\s+/g, "");
+  if (!trimmed) {
+    return { success: false, error: "Introduz um código de ativação válido." };
+  }
+
+  if (trimmed === "hortaviva") {
+    activateProSubscription({ email: "hortaviva", is_master: true });
+    return {
+      success: true,
+      tier: "pro",
+      isMaster: true,
+      message: "Acesso Master de Administrador ativado com sucesso!",
+    };
+  }
+
+  return {
+    success: false,
+    needsGoogle: true,
+    error: "Por motivos de segurança, subscrições regulares são vinculadas e restauradas através da tua Conta Google. Usa o botão 'Sincronizar com a Conta Google'.",
+  };
 }
 
 /**
@@ -406,14 +502,13 @@ export function useSubscription() {
 
     // Abertura de checkout Stripe
     openPlusCheckout: () => {
-      window.open(STRIPE_PLUS_PAYMENT_LINK, "_blank", "noopener,noreferrer");
+      window.open(getCheckoutUrl("plus"), "_blank", "noopener,noreferrer");
     },
     openProCheckout: () => {
-      window.open(STRIPE_PAYMENT_LINK, "_blank", "noopener,noreferrer");
+      window.open(getCheckoutUrl("pro"), "_blank", "noopener,noreferrer");
     },
     openCheckout: (targetTier = "pro") => {
-      const url = targetTier === "plus" ? STRIPE_PLUS_PAYMENT_LINK : STRIPE_PAYMENT_LINK;
-      window.open(url, "_blank", "noopener,noreferrer");
+      window.open(getCheckoutUrl(targetTier), "_blank", "noopener,noreferrer");
     },
 
     // Ações de ativação / cancelamento

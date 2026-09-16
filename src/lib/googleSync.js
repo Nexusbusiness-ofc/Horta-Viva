@@ -203,6 +203,26 @@ export async function connectGoogleDrive(options = {}) {
             console.warn("Não foi possível carregar o perfil Google detalhado:", e);
           }
 
+          // Vincular subscrição ativa à conta Google recém-ligada
+          try {
+            const rawSub = localStorage.getItem("hortaviva_pro_subscription");
+            if (rawSub) {
+              const sub = JSON.parse(rawSub);
+              if (sub && sub.active) {
+                const updatedSub = {
+                  ...sub,
+                  customer_email: sub.customer_email || googleUser.email,
+                  google_id: googleUser.id,
+                  google_email: googleUser.email,
+                };
+                localStorage.setItem("hortaviva_pro_subscription", JSON.stringify(updatedSub));
+                window.dispatchEvent(new CustomEvent("hortaviva_subscription_changed"));
+              }
+            }
+          } catch (subErr) {
+            console.warn("Erro ao vincular subscrição à conta Google:", subErr);
+          }
+
           notifySyncState("synced", "Ligado com sucesso à conta Google.");
           resolve(accessToken);
         },
@@ -421,8 +441,16 @@ export async function autoSyncGoogleDrive(interactive = false) {
         const mergedPlantingsCount = mergedData.plantings?.length || 0;
         const mergedAnimalsCount = mergedData.myAnimals?.length || 0;
 
-        // Se local continha itens novos que a nuvem não tinha, atualiza a nuvem com os dados fundidos
-        if (mergedPlantingsCount > remotePlantingsCount || mergedAnimalsCount > remoteAnimalsCount) {
+        // Se local continha itens novos ou subscrição ativa que a nuvem não tinha, atualiza a nuvem com os dados fundidos
+        const localHasSub = Boolean(localData?.subscription?.active);
+        const remoteHasSub = Boolean(remoteData?.subscription?.active);
+        const subUpdated = localHasSub && !remoteHasSub;
+
+        if (
+          mergedPlantingsCount > remotePlantingsCount ||
+          mergedAnimalsCount > remoteAnimalsCount ||
+          subUpdated
+        ) {
           const jsonContent = JSON.stringify(mergedData, null, 2);
           await fetch(
             `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
@@ -461,7 +489,49 @@ export async function autoSyncGoogleDrive(interactive = false) {
   }
 }
 
-// Auto-gravação automática em segundo plano a cada alteração na quinta
+/**
+ * Sincroniza e restaura a subscrição Pro/Plus vinculada à Conta Google
+ */
+export async function syncSubscriptionWithGoogleAccount(interactive = true) {
+  try {
+    notifySyncState("syncing", "A sincronizar subscrição com a Conta Google...");
+    if (!isGoogleConnected() || !hasValidGoogleToken()) {
+      await connectGoogleDrive({ prompt: interactive ? "select_account" : "" });
+    }
+    await downloadFromGoogleDrive(interactive);
+
+    const subRaw = localStorage.getItem("hortaviva_pro_subscription");
+    const sub = subRaw ? JSON.parse(subRaw) : null;
+    const isPro = sub && sub.active && (sub.tier === "pro" || sub.is_master || sub.plan === "lifetime");
+    const isPlus = sub && sub.active && (sub.tier === "plus" || sub.plan === "plus");
+    const googleUser = getGoogleUser();
+
+    if (isPro || isPlus) {
+      await uploadToGoogleDrive(false).catch(() => {});
+      return {
+        success: true,
+        restored: true,
+        tier: isPro ? "pro" : "plus",
+        email: googleUser?.email || sub.customer_email,
+      };
+    }
+
+    return {
+      success: false,
+      restored: false,
+      reason: "not_found",
+      email: googleUser?.email || "desconhecido",
+    };
+  } catch (err) {
+    return {
+      success: false,
+      restored: false,
+      error: err?.message || String(err),
+    };
+  }
+}
+
+// Auto-gravação automática em segundo plano a cada alteração na quinta ou subscrição
 let autoSyncDebounceTimer = null;
 if (typeof window !== "undefined") {
   window.addEventListener("hortaviva_data_changed", () => {
@@ -472,5 +542,15 @@ if (typeof window !== "undefined") {
         console.warn("[GoogleSync] Falha na auto-gravação:", err);
       });
     }, 1200);
+  });
+
+  window.addEventListener("hortaviva_subscription_changed", () => {
+    if (!isGoogleConnected()) return;
+    if (autoSyncDebounceTimer) clearTimeout(autoSyncDebounceTimer);
+    autoSyncDebounceTimer = setTimeout(() => {
+      autoSyncGoogleDrive(false).catch((err) => {
+        console.warn("[GoogleSync] Falha na sincronização de subscrição:", err);
+      });
+    }, 600);
   });
 }
