@@ -1,11 +1,16 @@
 {
-  "id": "./",
+  "id": "pt.hortaviva.app",
   "name": "Horta Viva — Guia de Cultivo",
   "short_name": "Horta Viva",
   "description": "Guia prático de cultivo, horta biológica, animais, podas, mondas e identificação de plantas por IA.",
-  "start_url": "./",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
+  "display_override": [
+    "standalone",
+    "window-controls-overlay",
+    "minimal-ui"
+  ],
   "orientation": "portrait-primary",
   "background_color": "#ffffff",
   "theme_color": "#059669",
@@ -14,14 +19,22 @@
   "categories": [
     "lifestyle",
     "education",
-    "utilities"
+    "utilities",
+    "food"
   ],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "./icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "./icons/icon-512x512.png",
@@ -40,6 +53,36 @@
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Minha Quinta",
+      "short_name": "Quinta",
+      "description": "Consultar as minhas plantações e animais",
+      "url": "./index.html#/minha-quinta",
+      "icons": [{ "src": "./icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Tarefas de Hoje",
+      "short_name": "Tarefas",
+      "description": "Rega, alimentação e cuidados diários",
+      "url": "./index.html#/tarefas-hoje",
+      "icons": [{ "src": "./icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Identificar Planta",
+      "short_name": "Identificar",
+      "description": "Tirar foto para identificar com IA",
+      "url": "./index.html#/identificar",
+      "icons": [{ "src": "./icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Animais da Quinta",
+      "short_name": "Animais",
+      "description": "Catálogo e guia de criação de animais",
+      "url": "./index.html#/animais",
+      "icons": [{ "src": "./icons/icon-192x192.png", "sizes": "192x192" }]
     }
   ]
 }
