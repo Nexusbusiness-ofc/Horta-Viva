@@ -129,15 +129,72 @@ export function incrementAIUsage() {
 }
 
 /**
+ * Retorna o email do utilizador autenticado ativo (Google ou Quinta).
+ */
+function getActiveUserEmail() {
+  try {
+    const rawGoogle = localStorage.getItem("hortaviva_google_user_info");
+    if (rawGoogle) {
+      const g = JSON.parse(rawGoogle);
+      if (g && g.email) return g.email.toLowerCase().trim();
+    }
+  } catch {}
+  try {
+    const rawUser = localStorage.getItem("hortaviva_current_user");
+    if (rawUser) {
+      const u = JSON.parse(rawUser);
+      if (u && u.email) return u.email.toLowerCase().trim();
+    }
+  } catch {}
+  return null;
+}
+
+/**
+ * Retorna o ID Google do utilizador ativo.
+ */
+function getActiveGoogleId() {
+  try {
+    const rawGoogle = localStorage.getItem("hortaviva_google_user_info");
+    if (rawGoogle) {
+      const g = JSON.parse(rawGoogle);
+      return g?.id || g?.sub || null;
+    }
+  } catch {}
+  return null;
+}
+
+/**
  * Retorna o escalão atual do utilizador: "pro", "plus" ou "free".
  */
 export function getUserTier() {
   try {
+    const isLoggedOut = localStorage.getItem("hortaviva_logged_out") === "true";
     const raw = localStorage.getItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
     if (!raw) return "free";
     const sub = JSON.parse(raw);
     if (!sub || sub.active !== true) return "free";
+
+    // 1. Chave Master de Administrador ("hortaviva") funciona sempre
     if (sub.is_master || sub.plan === "lifetime") return "pro";
+
+    // 2. Se o utilizador fez logout explícito, subscrições regulares ficam inativas
+    if (isLoggedOut) return "free";
+
+    // 3. Validação de posse por conta autenticada
+    const activeEmail = getActiveUserEmail();
+    const activeGoogleId = getActiveGoogleId();
+    const subEmail = (sub.google_email || sub.customer_email || "").toLowerCase().trim();
+    const subGoogleId = sub.google_id || null;
+
+    // Se a subscrição estiver associada a um email e a sessão atual for de outro email, não ativar
+    if (subEmail && activeEmail && subEmail !== activeEmail) {
+      return "free";
+    }
+    // Se a subscrição estiver associada a um Google ID e a sessão for de outro Google ID, não ativar
+    if (subGoogleId && activeGoogleId && subGoogleId !== activeGoogleId) {
+      return "free";
+    }
+
     if (sub.tier === "plus" || sub.plan === "plus" || sub.price === "1.99€") return "plus";
     return "pro";
   } catch {
@@ -168,13 +225,32 @@ export function isPaidSubscriber() {
 }
 
 /**
- * Retorna os detalhes da subscrição ativa ou null.
+ * Retorna os detalhes da subscrição ativa ou null se inválida ou de outra conta.
  */
 export function getSubscriptionDetails() {
   try {
+    const isLoggedOut = localStorage.getItem("hortaviva_logged_out") === "true";
     const raw = localStorage.getItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
     if (!raw) return null;
-    return JSON.parse(raw);
+    const sub = JSON.parse(raw);
+    if (!sub || !sub.active) return null;
+
+    // Chave Master funciona sempre
+    if (sub.is_master || sub.plan === "lifetime") return sub;
+
+    // Se fez logout explícito
+    if (isLoggedOut) return null;
+
+    // Validação de titularidade da conta
+    const activeEmail = getActiveUserEmail();
+    const activeGoogleId = getActiveGoogleId();
+    const subEmail = (sub.google_email || sub.customer_email || "").toLowerCase().trim();
+    const subGoogleId = sub.google_id || null;
+
+    if (subEmail && activeEmail && subEmail !== activeEmail) return null;
+    if (subGoogleId && activeGoogleId && subGoogleId !== activeGoogleId) return null;
+
+    return sub;
   } catch {
     return null;
   }

@@ -160,68 +160,81 @@ export async function connectGoogleDrive(options = {}) {
           localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
           localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES_AT, String(expiresAt));
 
-          // 2. Criar imediatamente um utilizador Google autenticado localmente
-          let googleUser = {
-            id: `google_${Date.now()}`,
-            email: "agricultor.google@gmail.com",
-            name: "Agricultor Google",
-            full_name: "Agricultor Google",
-            picture: "",
-            avatar_url: "",
-            avatar_emoji: "🌾",
-            auth_provider: "google",
-          };
+          const prevGoogleUser = getGoogleUser();
 
-          const prevInfo = getGoogleUser();
-          if (prevInfo && prevInfo.email) {
-            googleUser = { ...googleUser, ...prevInfo };
-          }
+          // 1. Limpar explicitamente qualquer flag de logout e salvar tokens
+          localStorage.removeItem("hortaviva_logged_out");
+          localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+          localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES_AT, String(expiresAt));
 
-          localStorage.setItem(STORAGE_KEYS.GOOGLE_USER, JSON.stringify(googleUser));
-          localAuth.loginWithGoogleUser(googleUser, accessToken);
-
-          // 3. Tentar enriquecer os dados através do endpoint de userinfo da Google
+          // 2. Carregar o perfil real a partir do endpoint userinfo da Google
+          let profile = null;
           try {
             const userRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
               headers: { Authorization: `Bearer ${accessToken}` },
             });
             if (userRes.ok) {
-              const profile = await userRes.json();
-              googleUser = {
-                ...googleUser,
-                id: profile.sub || profile.id || googleUser.id,
-                email: profile.email || googleUser.email,
-                name: profile.name || googleUser.name,
-                full_name: profile.name || googleUser.name,
-                picture: profile.picture || "",
-                avatar_url: profile.picture || "",
-              };
-              localStorage.setItem(STORAGE_KEYS.GOOGLE_USER, JSON.stringify(googleUser));
-              localAuth.loginWithGoogleUser(googleUser, accessToken);
+              profile = await userRes.json();
             }
           } catch (e) {
             console.warn("Não foi possível carregar o perfil Google detalhado:", e);
           }
 
-          // Vincular subscrição ativa à conta Google recém-ligada
+          const newEmail = (profile?.email || "").toLowerCase().trim();
+          const prevEmail = (prevGoogleUser?.email || "").toLowerCase().trim();
+          const isAccountSwitch = Boolean(prevEmail && newEmail && prevEmail !== newEmail);
+
+          // Se trocou de conta Google neste dispositivo, limpar cache da conta anterior
+          if (isAccountSwitch) {
+            localStorage.removeItem(STORAGE_KEYS.DRIVE_FILE_ID);
+            localStorage.removeItem(STORAGE_KEYS.LAST_SYNC);
+            localStorage.removeItem("hortaviva_monthly_usage_v2");
+            localStorage.removeItem("hortaviva_photo_identifications_count");
+            localStorage.removeItem("hortaviva_ai_usage_count");
+          }
+
+          // 3. Validação estrita da subscrição existente no dispositivo
           try {
             const rawSub = localStorage.getItem("hortaviva_pro_subscription");
             if (rawSub) {
               const sub = JSON.parse(rawSub);
-              if (sub && sub.active) {
-                const updatedSub = {
-                  ...sub,
-                  customer_email: sub.customer_email || googleUser.email,
-                  google_id: googleUser.id,
-                  google_email: googleUser.email,
-                };
-                localStorage.setItem("hortaviva_pro_subscription", JSON.stringify(updatedSub));
-                window.dispatchEvent(new CustomEvent("hortaviva_subscription_changed"));
+              if (!sub?.is_master) {
+                const subEmail = (sub.google_email || sub.customer_email || "").toLowerCase().trim();
+                // Se a subscrição guardada localmente pertencer a outra conta Google, eliminar imediatamente!
+                if (subEmail && newEmail && subEmail !== newEmail) {
+                  console.info("[GoogleSync] Subscrição local pertence a outra conta. Removendo para isolar a nova conta:", subEmail, "vs", newEmail);
+                  localStorage.removeItem("hortaviva_pro_subscription");
+                  window.dispatchEvent(new CustomEvent("hortaviva_subscription_changed"));
+                } else if (sub.source === "stripe_checkout" && (!subEmail || subEmail === newEmail)) {
+                  // Se foi uma compra recente Stripe do mesmo email que estava a aguardar sincronização
+                  const updatedSub = {
+                    ...sub,
+                    customer_email: sub.customer_email || profile?.email || newEmail,
+                    google_id: profile?.sub || profile?.id || null,
+                    google_email: profile?.email || newEmail,
+                  };
+                  localStorage.setItem("hortaviva_pro_subscription", JSON.stringify(updatedSub));
+                  window.dispatchEvent(new CustomEvent("hortaviva_subscription_changed"));
+                }
               }
             }
           } catch (subErr) {
-            console.warn("Erro ao vincular subscrição à conta Google:", subErr);
+            console.warn("Erro ao validar isolamento de subscrição:", subErr);
           }
+
+          let googleUser = {
+            id: profile?.sub || profile?.id || (isAccountSwitch ? `google_${Date.now()}` : prevGoogleUser?.id) || `google_${Date.now()}`,
+            email: profile?.email || (isAccountSwitch ? "agricultor@gmail.com" : prevGoogleUser?.email) || "agricultor@gmail.com",
+            name: profile?.name || (isAccountSwitch ? "Agricultor Google" : prevGoogleUser?.name) || "Agricultor Google",
+            full_name: profile?.name || (isAccountSwitch ? "Agricultor Google" : prevGoogleUser?.full_name) || "Agricultor Google",
+            picture: profile?.picture || (isAccountSwitch ? "" : prevGoogleUser?.picture) || "",
+            avatar_url: profile?.picture || (isAccountSwitch ? "" : prevGoogleUser?.avatar_url) || "",
+            avatar_emoji: "🌾",
+            auth_provider: "google",
+          };
+
+          localStorage.setItem(STORAGE_KEYS.GOOGLE_USER, JSON.stringify(googleUser));
+          localAuth.loginWithGoogleUser(googleUser, accessToken);
 
           notifySyncState("synced", "Ligado com sucesso à conta Google.");
           resolve(accessToken);
@@ -243,10 +256,24 @@ export function disconnectGoogleDrive() {
       window.google.accounts.oauth2.revoke(token, () => {});
     } catch {}
   }
+
+  // Se a subscrição ativa não for master de admin, desativar ao desligar o Google Drive
+  try {
+    const rawSub = localStorage.getItem("hortaviva_pro_subscription");
+    if (rawSub) {
+      const parsed = JSON.parse(rawSub);
+      if (!parsed?.is_master) {
+        localStorage.removeItem("hortaviva_pro_subscription");
+        window.dispatchEvent(new CustomEvent("hortaviva_subscription_changed"));
+      }
+    }
+  } catch {}
+
   localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
   localStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRES_AT);
   localStorage.removeItem(STORAGE_KEYS.GOOGLE_USER);
   localStorage.removeItem(STORAGE_KEYS.DRIVE_FILE_ID);
+  localStorage.removeItem(STORAGE_KEYS.LAST_SYNC);
   notifySyncState("idle", "Desconectado do Google Drive");
 }
 
@@ -441,10 +468,9 @@ export async function autoSyncGoogleDrive(interactive = false) {
         const mergedPlantingsCount = mergedData.plantings?.length || 0;
         const mergedAnimalsCount = mergedData.myAnimals?.length || 0;
 
-        // Se local continha itens novos ou subscrição ativa que a nuvem não tinha, atualiza a nuvem com os dados fundidos
-        const localHasSub = Boolean(localData?.subscription?.active);
+        // Se local continha itens novos ou subscrição válida que a nuvem não tinha, atualiza a nuvem com os dados fundidos
         const remoteHasSub = Boolean(remoteData?.subscription?.active);
-        const subUpdated = localHasSub && !remoteHasSub;
+        const subUpdated = Boolean(mergedData?.subscription?.active) && !remoteHasSub;
 
         if (
           mergedPlantingsCount > remotePlantingsCount ||
@@ -502,9 +528,15 @@ export async function syncSubscriptionWithGoogleAccount(interactive = true) {
 
     const subRaw = localStorage.getItem("hortaviva_pro_subscription");
     const sub = subRaw ? JSON.parse(subRaw) : null;
-    const isPro = sub && sub.active && (sub.tier === "pro" || sub.is_master || sub.plan === "lifetime");
-    const isPlus = sub && sub.active && (sub.tier === "plus" || sub.plan === "plus");
     const googleUser = getGoogleUser();
+
+    // Validar se a subscrição pertence realmente à conta autenticada
+    const activeEmail = (googleUser?.email || "").toLowerCase().trim();
+    const subEmail = (sub?.google_email || sub?.customer_email || "").toLowerCase().trim();
+    const isOwner = Boolean(sub?.is_master || !subEmail || (activeEmail && subEmail === activeEmail));
+
+    const isPro = isOwner && sub && sub.active && (sub.tier === "pro" || sub.is_master || sub.plan === "lifetime");
+    const isPlus = isOwner && sub && sub.active && (sub.tier === "plus" || sub.plan === "plus");
 
     if (isPro || isPlus) {
       await uploadToGoogleDrive(false).catch(() => {});

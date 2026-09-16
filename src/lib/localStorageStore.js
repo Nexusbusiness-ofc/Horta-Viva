@@ -230,6 +230,11 @@ export const localAuth = {
       if (raw) existing = JSON.parse(raw);
     } catch {}
 
+    // Se o utilizador anterior tinha outro email, não herdar dados do perfil antigo
+    if (existing?.email && googleProfile?.email && existing.email.toLowerCase() !== googleProfile.email.toLowerCase()) {
+      existing = null;
+    }
+
     const name = googleProfile.name || googleProfile.full_name || existing?.full_name || "Agricultor Google";
     const firstName = name.split(" ")[0] || "Cultivo";
 
@@ -368,17 +373,34 @@ export const localAuth = {
 
   logout: (redirectUrl) => {
     try {
+      // Se não for chave master de admin, remove a subscrição ao sair da conta
+      const rawSub = localStorage.getItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
+      let isMaster = false;
+      try {
+        if (rawSub) isMaster = JSON.parse(rawSub)?.is_master === true;
+      } catch {}
+
+      if (!isMaster) {
+        localStorage.removeItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
+      }
+
       localStorage.removeItem(STORAGE_KEYS.TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER);
       localStorage.removeItem("hortaviva_google_access_token");
       localStorage.removeItem("hortaviva_google_token_expires_at");
       localStorage.removeItem("hortaviva_google_user_info");
+      localStorage.removeItem("hortaviva_google_drive_file_id");
+      localStorage.removeItem("hortaviva_google_last_sync");
+      localStorage.removeItem("hortaviva_monthly_usage_v2");
+      localStorage.removeItem("hortaviva_photo_identifications_count");
+      localStorage.removeItem("hortaviva_ai_usage_count");
       localStorage.setItem(STORAGE_KEYS.LOGGED_OUT, "true");
     } catch {}
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("hortaviva_auth_changed", { detail: { user: null } }));
       window.dispatchEvent(new CustomEvent("hortaviva_sync_change", { detail: { status: "idle", connected: false } }));
+      window.dispatchEvent(new CustomEvent("hortaviva_subscription_changed"));
     }
 
     if (redirectUrl) {
@@ -555,7 +577,21 @@ export function mergeFarmData(local, remote) {
     }
   }
 
-  // 4. Fusão inteligente de subscrição Pro / Plus
+  // 4. Fusão inteligente de subscrição Pro / Plus estritamente vinculada à conta ativa
+  const activeEmail = (remote?.user?.email || local?.user?.email || "").toLowerCase().trim();
+  const activeGoogleId = remote?.user?.id || local?.user?.id || null;
+
+  const isSubValidForUser = (sub) => {
+    if (!sub || sub.active !== true) return false;
+    if (sub.is_master || sub.plan === "lifetime") return true;
+    const subEmail = (sub.google_email || sub.customer_email || "").toLowerCase().trim();
+    const subGoogleId = sub.google_id || null;
+    if (subEmail && activeEmail) return subEmail === activeEmail;
+    if (subGoogleId && activeGoogleId) return subGoogleId === activeGoogleId;
+    if (sub.source === "stripe_checkout" && !subEmail) return true;
+    return false;
+  };
+
   const getSubRank = (sub) => {
     if (!sub || sub.active !== true) return 0;
     if (sub.is_master || sub.plan === "lifetime") return 3;
@@ -564,12 +600,12 @@ export function mergeFarmData(local, remote) {
     return 1;
   };
 
-  let mergedSubscription = null;
-  const localSub = local?.subscription || null;
-  const remoteSub = remote?.subscription || null;
+  const localSub = isSubValidForUser(local?.subscription) ? local.subscription : null;
+  const remoteSub = isSubValidForUser(remote?.subscription) ? remote.subscription : null;
   const localRank = getSubRank(localSub);
   const remoteRank = getSubRank(remoteSub);
 
+  let mergedSubscription = null;
   if (remoteRank > localRank) {
     mergedSubscription = remoteSub;
   } else if (localRank > remoteRank) {
@@ -579,7 +615,7 @@ export function mergeFarmData(local, remote) {
     const remoteTime = remoteSub.activated_at ? new Date(remoteSub.activated_at).getTime() : 0;
     mergedSubscription = remoteTime >= localTime ? remoteSub : localSub;
   } else {
-    mergedSubscription = localSub || remoteSub || null;
+    mergedSubscription = remoteSub || localSub || null;
   }
 
   return {
@@ -634,13 +670,24 @@ export function importFarmData(data, shouldMerge = true) {
     localStorage.removeItem(STORAGE_KEYS.LOGGED_OUT);
   }
 
-  // Sincronizar subscrição Pro/Plus da nuvem
-  if (finalData.subscription && typeof finalData.subscription === "object") {
-    if (finalData.subscription.active === true) {
-      localStorage.setItem(STORAGE_KEYS.PRO_SUBSCRIPTION, JSON.stringify(finalData.subscription));
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("hortaviva_subscription_changed", { detail: finalData.subscription }));
-      }
+  // Sincronizar subscrição Pro/Plus da nuvem garantindo isolamento entre contas
+  const currentRawSub = localStorage.getItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
+  let isMasterLocal = false;
+  try {
+    if (currentRawSub) {
+      isMasterLocal = JSON.parse(currentRawSub)?.is_master === true;
+    }
+  } catch {}
+
+  if (finalData.subscription && typeof finalData.subscription === "object" && finalData.subscription.active === true) {
+    localStorage.setItem(STORAGE_KEYS.PRO_SUBSCRIPTION, JSON.stringify(finalData.subscription));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hortaviva_subscription_changed", { detail: finalData.subscription }));
+    }
+  } else if (!isMasterLocal) {
+    localStorage.removeItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("hortaviva_subscription_changed", { detail: null }));
     }
   }
 

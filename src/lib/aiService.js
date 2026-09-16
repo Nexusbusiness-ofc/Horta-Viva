@@ -1,5 +1,5 @@
-import { DEFAULT_PLANTS } from "./plantsData";
-import { DEFAULT_PODAS, DEFAULT_MONDAS } from "./catalogData";
+import { DEFAULT_PLANTS } from "./plantsData.js";
+import { DEFAULT_PODAS, DEFAULT_MONDAS } from "./catalogData.js";
 
 const API_KEY_STORAGE = "hortaviva_gemini_api_key";
 
