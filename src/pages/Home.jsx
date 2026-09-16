@@ -10,6 +10,7 @@ import AIAssistant from "@/components/plant/AIAssistant";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
 import HeroCarousel from "@/components/home/HeroCarousel";
 import DailyCuriosityCard from "@/components/home/DailyCuriosityCard";
+import HomeExploreGrid from "@/components/home/HomeExploreGrid";
 import OnboardingProfile from "@/components/profile/OnboardingProfile";
 import AuthButton from "@/components/auth/AuthButton";
 import { cachedList } from "@/lib/offlineCatalog";
@@ -124,6 +125,11 @@ export default function Home() {
         {/* Curiosidade Diária Compacta & Elegante (oculta durante pesquisa) */}
         {searchResults === null && !loading && (
           <DailyCuriosityCard />
+        )}
+
+        {/* Grelha Dinâmica de Secções da Quinta com Imagens em Transição (Animais, Cogumelos, Curas, Podas) */}
+        {searchResults === null && !loading && (
+          <HomeExploreGrid />
         )}
 
         {/* Month selector (hidden during search) */}
