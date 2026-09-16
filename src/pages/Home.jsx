@@ -9,6 +9,7 @@ import PlantDetail from "@/components/plant/PlantDetail";
 import AIAssistant from "@/components/plant/AIAssistant";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
 import HeroCarousel from "@/components/home/HeroCarousel";
+import DailyCuriosityCard from "@/components/home/DailyCuriosityCard";
 import OnboardingProfile from "@/components/profile/OnboardingProfile";
 import AuthButton from "@/components/auth/AuthButton";
 import { cachedList } from "@/lib/offlineCatalog";
@@ -118,6 +119,11 @@ export default function Home() {
         {/* Hero carousel (hidden during search) */}
         {searchResults === null && !loading && plants.length > 0 && (
           <HeroCarousel plants={plants} onSelect={setSelectedPlant} />
+        )}
+
+        {/* Curiosidade Diária Compacta & Elegante (oculta durante pesquisa) */}
+        {searchResults === null && !loading && (
+          <DailyCuriosityCard />
         )}
 
         {/* Month selector (hidden during search) */}
