@@ -84,7 +84,7 @@ export default function ProSubscriptionView({ onSubscribed }) {
     const validation = validateAndActivateSubscription(emailInput.trim());
     if (validation.success) {
       toast({
-        title: "🎉 Código Validado!",
+        title: "⭐ Pro Desbloqueado!",
         description: validation.message,
       });
       setEmailInput("");

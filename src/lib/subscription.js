@@ -21,12 +21,15 @@ const STORAGE_KEYS = {
   USAGE_COUNT: "hortaviva_photo_identifications_count",
   PRO_SUBSCRIPTION: "hortaviva_pro_subscription",
   MONTHLY_USAGE: "hortaviva_monthly_usage_v2",
+  LOGGED_OUT: "hortaviva_logged_out",
 };
 
 // Único código aceite para ativação do modo Administrador / Master: H_Viva
 export const VALID_ADMIN_CODES = new Set([
   "h_viva",
 ]);
+
+
 
 
 
@@ -175,26 +178,27 @@ function getActiveGoogleId() {
  */
 export function getUserTier() {
   try {
+    const raw = localStorage.getItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
+    if (raw) {
+      try {
+        const sub = JSON.parse(raw);
+        if (sub && sub.active === true && (sub.is_master === true || sub.plan === "lifetime")) {
+          // Master / Administrador: desbloqueia Pro incondicionalmente neste dispositivo
+          localStorage.removeItem("hortaviva_logged_out");
+          localStorage.removeItem(STORAGE_KEYS.LOGGED_OUT);
+          return "pro";
+        }
+      } catch {}
+    }
+
     const isLoggedOut = localStorage.getItem("hortaviva_logged_out") === "true";
     if (isLoggedOut) return "free";
 
-    const raw = localStorage.getItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
     if (!raw) return "free";
     const sub = JSON.parse(raw);
     if (!sub || sub.active !== true) return "free";
 
-    // Master / Administrador local neste dispositivo
-    if (sub.is_master === true || sub.plan === "lifetime") {
-      const activeEmail = getActiveUserEmail();
-      const subEmail = (sub.google_email || sub.customer_email || "").toLowerCase().trim();
-      // Válido se o email coincide com a sessão atual, ou se foi ativado globalmente/master, ou se anónimo
-      if (!activeEmail || !subEmail || subEmail === "master@hortaviva.local" || subEmail === activeEmail) {
-        return "pro";
-      }
-      return "free";
-    }
-
-    // Validação de posse por conta autenticada
+    // Validação de posse por conta autenticada (planos regulares Stripe/Google)
     const activeEmail = getActiveUserEmail();
     const activeGoogleId = getActiveGoogleId();
     const subEmail = (sub.google_email || sub.customer_email || "").toLowerCase().trim();
@@ -250,25 +254,20 @@ export function isPaidSubscriber() {
  */
 export function getSubscriptionDetails() {
   try {
-    const isLoggedOut = localStorage.getItem("hortaviva_logged_out") === "true";
-    if (isLoggedOut) return null;
-
     const raw = localStorage.getItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
     if (!raw) return null;
     const sub = JSON.parse(raw);
     if (!sub || !sub.active) return null;
 
-    // Master / Administrador local
+    // Master / Administrador: sempre ativo enquanto existir
     if (sub.is_master === true || sub.plan === "lifetime") {
-      const activeEmail = getActiveUserEmail();
-      const subEmail = (sub.google_email || sub.customer_email || "").toLowerCase().trim();
-      if (!activeEmail || !subEmail || subEmail === "master@hortaviva.local" || subEmail === activeEmail) {
-        return sub;
-      }
-      return null;
+      return sub;
     }
 
-    // Validação de titularidade da conta
+    const isLoggedOut = localStorage.getItem("hortaviva_logged_out") === "true";
+    if (isLoggedOut) return null;
+
+    // Validação de titularidade da conta regular
     const activeEmail = getActiveUserEmail();
     const activeGoogleId = getActiveGoogleId();
     const subEmail = (sub.google_email || sub.customer_email || "").toLowerCase().trim();
@@ -394,6 +393,10 @@ export function activateProSubscription(details = {}) {
     };
     localStorage.setItem(STORAGE_KEYS.PRO_SUBSCRIPTION, JSON.stringify(subData));
     localStorage.removeItem(STORAGE_KEYS.LOGGED_OUT);
+    localStorage.removeItem("hortaviva_logged_out");
+    localStorage.removeItem("hortaviva_monthly_usage_v2");
+    localStorage.removeItem("hortaviva_photo_identifications_count");
+    localStorage.removeItem("hortaviva_ai_usage_count");
     emitSubscriptionChange();
     return true;
   } catch {
@@ -531,7 +534,8 @@ function emitSubscriptionChange() {
  * Aceita códigos de administrador/master e ativa o plano Pro com acesso total.
  */
 export function validateAndActivateSubscription(codeOrEmail) {
-  const trimmed = (codeOrEmail || "").trim().toLowerCase().replace(/\s+/g, "");
+  const rawStr = (codeOrEmail || "").trim();
+  const trimmed = rawStr.toLowerCase().replace(/\s+/g, "");
   if (!trimmed) {
     return { success: false, error: "Introduz um código de ativação válido." };
   }
@@ -551,7 +555,7 @@ export function validateAndActivateSubscription(codeOrEmail) {
         success: true,
         tier: "pro",
         isMaster: true,
-        message: `Acesso de Administrador ativado com sucesso!`,
+        message: "⭐ Plano Pro Desbloqueado com Sucesso! Acesso ilimitado de Administrador ativado.",
       };
     }
   }
@@ -559,7 +563,7 @@ export function validateAndActivateSubscription(codeOrEmail) {
   return {
     success: false,
     needsGoogle: true,
-    error: "Código de ativação inválido. Se subscreveste através da Stripe, usa o botão 'Sincronizar com a Conta Google'.",
+    error: "Código de ativação inválido. Para administradores, o código correto é H_Viva. Se subscreveste através da Stripe, usa o botão 'Sincronizar com a Conta Google'.",
   };
 }
 

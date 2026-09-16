@@ -78,7 +78,7 @@ export default function UpgradeModal({
       setRestoreMessage({ type: "success", text: validation.message });
       setTimeout(() => {
         onClose();
-      }, 1500);
+      }, 900);
     } else {
       setRestoreMessage({ type: "error", text: validation.error });
     }
