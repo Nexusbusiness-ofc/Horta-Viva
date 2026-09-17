@@ -543,6 +543,8 @@ function ResultCard({ result, image, preview, confidenceColor, onReset, onChoose
       </div>
 
       <div className="px-5 pb-5 space-y-5">
+        <PhotoQuestionPanel image={image} result={r} />
+
         {r.description && (
           <p className="text-xs sm:text-sm text-stone-600 leading-relaxed bg-stone-50/70 p-3.5 rounded-2xl border border-stone-100">
             {r.description}
@@ -716,8 +718,6 @@ function ResultCard({ result, image, preview, confidenceColor, onReset, onChoose
             <Sprout className="w-4 h-4" /> Adicionar à Minha Quinta
           </button>
         </div>
-
-        <PhotoQuestionPanel image={image} result={r} />
       </div>
     </div>
   );

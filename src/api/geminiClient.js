@@ -2,8 +2,57 @@ const GEMINI_API_KEY =
   import.meta.env.VITE_GEMINI_API_KEY ||
   (typeof window !== "undefined" ? localStorage.getItem("hortaviva_gemini_api_key") || "" : "");
 
-const GEMINI_MODEL = "gemini-3.6-flash";
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_MODELS = ["gemini-3.6-flash", "gemini-2.5-flash"];
+
+const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+function getApiUrl(model) {
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+}
+
+async function generateContent(payload) {
+  let lastError = null;
+
+  for (const model of GEMINI_MODELS) {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const response = await fetch(getApiUrl(model), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          return response.json();
+        }
+
+        const errText = await response.text();
+        let detail = errText;
+        try {
+          detail = JSON.parse(errText)?.error?.message || errText;
+        } catch {}
+
+        const transient = [429, 500, 502, 503, 504].includes(response.status);
+        lastError = new Error(`Erro na API Google Gemini (${response.status}): ${detail}`);
+
+        if (transient && attempt === 0) {
+          await wait(700);
+          continue;
+        }
+
+        break;
+      } catch (error) {
+        lastError = error;
+        if (attempt === 0) {
+          await wait(700);
+          continue;
+        }
+      }
+    }
+  }
+
+  throw lastError || new Error("Não foi possível contactar a IA da Google.");
+}
 
 /**
  * Converte um ficheiro de imagem (File ou Blob) para uma string Base64 limpa
@@ -76,27 +125,7 @@ export async function identifyPlantWithGemini(file, prompt, schema) {
     },
   };
 
-  const response = await fetch(API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    let detail = "";
-    try {
-      const parsed = JSON.parse(errText);
-      detail = parsed?.error?.message || errText;
-    } catch {
-      detail = errText;
-    }
-    throw new Error(`Erro na API Google Gemini (${response.status}): ${detail}`);
-  }
-
-  const data = await response.json();
+  const data = await generateContent(payload);
   const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
   if (!rawText) {
@@ -127,27 +156,7 @@ export async function askGeminiAgriculturalAI(prompt) {
     },
   };
 
-  const response = await fetch(API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    let detail = "";
-    try {
-      const parsed = JSON.parse(errText);
-      detail = parsed?.error?.message || errText;
-    } catch {
-      detail = errText;
-    }
-    throw new Error(`Erro na API Google Gemini (${response.status}): ${detail}`);
-  }
-
-  const data = await response.json();
+  const data = await generateContent(payload);
   const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
   if (!rawText) {
@@ -166,37 +175,22 @@ export async function askGeminiAboutPhoto(file, prompt) {
   }
 
   const base64 = await fileToBase64(file);
-  const response = await fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [
-            { text: prompt },
-            {
-              inlineData: {
-                mimeType: file.type || "image/jpeg",
-                data: base64,
-              },
+  const data = await generateContent({
+    contents: [
+      {
+        parts: [
+          { text: prompt },
+          {
+            inlineData: {
+              mimeType: file.type || "image/jpeg",
+              data: base64,
             },
-          ],
-        },
-      ],
-      generationConfig: { temperature: 0.35 },
-    }),
+          },
+        ],
+      },
+    ],
+    generationConfig: { temperature: 0.35 },
   });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    let detail = errText;
-    try {
-      detail = JSON.parse(errText)?.error?.message || errText;
-    } catch {}
-    throw new Error(`Erro na API Google Gemini (${response.status}): ${detail}`);
-  }
-
-  const data = await response.json();
   const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!answer) {
     throw new Error("A IA não gerou uma resposta para esta fotografia.");
