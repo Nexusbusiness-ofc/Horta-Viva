@@ -33,6 +33,8 @@ const HIDDEN_ROUTES = [
   "/oauth-consent",
 ];
 
+const CENTER_LOGO_URL = `${import.meta.env.BASE_URL}images/horta-viva-logo.png`;
+
 export default function BottomNav() {
   const location = useLocation();
 
@@ -52,7 +54,7 @@ export default function BottomNav() {
         key={item.to}
         to={item.to}
         aria-current={isActive ? "page" : undefined}
-        className={`group flex h-full min-w-0 flex-col items-center justify-center gap-1 px-1 transition-colors duration-200 active:scale-95 ${
+        className={`group relative flex h-full min-w-0 flex-col items-center justify-center gap-1 px-1 transition-all duration-200 active:scale-95 ${
           isActive
             ? "text-emerald-700"
             : "text-stone-500 hover:text-emerald-700"
@@ -75,7 +77,7 @@ export default function BottomNav() {
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 select-none">
       <nav
         aria-label="Navegação rápida"
-        className="pointer-events-auto h-[72px] w-full border-t border-emerald-950/10 bg-white/90 shadow-[0_-8px_24px_rgba(20,83,45,0.12)] backdrop-blur-md"
+        className="pointer-events-auto h-[74px] w-full border-t border-emerald-950/10 bg-white/85 shadow-[0_-6px_20px_rgba(20,83,45,0.10)] backdrop-blur-xl"
       >
         <div className="grid h-full grid-cols-[1fr_1fr_76px_1fr_1fr]">
           {NAV_ITEMS.slice(0, 2).map(renderNavItem)}
@@ -85,9 +87,9 @@ export default function BottomNav() {
             className="group relative flex items-center justify-center"
           >
             <img
-              src="/images/horta-viva-logo.png"
+              src={CENTER_LOGO_URL}
               alt=""
-              className="absolute -bottom-1 h-[104px] w-[104px] object-contain transition-transform duration-200 group-hover:scale-105 group-active:scale-95"
+              className="absolute bottom-5 h-[104px] w-[104px] object-contain drop-shadow-[0_5px_8px_rgba(20,83,45,0.18)] transition-transform duration-200 group-hover:scale-105 group-active:scale-95"
             />
           </Link>
           {NAV_ITEMS.slice(2).map(renderNavItem)}
