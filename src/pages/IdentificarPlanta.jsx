@@ -3,14 +3,20 @@ import { Link, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, Camera, Loader2, Sparkles, Sun, Droplets, Sprout, 
   Bug, Calendar, Leaf, RotateCcw, X, BookOpen, Search,
-  CheckCircle2, AlertTriangle, ShieldCheck, Scissors, ListChecks
+  CheckCircle2, AlertTriangle, ShieldCheck, Scissors, ListChecks, MessageCircle, Send
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { findPlantInCatalog } from "@/lib/aiService";
-import { identifyPlantWithGemini } from "@/api/geminiClient";
+import { askGeminiAboutPhoto, identifyPlantWithGemini } from "@/api/geminiClient";
 import { DEFAULT_PLANTS } from "@/lib/plantsData";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
-import { useSubscription, incrementPhotoUsage, PLUS_PHOTO_LIMIT, FREE_IDENTIFICATION_LIMIT } from "@/lib/subscription";
+import {
+  useSubscription,
+  incrementAIUsage,
+  incrementPhotoUsage,
+  PLUS_PHOTO_LIMIT,
+  FREE_IDENTIFICATION_LIMIT,
+} from "@/lib/subscription";
 import UpgradeModal from "@/components/subscription/UpgradeModal";
 
 const SCHEMA = {
@@ -368,6 +374,7 @@ export default function IdentificarPlanta() {
         {result && (
           <ResultCard 
             result={result} 
+            image={image}
             preview={preview} 
             confidenceColor={confidenceColor} 
             onReset={reset}
@@ -476,7 +483,7 @@ export default function IdentificarPlanta() {
   );
 }
 
-function ResultCard({ result, preview, confidenceColor, onReset, onChooseCatalog, onAddToFarm }) {
+function ResultCard({ result, image, preview, confidenceColor, onReset, onChooseCatalog, onAddToFarm }) {
   const r = result;
 
   if (r.identified === false) {
@@ -497,6 +504,7 @@ function ResultCard({ result, preview, confidenceColor, onReset, onChooseCatalog
               <BookOpen className="w-4 h-4" /> Escolher no catálogo
             </button>
           </div>
+          <PhotoQuestionPanel image={image} result={r} />
         </div>
       </div>
     );
@@ -708,8 +716,139 @@ function ResultCard({ result, preview, confidenceColor, onReset, onChooseCatalog
             <Sprout className="w-4 h-4" /> Adicionar à Minha Quinta
           </button>
         </div>
+
+        <PhotoQuestionPanel image={image} result={r} />
       </div>
     </div>
+  );
+}
+
+function PhotoQuestionPanel({ image, result }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [question, setQuestion] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const { isPro, canUseAI } = useSubscription();
+
+  if (!image) return null;
+
+  const askQuestion = async (value) => {
+    const trimmed = value.trim();
+    if (!trimmed || loading) return;
+
+    if (!canUseAI) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    const userMessage = { role: "user", text: trimmed };
+    const recentConversation = [...messages, userMessage]
+      .slice(-6)
+      .map((message) => `${message.role === "user" ? "Utilizador" : "Assistente"}: ${message.text}`)
+      .join("\n");
+
+    setMessages((current) => [...current, userMessage]);
+    setQuestion("");
+    setLoading(true);
+
+    try {
+      const answer = await askGeminiAboutPhoto(image, `És o assistente agrícola da Horta Viva. Analisa a fotografia enviada e responde em português de Portugal, de forma clara e prática.
+
+Análise inicial desta fotografia:
+- Planta ou cultura: ${result.name || "não confirmada"}
+- Estado visual: ${result.health_status || "não avaliado"}
+- Diagnóstico: ${result.health_assessment || "sem detalhes"}
+- Pragas ou doenças: ${result.detected_diseases || "sem diagnóstico confirmado"}
+
+Conversa:
+${recentConversation}
+
+Usa sempre a fotografia como contexto. Distingue o que é visível do que exige confirmação no local. Para a plantação, indica passos concretos e seguros sobre rega, tratamento, colheita, solo ou manutenção quando a pergunta o justificar.`);
+      setMessages((current) => [...current, { role: "assistant", text: answer }]);
+      if (!isPro) incrementAIUsage();
+    } catch (error) {
+      setMessages((current) => [
+        ...current,
+        { role: "assistant", text: `Não consegui responder sobre esta foto agora. ${String(error?.message || error)}` },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <section className="border-t border-stone-100 pt-4" aria-label="Perguntar à IA sobre esta foto">
+      <button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className="flex w-full items-center justify-between gap-3 rounded-2xl border border-teal-200 bg-teal-50/70 px-4 py-3 text-left transition-colors hover:bg-teal-100"
+        aria-expanded={isOpen}
+      >
+        <span className="flex min-w-0 items-center gap-2.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-white shadow-sm">
+            <MessageCircle className="h-4 w-4" />
+          </span>
+          <span>
+            <span className="block text-sm font-bold text-stone-800">Perguntar à IA sobre esta foto</span>
+            <span className="block text-[11px] text-stone-500">Cuidados, doenças, rega e próximos passos</span>
+          </span>
+        </span>
+        <span className="text-xs font-bold text-teal-700">{isOpen ? "Fechar" : "Perguntar"}</span>
+      </button>
+
+      {isOpen && (
+        <div className="mt-3 overflow-hidden rounded-2xl border border-stone-200 bg-white">
+          <div className="max-h-72 space-y-3 overflow-y-auto p-4">
+            {messages.length === 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-stone-500">A IA continua a observar a fotografia enquanto responde.</p>
+                <div className="flex flex-wrap gap-2">
+                  {["O que devo fazer primeiro?", "Há sinais de pragas ou doenças?", "Como devo regar esta plantação?"].map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      onClick={() => askQuestion(suggestion)}
+                      className="rounded-xl border border-teal-100 bg-teal-50 px-3 py-2 text-xs font-medium text-teal-800 hover:bg-teal-100"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {messages.map((message, index) => (
+              <div key={`${message.role}-${index}`} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                <p className={`max-w-[88%] whitespace-pre-wrap rounded-2xl px-3 py-2.5 text-xs leading-relaxed ${message.role === "user" ? "rounded-br-md bg-teal-600 text-white" : "rounded-bl-md bg-stone-100 text-stone-700"}`}>
+                  {message.text}
+                </p>
+              </div>
+            ))}
+
+            {loading && (
+              <div className="flex items-center gap-2 text-xs text-stone-500">
+                <Loader2 className="h-4 w-4 animate-spin text-teal-600" /> A analisar a fotografia...
+              </div>
+            )}
+          </div>
+
+          <form onSubmit={(event) => { event.preventDefault(); askQuestion(question); }} className="flex gap-2 border-t border-stone-100 p-3">
+            <input
+              value={question}
+              onChange={(event) => setQuestion(event.target.value)}
+              placeholder="Escreve uma pergunta sobre a foto..."
+              className="min-w-0 flex-1 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-800 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+            />
+            <button type="submit" disabled={!question.trim() || loading} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-white hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-stone-300" aria-label="Enviar pergunta">
+              <Send className="h-4 w-4" />
+            </button>
+          </form>
+        </div>
+      )}
+
+      <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} reason="ai" />
+    </section>
   );
 }
 

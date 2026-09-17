@@ -156,3 +156,51 @@ export async function askGeminiAgriculturalAI(prompt) {
 
   return rawText.trim();
 }
+
+/**
+ * Consulta o Gemini sobre uma fotografia, mantendo a imagem no contexto visual.
+ */
+export async function askGeminiAboutPhoto(file, prompt) {
+  if (!GEMINI_API_KEY) {
+    throw new Error("Chave da API Google Gemini não configurada.");
+  }
+
+  const base64 = await fileToBase64(file);
+  const response = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [
+            { text: prompt },
+            {
+              inlineData: {
+                mimeType: file.type || "image/jpeg",
+                data: base64,
+              },
+            },
+          ],
+        },
+      ],
+      generationConfig: { temperature: 0.35 },
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    let detail = errText;
+    try {
+      detail = JSON.parse(errText)?.error?.message || errText;
+    } catch {}
+    throw new Error(`Erro na API Google Gemini (${response.status}): ${detail}`);
+  }
+
+  const data = await response.json();
+  const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!answer) {
+    throw new Error("A IA não gerou uma resposta para esta fotografia.");
+  }
+
+  return answer.trim();
+}
