@@ -89,7 +89,7 @@ export default function BottomNav() {
             <img
               src={CENTER_LOGO_URL}
               alt=""
-              className="absolute bottom-5 h-[104px] w-[104px] object-contain drop-shadow-[0_5px_8px_rgba(20,83,45,0.18)] transition-transform duration-200 group-hover:scale-105 group-active:scale-95"
+              className="absolute bottom-5 h-[104px] w-[104px] object-contain drop-shadow-[0_7px_10px_rgba(20,83,45,0.24)] transition-transform duration-200 group-hover:scale-105 group-active:scale-95"
             />
           </Link>
           {NAV_ITEMS.slice(2).map(renderNavItem)}
