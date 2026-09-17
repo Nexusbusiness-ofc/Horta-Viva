@@ -3,20 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, Camera, Loader2, Sparkles, Sun, Droplets, Sprout, 
   Bug, Calendar, Leaf, RotateCcw, X, BookOpen, Search,
-  CheckCircle2, AlertTriangle, ShieldCheck, Scissors, ListChecks, MessageCircle, Send
+  CheckCircle2, AlertTriangle, ShieldCheck, Scissors, ListChecks
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { findPlantInCatalog } from "@/lib/aiService";
-import { askGeminiAboutPhoto, identifyPlantWithGemini } from "@/api/geminiClient";
+import { identifyPlantWithGemini } from "@/api/geminiClient";
 import { DEFAULT_PLANTS } from "@/lib/plantsData";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
-import {
-  useSubscription,
-  incrementAIUsage,
-  incrementPhotoUsage,
-  PLUS_PHOTO_LIMIT,
-  FREE_IDENTIFICATION_LIMIT,
-} from "@/lib/subscription";
+import { useSubscription, incrementPhotoUsage, PLUS_PHOTO_LIMIT, FREE_IDENTIFICATION_LIMIT } from "@/lib/subscription";
 import UpgradeModal from "@/components/subscription/UpgradeModal";
 
 const SCHEMA = {
@@ -374,7 +368,6 @@ export default function IdentificarPlanta() {
         {result && (
           <ResultCard 
             result={result} 
-            image={image}
             preview={preview} 
             confidenceColor={confidenceColor} 
             onReset={reset}
@@ -483,7 +476,7 @@ export default function IdentificarPlanta() {
   );
 }
 
-function ResultCard({ result, image, preview, confidenceColor, onReset, onChooseCatalog, onAddToFarm }) {
+function ResultCard({ result, preview, confidenceColor, onReset, onChooseCatalog, onAddToFarm }) {
   const r = result;
 
   if (r.identified === false) {
@@ -504,7 +497,6 @@ function ResultCard({ result, image, preview, confidenceColor, onReset, onChoose
               <BookOpen className="w-4 h-4" /> Escolher no catálogo
             </button>
           </div>
-          <PhotoAIAssistant image={image} result={r} />
         </div>
       </div>
     );
@@ -716,179 +708,8 @@ function ResultCard({ result, image, preview, confidenceColor, onReset, onChoose
             <Sprout className="w-4 h-4" /> Adicionar à Minha Quinta
           </button>
         </div>
-
-        <PhotoAIAssistant image={image} result={r} />
       </div>
     </div>
-  );
-}
-
-function PhotoAIAssistant({ image, result }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const [question, setQuestion] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const { isPro, isPlus, remainingAI, canUseAI } = useSubscription();
-
-  if (!image) return null;
-
-  const askAboutPhoto = async (nextQuestion) => {
-    const trimmedQuestion = nextQuestion.trim();
-    if (!trimmedQuestion || isLoading) return;
-
-    if (!canUseAI) {
-      setShowUpgradeModal(true);
-      return;
-    }
-
-    const userMessage = { role: "user", text: trimmedQuestion };
-    const conversation = [...messages, userMessage]
-      .slice(-6)
-      .map((message) => `${message.role === "user" ? "Utilizador" : "Assistente"}: ${message.text}`)
-      .join("\n");
-
-    setMessages((current) => [...current, userMessage]);
-    setQuestion("");
-    setIsLoading(true);
-
-    try {
-      const prompt = `És o modo IA da Foto da Horta Viva, especialista em horticultura e agricultura em Portugal.
-
-Esta é a mesma fotografia que o utilizador acabou de analisar. A análise inicial indicou:
-- Identificação: ${result.name || "não confirmada"}
-- Estado: ${result.health_status || "não avaliado"}
-- Observações: ${result.health_assessment || "sem observações adicionais"}
-- Pragas ou doenças: ${result.detected_diseases || "sem diagnóstico confirmado"}
-
-Conversa recente:
-${conversation}
-
-Responde em português de Portugal, de forma prática e direta. Usa a fotografia como evidência, distingue claramente o que é visível do que exige confirmação no local e não inventes detalhes que não aparecem na imagem. Para tratamentos ou problemas graves, indica passos seguros e recomenda confirmação presencial quando necessário.`;
-
-      const answer = await askGeminiAboutPhoto(image, prompt);
-      setMessages((current) => [...current, { role: "assistant", text: answer }]);
-      if (!isPro) incrementAIUsage();
-    } catch (error) {
-      setMessages((current) => [
-        ...current,
-        {
-          role: "assistant",
-          text: `Não foi possível analisar esta fotografia agora. ${String(error?.message || error)}`,
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const suggestions = [
-    "O que devo fazer primeiro?",
-    "Vês sinais de doença ou pragas?",
-    "Como devo regar esta planta?",
-  ];
-
-  return (
-    <section className="border-t border-stone-100 pt-4" aria-label="Modo IA da Foto">
-      <button
-        type="button"
-        onClick={() => setIsOpen((current) => !current)}
-        className="flex w-full items-center justify-between gap-3 rounded-2xl border border-teal-200 bg-teal-50/70 px-4 py-3 text-left transition-colors hover:bg-teal-100/70"
-        aria-expanded={isOpen}
-      >
-        <span className="flex min-w-0 items-center gap-2.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-white shadow-sm">
-            <MessageCircle className="h-4 w-4" />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-sm font-bold text-stone-800">Modo IA da Foto</span>
-            <span className="block text-[11px] text-stone-500">Pergunta o que precisas de saber sobre esta imagem</span>
-          </span>
-        </span>
-        <span className="text-xs font-bold text-teal-700">{isOpen ? "Fechar" : "Perguntar"}</span>
-      </button>
-
-      {isOpen && (
-        <div className="mt-3 overflow-hidden rounded-2xl border border-stone-200 bg-white">
-          <div className="flex items-center justify-between gap-3 border-b border-stone-100 bg-stone-50 px-4 py-2.5">
-            <p className="text-xs font-semibold text-stone-700">A IA está a usar esta fotografia como contexto.</p>
-            {!isPro && (
-              <button
-                type="button"
-                onClick={() => setShowUpgradeModal(true)}
-                className="shrink-0 text-[11px] font-bold text-teal-700 hover:text-teal-900"
-              >
-                {isPlus ? `${remainingAI} usos` : `${remainingAI} grátis`}
-              </button>
-            )}
-          </div>
-
-          <div className="max-h-72 space-y-3 overflow-y-auto p-4">
-            {messages.length === 0 && (
-              <div className="space-y-2">
-                <p className="text-xs leading-relaxed text-stone-500">Faz uma pergunta específica sobre o que vês na foto.</p>
-                <div className="flex flex-wrap gap-2">
-                  {suggestions.map((suggestion) => (
-                    <button
-                      key={suggestion}
-                      type="button"
-                      onClick={() => askAboutPhoto(suggestion)}
-                      className="rounded-xl border border-teal-100 bg-teal-50 px-3 py-2 text-left text-xs font-medium text-teal-800 transition-colors hover:bg-teal-100"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {messages.map((message, index) => (
-              <div key={`${message.role}-${index}`} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-                <p className={`max-w-[88%] whitespace-pre-wrap rounded-2xl px-3 py-2.5 text-xs leading-relaxed ${
-                  message.role === "user"
-                    ? "rounded-br-md bg-teal-600 text-white"
-                    : "rounded-bl-md bg-stone-100 text-stone-700"
-                }`}>
-                  {message.text}
-                </p>
-              </div>
-            ))}
-
-            {isLoading && (
-              <div className="flex items-center gap-2 text-xs text-stone-500">
-                <Loader2 className="h-4 w-4 animate-spin text-teal-600" />
-                A observar a fotografia...
-              </div>
-            )}
-          </div>
-
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              askAboutPhoto(question);
-            }}
-            className="flex gap-2 border-t border-stone-100 p-3"
-          >
-            <input
-              value={question}
-              onChange={(event) => setQuestion(event.target.value)}
-              placeholder="Pergunta algo sobre esta foto..."
-              className="min-w-0 flex-1 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-800 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-            />
-            <button
-              type="submit"
-              disabled={!question.trim() || isLoading}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-stone-300"
-              aria-label="Enviar pergunta sobre a fotografia"
-            >
-              <Send className="h-4 w-4" />
-            </button>
-          </form>
-        </div>
-      )}
-
-      <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} reason="ai" />
-    </section>
   );
 }
 
