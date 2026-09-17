@@ -5,12 +5,16 @@ const STORAGE_KEYS = {
   ACCESS_TOKEN: "hortaviva_google_access_token",
   TOKEN_EXPIRES_AT: "hortaviva_google_token_expires_at",
   LAST_SYNC: "hortaviva_google_last_sync",
-  DRIVE_FILE_ID: "hortaviva_google_drive_file_id",
+  DRIVE_FILE_ID: "hortaviva_google_app_data_file_id",
+  LEGACY_DRIVE_FILE_ID: "hortaviva_google_drive_file_id",
+  GRANTED_SCOPES: "hortaviva_google_granted_scopes",
   GOOGLE_USER: "hortaviva_google_user_info",
 };
 
 const DRIVE_FILE_NAME = "horta_viva_quinta.json";
+const DRIVE_APP_DATA_SPACE = "appDataFolder";
 const SCOPES = [
+  "https://www.googleapis.com/auth/drive.appdata",
   "https://www.googleapis.com/auth/drive.file",
   "https://www.googleapis.com/auth/userinfo.profile",
   "https://www.googleapis.com/auth/userinfo.email",
@@ -64,6 +68,11 @@ export function hasValidGoogleToken() {
   const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
   const expiresAt = Number(localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRES_AT) || 0);
   return !!token && Date.now() < expiresAt;
+}
+
+function hasAppDataAccess() {
+  const scopes = localStorage.getItem(STORAGE_KEYS.GRANTED_SCOPES) || "";
+  return scopes.split(/\s+/).includes("https://www.googleapis.com/auth/drive.appdata");
 }
 
 export function getGoogleUser() {
@@ -129,6 +138,7 @@ function notifySyncState(status = "idle", detail = "") {
 // Iniciar sessão com a conta Google e obter permissão para o Google Drive
 export async function connectGoogleDrive(options = {}) {
   const promptMode = options.prompt !== undefined ? options.prompt : "select_account";
+  const loginHint = options.login_hint || getGoogleUser()?.email || undefined;
   const clientId = getGoogleClientId();
   if (!clientId) {
     throw new Error("ID de Cliente Google não configurado.");
@@ -141,6 +151,7 @@ export async function connectGoogleDrive(options = {}) {
       tokenClientInstance = window.google.accounts.oauth2.initTokenClient({
         client_id: clientId,
         scope: SCOPES,
+        login_hint: loginHint,
         error_callback: (err) => {
           notifySyncState("error", err?.message || "Autorização cancelada");
           reject(new Error(err?.message || "Autorização Google cancelada."));
@@ -159,6 +170,7 @@ export async function connectGoogleDrive(options = {}) {
           localStorage.removeItem("hortaviva_logged_out");
           localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
           localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES_AT, String(expiresAt));
+          localStorage.setItem(STORAGE_KEYS.GRANTED_SCOPES, tokenResponse.scope || SCOPES);
 
           const prevGoogleUser = getGoogleUser();
 
@@ -182,6 +194,7 @@ export async function connectGoogleDrive(options = {}) {
           // Se trocou de conta Google ou ligou uma nova, limpar cache de ficheiro anterior
           if (isAccountSwitch || !prevEmail || prevEmail !== newEmail) {
             localStorage.removeItem(STORAGE_KEYS.DRIVE_FILE_ID);
+            localStorage.removeItem(STORAGE_KEYS.LEGACY_DRIVE_FILE_ID);
             localStorage.removeItem(STORAGE_KEYS.LAST_SYNC);
             localStorage.removeItem("hortaviva_monthly_usage_v2");
             localStorage.removeItem("hortaviva_photo_identifications_count");
@@ -246,6 +259,8 @@ export function disconnectGoogleDrive() {
   localStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRES_AT);
   localStorage.removeItem(STORAGE_KEYS.GOOGLE_USER);
   localStorage.removeItem(STORAGE_KEYS.DRIVE_FILE_ID);
+  localStorage.removeItem(STORAGE_KEYS.LEGACY_DRIVE_FILE_ID);
+  localStorage.removeItem(STORAGE_KEYS.GRANTED_SCOPES);
   localStorage.removeItem(STORAGE_KEYS.LAST_SYNC);
   notifySyncState("idle", "Desconectado do Google Drive");
   if (typeof window !== "undefined") {
@@ -258,32 +273,45 @@ export async function getValidAccessToken(interactive = false) {
     return localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
   }
   if (!interactive) {
-    // O Google pode mostrar o seletor de contas mesmo com prompt vazio. Em segundo
-    // plano, mantemos a sessão local e esperamos por uma ação explícita do utilizador.
-    const error = new Error("Sessão Google expirada. Liga novamente a conta para sincronizar.");
-    notifySyncState("needs_reconnect", "Sessão Google expirada");
-    throw error;
+    // Renova para a conta já conhecida sem trocar de utilizador. Se a Google exigir
+    // interação, esta tentativa falha e a app mantém a sessão local intacta.
+    try {
+      return await connectGoogleDrive({ prompt: "", login_hint: getGoogleUser()?.email });
+    } catch (error) {
+      notifySyncState("needs_reconnect", "Sessão Google expirada");
+      throw error;
+    }
   }
   return connectGoogleDrive({ prompt: "select_account" });
 }
 
-// Procurar ficheiro existente horta_viva_quinta.json no Google Drive
+async function getCachedDriveFile(token, storageKey) {
+  const cachedId = localStorage.getItem(storageKey);
+  if (!cachedId) return null;
+
+  try {
+    const response = await fetch(`https://www.googleapis.com/drive/v3/files/${cachedId}?fields=id,name,trashed`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (!data.trashed) return cachedId;
+    }
+  } catch {}
+
+  localStorage.removeItem(storageKey);
+  return null;
+}
+
+// Procurar o ficheiro principal no espaço privado da app, partilhado pela mesma
+// conta Google em todos os dispositivos.
 async function findDriveFile(token) {
-  const cachedId = localStorage.getItem(STORAGE_KEYS.DRIVE_FILE_ID);
-  if (cachedId) {
-    try {
-      const checkRes = await fetch(`https://www.googleapis.com/drive/v3/files/${cachedId}?fields=id,name,trashed`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (checkRes.ok) {
-        const data = await checkRes.json();
-        if (!data.trashed) return cachedId;
-      }
-    } catch {}
-  }
+  if (!hasAppDataAccess()) return null;
+  const cachedId = await getCachedDriveFile(token, STORAGE_KEYS.DRIVE_FILE_ID);
+  if (cachedId) return cachedId;
 
   const query = encodeURIComponent(`name='${DRIVE_FILE_NAME}' and trashed=false`);
-  const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&orderBy=modifiedTime desc&fields=files(id,name,modifiedTime)`, {
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=${DRIVE_APP_DATA_SPACE}&q=${query}&orderBy=modifiedTime desc&fields=files(id,name,modifiedTime)`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -297,6 +325,59 @@ async function findDriveFile(token) {
   return null;
 }
 
+// Mantém acesso às cópias criadas por versões anteriores da app no Meu Drive.
+async function findLegacyDriveFile(token) {
+  const cachedId = await getCachedDriveFile(token, STORAGE_KEYS.LEGACY_DRIVE_FILE_ID);
+  if (cachedId) return cachedId;
+
+  const query = encodeURIComponent(`name='${DRIVE_FILE_NAME}' and trashed=false`);
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=drive&q=${query}&orderBy=modifiedTime desc&fields=files(id,name,modifiedTime)`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) throw new Error("Falha ao pesquisar cópia anterior no Google Drive.");
+  const data = await res.json();
+  if (data.files && data.files.length > 0) {
+    const fileId = data.files[0].id;
+    localStorage.setItem(STORAGE_KEYS.LEGACY_DRIVE_FILE_ID, fileId);
+    return fileId;
+  }
+  return null;
+}
+
+function getSyncComparableData(data = {}) {
+  const sortRecords = (records) =>
+    (Array.isArray(records) ? records : [])
+      .map((record) => sortValue(record))
+      .sort((a, b) => String(a.id || JSON.stringify(a)).localeCompare(String(b.id || JSON.stringify(b))));
+
+  const sortValue = (value) => {
+    if (Array.isArray(value)) return value.map(sortValue);
+    if (!value || typeof value !== "object") return value;
+    return Object.keys(value)
+      .sort()
+      .reduce((result, key) => {
+        result[key] = sortValue(value[key]);
+        return result;
+      }, {});
+  };
+
+  return sortValue({
+    version: data.version || 3,
+    appName: data.appName || "Horta Viva",
+    user: data.user || null,
+    subscription: data.subscription || null,
+    deletedIds: data.deletedIds || {},
+    plantings: sortRecords(data.plantings),
+    myAnimals: sortRecords(data.myAnimals),
+    reminders: sortRecords(data.reminders),
+  });
+}
+
+function syncDataDiffers(first, second) {
+  return JSON.stringify(getSyncComparableData(first)) !== JSON.stringify(getSyncComparableData(second));
+}
+
 // Enviar dados locais para o Google Drive
 export async function uploadToGoogleDrive(interactive = false, options = {}) {
   if (!isGoogleConnected()) return { skipped: true };
@@ -304,13 +385,16 @@ export async function uploadToGoogleDrive(interactive = false, options = {}) {
   try {
     const token = await getValidAccessToken(interactive);
     const existingFileId = await findDriveFile(token);
+    const legacyFileId = existingFileId ? null : await findLegacyDriveFile(token);
+    const sourceFileId = existingFileId || legacyFileId;
+    const updateFileId = existingFileId || (!hasAppDataAccess() ? legacyFileId : null);
 
     let farmData = exportFarmData(options);
 
     // Se já existe ficheiro remoto, descarrega e funde antes de gravar para nunca perder dados de outro dispositivo
-    if (existingFileId) {
+    if (sourceFileId) {
       try {
-        const remoteRes = await fetch(`https://www.googleapis.com/drive/v3/files/${existingFileId}?alt=media`, {
+        const remoteRes = await fetch(`https://www.googleapis.com/drive/v3/files/${sourceFileId}?alt=media`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (remoteRes.ok) {
@@ -332,9 +416,9 @@ export async function uploadToGoogleDrive(interactive = false, options = {}) {
 
     const jsonContent = JSON.stringify(farmData, null, 2);
 
-    if (existingFileId) {
+    if (updateFileId) {
       const updateRes = await fetch(
-        `https://www.googleapis.com/upload/drive/v3/files/${existingFileId}?uploadType=media`,
+        `https://www.googleapis.com/upload/drive/v3/files/${updateFileId}?uploadType=media`,
         {
           method: "PATCH",
           headers: {
@@ -350,6 +434,7 @@ export async function uploadToGoogleDrive(interactive = false, options = {}) {
         name: DRIVE_FILE_NAME,
         mimeType: "application/json",
         description: "Cópia de segurança sincronizada da Minha Horta (Horta Viva)",
+        parents: [DRIVE_APP_DATA_SPACE],
       };
 
       const boundary = "-------314159265358979323846";
@@ -378,7 +463,9 @@ export async function uploadToGoogleDrive(interactive = false, options = {}) {
       );
       if (!createRes.ok) throw new Error("Erro ao criar ficheiro no Google Drive.");
       const created = await createRes.json();
-      if (created.id) localStorage.setItem(STORAGE_KEYS.DRIVE_FILE_ID, created.id);
+      if (created.id) {
+        localStorage.setItem(STORAGE_KEYS.DRIVE_FILE_ID, created.id);
+      }
     }
 
     const now = new Date().toISOString();
@@ -398,13 +485,15 @@ export async function downloadFromGoogleDrive(interactive = false) {
   try {
     const token = await getValidAccessToken(interactive);
     const fileId = await findDriveFile(token);
+    const legacyFileId = fileId ? null : await findLegacyDriveFile(token);
+    const sourceFileId = fileId || legacyFileId;
 
-    if (!fileId) {
+    if (!sourceFileId) {
       notifySyncState("idle", "Ainda não existe ficheiro da quinta no Google Drive.");
       return { success: false, notFound: true };
     }
 
-    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${sourceFileId}?alt=media`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
@@ -414,6 +503,11 @@ export async function downloadFromGoogleDrive(interactive = false) {
     const localData = exportFarmData();
     const mergedData = mergeFarmData(localData, remoteData);
     const result = importFarmData(mergedData, false);
+
+    // Migra a cópia anterior para o espaço privado da app sem perder os dados.
+    if (legacyFileId) {
+      await uploadToGoogleDrive(false).catch(() => {});
+    }
 
     const now = new Date().toISOString();
     localStorage.setItem(STORAGE_KEYS.LAST_SYNC, now);
@@ -431,9 +525,11 @@ export async function autoSyncGoogleDrive(interactive = false) {
   try {
     const token = await getValidAccessToken(interactive);
     const fileId = await findDriveFile(token);
+    const legacyFileId = fileId ? null : await findLegacyDriveFile(token);
+    const sourceFileId = fileId || legacyFileId;
 
-    if (fileId) {
-      const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+    if (sourceFileId) {
+      const res = await fetch(`https://www.googleapis.com/drive/v3/files/${sourceFileId}?alt=media`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -443,32 +539,26 @@ export async function autoSyncGoogleDrive(interactive = false) {
 
         importFarmData(mergedData, false);
 
-        const remotePlantingsCount = remoteData?.plantings?.length || 0;
-        const remoteAnimalsCount = remoteData?.myAnimals?.length || 0;
-        const mergedPlantingsCount = mergedData.plantings?.length || 0;
-        const mergedAnimalsCount = mergedData.myAnimals?.length || 0;
-
-        // Se local continha itens novos ou subscrição válida que a nuvem não tinha, atualiza a nuvem com os dados fundidos
-        const remoteHasSub = Boolean(remoteData?.subscription?.active);
-        const subUpdated = Boolean(mergedData?.subscription?.active) && !remoteHasSub;
-
-        if (
-          mergedPlantingsCount > remotePlantingsCount ||
-          mergedAnimalsCount > remoteAnimalsCount ||
-          subUpdated
-        ) {
-          const jsonContent = JSON.stringify(mergedData, null, 2);
-          await fetch(
-            `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
-            {
-              method: "PATCH",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-              body: jsonContent,
-            }
-          );
+        // Atualiza sempre que existir uma diferença real: criações, edições,
+        // eliminações, lembretes ou qualquer alteração de plano.
+        if (legacyFileId || syncDataDiffers(remoteData, mergedData)) {
+          if (legacyFileId) {
+            await uploadToGoogleDrive(interactive);
+          } else {
+            const jsonContent = JSON.stringify(mergedData, null, 2);
+            const updateRes = await fetch(
+              `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
+              {
+                method: "PATCH",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+                body: jsonContent,
+              }
+            );
+            if (!updateRes.ok) throw new Error("Erro ao atualizar ficheiro no Google Drive.");
+          }
         }
 
         const now = new Date().toISOString();
