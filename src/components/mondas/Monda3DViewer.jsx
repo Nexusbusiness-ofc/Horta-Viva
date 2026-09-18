@@ -544,7 +544,7 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
       </div>
 
       <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-3.5 flex items-center gap-3 text-xs text-amber-950">
-        <span className="text-2xl shrink-0">👴👵</span>
+        <span className="text-2xl shrink-0">💡</span>
         <div>
           <span className="font-extrabold block text-amber-900">Como funciona este esquema de monda 3D:</span>
           <span className="leading-relaxed">
