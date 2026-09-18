@@ -30,3 +30,19 @@ export function shouldNotifyToday() {
   localStorage.setItem(LAST_KEY, today);
   return true;
 }
+
+export function sendSmartAlertSummary(counts, alerts = []) {
+  if (!notifySupported() || Notification.permission !== "granted") return;
+  const parts = [];
+  if (counts.watering > 0) parts.push(`💧 ${counts.watering} rega(s)`);
+  if (counts.pruning > 0) parts.push(`✂️ ${counts.pruning} poda(s)`);
+  if (counts.thinning > 0) parts.push(`🌱 ${counts.thinning} monda(s)`);
+  if (counts.animals > 0) parts.push(`🐾 ${counts.animals} animal(is)`);
+  if (counts.harvest > 0) parts.push(`🌾 ${counts.harvest} colheita(s)`);
+
+  if (parts.length === 0) return;
+
+  const title = `Horta Viva 🌱 ${counts.totalDueToday} alerta(s) hoje!`;
+  const body = `Atenção à tua quinta: ${parts.join(" · ")}. Toca para verificar!`;
+  sendNotify(title, body);
+}
