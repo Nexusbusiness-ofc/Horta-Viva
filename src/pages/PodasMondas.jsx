@@ -66,15 +66,23 @@ export default function PodasMondas() {
           <div className="flex gap-2 mt-3">
             <button
               onClick={() => switchTab("podas")}
-              className={`flex-1 flex items-center justify-center gap-2 text-sm font-semibold py-2 rounded-xl transition-all ${tab === "podas" ? "bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white shadow-md" : "bg-white border border-stone-200 text-stone-600"}`}
+              className={`flex-1 flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold py-2 rounded-xl transition-all ${tab === "podas" ? "bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white shadow-md" : "bg-white border border-stone-200 text-stone-600"}`}
             >
               <Scissors className="w-4 h-4" /> Podas
             </button>
             <button
               onClick={() => switchTab("mondas")}
-              className={`flex-1 flex items-center justify-center gap-2 text-sm font-semibold py-2 rounded-xl transition-all ${tab === "mondas" ? "bg-gradient-to-r from-lime-500 via-green-600 to-emerald-600 text-white shadow-md" : "bg-white border border-stone-200 text-stone-600"}`}
+              className={`flex-1 flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold py-2 rounded-xl transition-all ${tab === "mondas" ? "bg-gradient-to-r from-lime-500 via-green-600 to-emerald-600 text-white shadow-md" : "bg-white border border-stone-200 text-stone-600"}`}
             >
               <Sprout className="w-4 h-4" /> Mondas
+            </button>
+            <button
+              onClick={() => setShowUniversalGuide(true)}
+              className="flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-200/50 transition-all shrink-0"
+            >
+              <span>📐</span>
+              <span className="hidden sm:inline">Guia de Esquemas</span>
+              <span className="sm:hidden">Esquemas</span>
             </button>
           </div>
         </div>

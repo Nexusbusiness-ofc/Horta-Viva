@@ -44,7 +44,9 @@ export default function PodaCard({ poda, onClick, compact = false }) {
             >
               {poda.category}
             </span>
-            <span className="text-stone-400 font-medium">✂️ Poda</span>
+            <span className="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200/60 flex items-center gap-0.5">
+              📐 Esquema
+            </span>
           </div>
         </div>
       </button>
@@ -67,9 +69,14 @@ export default function PodaCard({ poda, onClick, compact = false }) {
       </div>
       <div className="px-4 pt-3 pb-1">
         <h3 className="font-bold text-stone-800 leading-tight">{poda.name}</h3>
-        <span className="inline-block mt-1 text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: color + "22", color }}>
-          {poda.category}
-        </span>
+        <div className="flex items-center gap-1.5 mt-1">
+          <span className="inline-block text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: color + "22", color }}>
+            {poda.category}
+          </span>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 flex items-center gap-1">
+            <span>📐</span> Esquema
+          </span>
+        </div>
       </div>
       <div className="px-4 py-2.5 mt-auto">
         <p className="text-[10px] text-stone-400 font-medium mb-1">Meses de poda</p>

@@ -44,7 +44,9 @@ export default function MondaCard({ monda, onClick, compact = false }) {
             >
               {monda.category}
             </span>
-            <span className="text-stone-400 font-medium">🌱 Monda</span>
+            <span className="text-lime-700 font-bold bg-lime-50 px-1.5 py-0.5 rounded-md border border-lime-200/60 flex items-center gap-0.5">
+              📐 Esquema
+            </span>
           </div>
         </div>
       </button>
@@ -67,9 +69,14 @@ export default function MondaCard({ monda, onClick, compact = false }) {
       </div>
       <div className="px-4 pt-3 pb-1 space-y-2">
         <h3 className="font-bold text-stone-800 leading-tight">{monda.name}</h3>
-        <span className="inline-block text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: color + "22", color }}>
-          {monda.category}
-        </span>
+        <div className="flex items-center gap-1.5 mt-1">
+          <span className="inline-block text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: color + "22", color }}>
+            {monda.category}
+          </span>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-lime-50 text-lime-700 border border-lime-200/60 flex items-center gap-1">
+            <span>📐</span> Esquema
+          </span>
+        </div>
         {monda.when_stage && <p className="text-xs text-stone-500 leading-snug line-clamp-2">{monda.when_stage}</p>}
       </div>
       <div className="px-4 py-2.5 mt-auto">
