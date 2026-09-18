@@ -1,7 +1,80 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { RotateCcw, Play, Pause, Ruler, Scissors, CheckCircle2, XCircle, Sparkles } from "lucide-react";
+import { RotateCcw, Play, Pause, ZoomIn, ZoomOut, Eye, Ruler, Scissors, CheckCircle2, XCircle } from "lucide-react";
+
+// --- GERADOR DE ETIQUETAS 3D FLUTUANTES NÍTIDAS ---
+function createLabelSprite(text, {
+  bgColor = "#ffffff",
+  textColor = "#0f172a",
+  borderColor = "#cbd5e1",
+  icon = "",
+  fontSize = 30,
+  padding = 14
+} = {}) {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  const font = `bold ${fontSize}px system-ui, -apple-system, sans-serif`;
+  ctx.font = font;
+
+  const fullText = icon ? `${icon}  ${text}` : text;
+  const metrics = ctx.measureText(fullText);
+  const textWidth = metrics.width;
+  const textHeight = fontSize * 1.3;
+
+  const width = Math.ceil(textWidth + padding * 3);
+  const height = Math.ceil(textHeight + padding * 1.8);
+
+  canvas.width = width * 2;
+  canvas.height = height * 2;
+  ctx.scale(2, 2);
+
+  // Sombra
+  ctx.shadowColor = "rgba(0, 0, 0, 0.2)";
+  ctx.shadowBlur = 8;
+  ctx.shadowOffsetY = 3;
+
+  // Balão
+  const r = 14;
+  ctx.fillStyle = bgColor;
+  ctx.strokeStyle = borderColor;
+  ctx.lineWidth = 3;
+
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.lineTo(width - r, 0);
+  ctx.quadraticCurveTo(width, 0, width, r);
+  ctx.lineTo(width, height - r);
+  ctx.quadraticCurveTo(width, height, width - r, height);
+  ctx.lineTo(r, height);
+  ctx.quadraticCurveTo(0, height, 0, height - r);
+  ctx.lineTo(0, r);
+  ctx.quadraticCurveTo(0, 0, r, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.shadowColor = "transparent";
+  ctx.font = font;
+  ctx.fillStyle = textColor;
+  ctx.textBaseline = "middle";
+  ctx.fillText(fullText, padding * 1.5, height / 2 + 1);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.minFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+
+  const spriteMaterial = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: false
+  });
+
+  const sprite = new THREE.Sprite(spriteMaterial);
+  const scale = 0.0055;
+  sprite.scale.set(width * scale, height * scale, 1);
+  return sprite;
+}
 
 export default function Monda3DViewer({ diagramType = "root_thinning", name = "Cultura", spacingCm = "5 cm" }) {
   const containerRef = useRef(null);
@@ -11,28 +84,38 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
   const sceneRef = useRef(null);
   const cameraRef = useRef(null);
 
-  const [autoRotate, setAutoRotate] = useState(true);
+  const [autoRotate, setAutoRotate] = useState(false);
+  const [showLabels, setShowLabels] = useState(true);
+
+  useEffect(() => {
+    if (!sceneRef.current) return;
+    sceneRef.current.traverse((obj) => {
+      if (obj instanceof THREE.Sprite) {
+        obj.visible = showLabels;
+      }
+    });
+  }, [showLabels]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const width = container.clientWidth || 360;
-    const height = container.clientHeight || 320;
+    const height = container.clientHeight || 340;
 
     // 1. Scene
     const scene = new THREE.Scene();
     sceneRef.current = scene;
-    scene.background = new THREE.Color(0xf8fafc);
-    scene.fog = new THREE.FogExp2(0xf8fafc, 0.04);
+    scene.background = new THREE.Color(0xf7fee7); // Fundo verde lima suave e acolhedor
+    scene.fog = new THREE.FogExp2(0xf7fee7, 0.035);
 
     // 2. Camera
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
     cameraRef.current = camera;
     if (diagramType === "solanaceae_sucker") {
-      camera.position.set(2.5, 3.2, 5.0);
+      camera.position.set(2.4, 3.0, 4.8);
     } else {
-      camera.position.set(0, 3.8, 6.5);
+      camera.position.set(0, 3.6, 6.2);
     }
 
     // 3. Renderer
@@ -49,240 +132,272 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
     const controls = new OrbitControls(camera, renderer.domElement);
     controlsRef.current = controls;
     controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.maxPolarAngle = Math.PI / 2 + 0.1;
+    controls.dampingFactor = 0.06;
+    controls.maxPolarAngle = Math.PI / 2 + 0.05;
     controls.minDistance = 1.8;
     controls.maxDistance = 14;
     controls.autoRotate = autoRotate;
-    controls.autoRotateSpeed = 1.6;
+    controls.autoRotateSpeed = 1.4;
 
     if (diagramType === "solanaceae_sucker") {
       controls.target.set(0, 1.6, 0);
     } else {
-      controls.target.set(0, 1.2, 0);
+      controls.target.set(0, 1.0, 0);
     }
     controls.update();
 
     // 5. Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.3);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xfffbeb, 2.0);
-    dirLight.position.set(5, 10, 7);
-    dirLight.castShadow = true;
-    scene.add(dirLight);
+    const sunLight = new THREE.DirectionalLight(0xfffbeb, 2.3);
+    sunLight.position.set(5, 12, 7);
+    sunLight.castShadow = true;
+    scene.add(sunLight);
 
-    const fillLight = new THREE.DirectionalLight(0xa7f3d0, 0.7);
-    fillLight.position.set(-5, 4, -4);
-    scene.add(fillLight);
+    const skyFill = new THREE.DirectionalLight(0xa7f3d0, 0.8);
+    skyFill.position.set(-5, 4, -4);
+    scene.add(skyFill);
 
     // 6. Grupo de Modelos
     const modelGroup = new THREE.Group();
     scene.add(modelGroup);
 
-    // Materiais Comuns
+    // Materiais
     const stemMaterial = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.6 });
     const leafMaterial = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.5, side: THREE.DoubleSide });
     const suckerMaterial = new THREE.MeshStandardMaterial({
       color: 0xef4444, // Vermelho vivo
-      roughness: 0.4,
-      emissive: 0x991b1b,
-      emissiveIntensity: 0.35
+      roughness: 0.35,
+      emissive: 0xb91c1c,
+      emissiveIntensity: 0.4
     });
-    const cutRingMaterial = new THREE.MeshBasicMaterial({ color: 0xff1111, wireframe: true });
-    const rootMaterial = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.5 }); // Laranja para cenouras/raízes
+    const rootMaterial = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.4 }); // Cenouras laranjas brilhantes
+
+    // Helper tesourinha 3D
+    function addMiniShears(pos) {
+      const shears = new THREE.Group();
+      const bladeGeo = new THREE.BoxGeometry(0.03, 0.28, 0.015);
+      const bladeMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.9 });
+      const b1 = new THREE.Mesh(bladeGeo, bladeMat);
+      b1.rotation.z = Math.PI / 4;
+      const b2 = new THREE.Mesh(bladeGeo, bladeMat);
+      b2.rotation.z = -Math.PI / 4;
+      shears.add(b1);
+      shears.add(b2);
+
+      const r1 = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.015, 6, 12), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
+      r1.position.set(-0.1, -0.12, 0);
+      const r2 = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.015, 6, 12), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
+      r2.position.set(0.1, -0.12, 0);
+      shears.add(r1);
+      shears.add(r2);
+
+      shears.position.copy(pos);
+      modelGroup.add(shears);
+    }
 
     if (diagramType === "solanaceae_sucker") {
-      // --- MODELO 3D DE DESLADROAMENTO AXILAR (TOMATEIRO / PIMENTO) ---
-      // Solo pequeno
-      const bedGeo = new THREE.CylinderGeometry(2.5, 2.7, 0.3, 32);
-      const bedMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
+      // --- MODELO 3D DE DESLADROAMENTO (TOMATEIRO / PIMENTO) ---
+      // Base de solo
+      const bedGeo = new THREE.CylinderGeometry(2.4, 2.6, 0.3, 32);
+      const bedMat = new THREE.MeshStandardMaterial({ color: 0x543015, roughness: 0.9 });
       const bed = new THREE.Mesh(bedGeo, bedMat);
       bed.position.y = -0.15;
       modelGroup.add(bed);
 
-      // Caule Principal Vertical
-      const mainStemGeo = new THREE.CylinderGeometry(0.18, 0.22, 3.6, 24);
+      // Caule Principal Vertical Robusto
+      const mainStemGeo = new THREE.CylinderGeometry(0.2, 0.24, 3.8, 24);
       const mainStem = new THREE.Mesh(mainStemGeo, stemMaterial);
-      mainStem.position.y = 1.8;
+      mainStem.position.y = 1.9;
       mainStem.castShadow = true;
       modelGroup.add(mainStem);
 
-      // Folha Horizontal Estendida (formando a axila)
-      const petioleGeo = new THREE.CylinderGeometry(0.08, 0.12, 1.8, 16);
+      // Folha Horizontal Estendida (formando a axila em V)
+      const petioleGeo = new THREE.CylinderGeometry(0.09, 0.13, 2.0, 16);
       const petiole = new THREE.Mesh(petioleGeo, stemMaterial);
-      petiole.position.set(0.85, 1.7, 0);
-      petiole.rotation.z = -Math.PI / 2.5; // inclinado suavemente para baixo
+      petiole.position.set(0.95, 1.75, 0);
+      petiole.rotation.z = -Math.PI / 2.6;
       modelGroup.add(petiole);
 
       // Folíolos da folha
-      for (let i = 0; i < 4; i++) {
-        const leafGeo = new THREE.SphereGeometry(0.28, 12, 8);
-        leafGeo.scale(1, 0.1, 1.8);
+      for (let i = 0; i < 5; i++) {
+        const leafGeo = new THREE.SphereGeometry(0.3, 10, 8);
+        leafGeo.scale(1.2, 0.1, 1.8);
         const leaf = new THREE.Mesh(leafGeo, leafMaterial);
-        leaf.position.set(0.5 + i * 0.35, 1.95 - i * 0.18, (i % 2 === 0 ? 0.35 : -0.35));
-        leaf.rotation.y = (i % 2 === 0 ? 0.4 : -0.4);
+        leaf.position.set(0.5 + i * 0.38, 2.05 - i * 0.2, (i % 2 === 0 ? 0.38 : -0.38));
+        leaf.rotation.y = (i % 2 === 0 ? 0.45 : -0.45);
         modelGroup.add(leaf);
       }
 
-      // O REBENTO LADRÃO AXILAR (A 45° - VERMELHO VIVO - A RETIRAR!)
-      const suckerGeo = new THREE.CylinderGeometry(0.07, 0.1, 1.1, 16);
+      // O LADRÃO AXILAR (A 45° - VERMELHO INTENSO - A PARTIR COM O POLEGAR!)
+      const suckerGeo = new THREE.CylinderGeometry(0.08, 0.11, 1.2, 16);
       const sucker = new THREE.Mesh(suckerGeo, suckerMaterial);
-      sucker.position.set(0.38, 2.1, 0);
-      sucker.rotation.z = -Math.PI / 4; // rigorosamente a 45 graus!
+      sucker.position.set(0.42, 2.15, 0);
+      sucker.rotation.z = -Math.PI / 4; // exatamente 45 graus!
       sucker.castShadow = true;
       modelGroup.add(sucker);
 
       // Folhinhas jovens do ladrão
-      const suckerLeaf1 = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), suckerMaterial);
-      suckerLeaf1.position.set(0.72, 2.5, 0.1);
-      modelGroup.add(suckerLeaf1);
+      const sL1 = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), suckerMaterial);
+      sL1.position.set(0.8, 2.58, 0.1);
+      modelGroup.add(sL1);
 
-      const suckerLeaf2 = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8), suckerMaterial);
-      suckerLeaf2.position.set(0.68, 2.45, -0.1);
-      modelGroup.add(suckerLeaf2);
+      const sL2 = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 8), suckerMaterial);
+      sL2.position.set(0.75, 2.52, -0.1);
+      modelGroup.add(sL2);
 
-      // Anel vermelho pulsante de corte na axila
-      const ringGeo = new THREE.TorusGeometry(0.16, 0.03, 8, 20);
-      const ring = new THREE.Mesh(ringGeo, cutRingMaterial);
-      ring.position.set(0.12, 1.78, 0);
-      ring.rotation.y = Math.PI / 2;
-      modelGroup.add(ring);
+      // Marcador de tesoura na axila
+      addMiniShears(new THREE.Vector3(0.15, 1.82, 0.02));
 
-      // Pequeno cacho de flores amarelas de tomateiro no caule
-      const flowerMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3 });
-      const flower = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.2, 8), flowerMat);
-      flower.position.set(-0.25, 2.5, 0);
-      flower.rotation.z = Math.PI / 2.5;
-      modelGroup.add(flower);
+      // Cacho de Tomates Vermelhos com Cálice Estrelado
+      const tomatoGroup = new THREE.Group();
+      const tomatoGeo = new THREE.SphereGeometry(0.25, 16, 16);
+      const tomatoMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.25 });
+      const tomato = new THREE.Mesh(tomatoGeo, tomatoMat);
+      tomatoGroup.add(tomato);
 
-    } else if (diagramType === "cucurbit_trail") {
-      // --- MODELO 3D DE DESPONTA DE CUCURBITÁCEAS (ABÓBORA / MELÃO) ---
-      // Solo plano
-      const soilGeo = new THREE.BoxGeometry(6, 0.3, 3);
-      const soilMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
-      const soil = new THREE.Mesh(soilGeo, soilMat);
-      soil.position.y = -0.15;
-      modelGroup.add(soil);
+      // Cálice verde no topo do tomate
+      const calyxGeo = new THREE.ConeGeometry(0.12, 0.08, 5);
+      const calyx = new THREE.Mesh(calyxGeo, leafMaterial);
+      calyx.position.y = 0.24;
+      tomatoGroup.add(calyx);
 
-      // Rama rasteira ondulada
-      const vineCurve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(-2.4, 0.1, 0),
-        new THREE.Vector3(-1.2, 0.12, 0.3),
-        new THREE.Vector3(0, 0.1, -0.2),
-        new THREE.Vector3(1.2, 0.15, 0.2),
-        new THREE.Vector3(2.4, 0.1, 0)
-      ]);
-      const tubeGeo = new THREE.TubeGeometry(vineCurve, 32, 0.08, 12, false);
-      const vine = new THREE.Mesh(tubeGeo, stemMaterial);
-      modelGroup.add(vine);
+      tomatoGroup.position.set(-0.35, 2.6, 0.1);
+      modelGroup.add(tomatoGroup);
 
-      // 4 Folhas largas de abóbora
-      [-1.8, -0.8, 0.2, 1.2].forEach((x, idx) => {
-        const leafGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.02, 16);
-        const leaf = new THREE.Mesh(leafGeo, leafMaterial);
-        leaf.position.set(x, 0.4, (idx % 2 === 0 ? 0.4 : -0.4));
-        leaf.rotation.x = (idx % 2 === 0 ? 0.3 : -0.3);
-        modelGroup.add(leaf);
-      });
+      // ETIQUETAS FLUTUANTES 3D (À PROVA DE AVÓS)
+      if (showLabels) {
+        // Etiqueta 1: O Ladrão Axilar
+        const lSucker = createLabelSprite("CORTAR: Ladrão da Axila (3 a 5 cm)", {
+          bgColor: "#dc2626",
+          textColor: "#ffffff",
+          borderColor: "#b91c1c",
+          icon: "✂️"
+        });
+        lSucker.position.set(0.9, 2.95, 0);
+        modelGroup.add(lSucker);
 
-      // Fruto fixado no chão (Abóbora / Melão dourado)
-      const fruitGeo = new THREE.SphereGeometry(0.45, 24, 24);
-      fruitGeo.scale(1.2, 0.9, 1.1);
-      const fruitMat = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.3 });
-      const fruit = new THREE.Mesh(fruitGeo, fruitMat);
-      fruit.position.set(0.1, 0.38, -0.6);
-      fruit.castShadow = true;
-      modelGroup.add(fruit);
+        // Etiqueta 2: Técnica do Polegar
+        const lThumb = createLabelSprite("👉 Dobra com o polegar para partir com um clique", {
+          bgColor: "#eff6ff",
+          textColor: "#1d4ed8",
+          borderColor: "#93c5fd",
+          icon: "👌"
+        });
+        lThumb.position.set(1.4, 2.3, 0);
+        modelGroup.add(lThumb);
 
-      // Ponto de desponta apical (Corte após a 4ª folha - Vermelho)
-      const ringGeo = new THREE.TorusGeometry(0.18, 0.04, 8, 20);
-      const cutRing = new THREE.Mesh(ringGeo, cutRingMaterial);
-      cutRing.position.set(1.6, 0.25, 0.1);
-      cutRing.rotation.y = Math.PI / 2;
-      modelGroup.add(cutRing);
+        // Etiqueta 3: Folha que fica
+        const lLeaf = createLabelSprite("MANTER: Folha (alimenta os tomates)", {
+          bgColor: "#15803d",
+          textColor: "#ffffff",
+          borderColor: "#22c55e",
+          icon: "🌿"
+        });
+        lLeaf.position.set(1.6, 1.2, 0);
+        modelGroup.add(lLeaf);
 
-      // Ponta descartada além do corte (Vermelha)
-      const tipGeo = new THREE.CylinderGeometry(0.04, 0.07, 0.9, 12);
-      const tip = new THREE.Mesh(tipGeo, suckerMaterial);
-      tip.position.set(2.0, 0.16, 0.05);
-      tip.rotation.z = Math.PI / 2;
-      modelGroup.add(tip);
+        // Etiqueta 4: Caule principal
+        const lStem = createLabelSprite("Caule Principal", {
+          bgColor: "#ffffff",
+          textColor: "#166534",
+          borderColor: "#86efac",
+          icon: "👑"
+        });
+        lStem.position.set(-0.6, 3.4, 0);
+        modelGroup.add(lStem);
+      }
 
     } else {
-      // --- MODELO 3D PADRÃO DE DESBASTE DE SEMENTEIRA (CENOURA, BETERRABA, ETC.) ---
-      // Bloco de canteiro com solo translúcido para ver as raízes subterrâneas!
+      // --- MODELO 3D DE DESBASTE DE SEMENTEIRA (CENOURAS / RAÍZES) ---
       const bedWidth = 5.6;
+      // Bloco de terra translúcida
       const bedGeo = new THREE.BoxGeometry(bedWidth, 1.6, 1.8);
       const bedMat = new THREE.MeshStandardMaterial({
-        color: 0x5c3818,
+        color: 0x451a03,
         roughness: 0.9,
         transparent: true,
-        opacity: 0.85
+        opacity: 0.8
       });
       const bed = new THREE.Mesh(bedGeo, bedMat);
       bed.position.set(0, -0.8, 0);
       modelGroup.add(bed);
 
-      // Linha da régua em cm desenhada na borda frontal
-      const rulerGeo = new THREE.BoxGeometry(bedWidth, 0.06, 0.12);
-      const rulerMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2 });
+      // Régua em Centímetros na frente
+      const rulerGeo = new THREE.BoxGeometry(bedWidth, 0.08, 0.14);
+      const rulerMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
       const ruler = new THREE.Mesh(rulerGeo, rulerMat);
-      ruler.position.set(0, 0.03, 0.85);
+      ruler.position.set(0, 0.04, 0.85);
       modelGroup.add(ruler);
 
-      // Marcações da régua a cada 5cm (escala 3D)
-      [-2.0, -1.0, 0.0, 1.0, 2.0].forEach((x, idx) => {
-        const markGeo = new THREE.BoxGeometry(0.04, 0.08, 0.14);
-        const mark = new THREE.Mesh(markGeo, new THREE.MeshBasicMaterial({ color: 0x0284c7 }));
-        mark.position.set(x, 0.04, 0.85);
-        modelGroup.add(mark);
-      });
-
-      // Plântulas principais espaçadas (Verdes - Mantidas)
+      // Cenouras Mantidas (Espaçadas a cada 1.0 unidade / 5 cm reais)
       [-2.0, -1.0, 0.0, 1.0, 2.0].forEach((x) => {
-        // Folhagem acima do chão
-        const foliage = new THREE.Group();
+        // Folhagem fofa
         for (let j = 0; j < 3; j++) {
-          const leafStem = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, 0.9, 8), stemMaterial);
-          leafStem.position.set(0, 0.45, 0);
-          leafStem.rotation.z = (j - 1) * 0.25;
-          foliage.add(leafStem);
+          const l = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, 0.9, 8), stemMaterial);
+          l.position.set(x, 0.45, 0);
+          l.rotation.z = (j - 1) * 0.22;
+          modelGroup.add(l);
         }
-        foliage.position.set(x, 0, 0);
-        modelGroup.add(foliage);
 
-        // Raiz de cenoura aprumada debaixo da terra
-        const carrotGeo = new THREE.ConeGeometry(0.18, 1.1, 16);
+        // Cenoura grossa bonita debaixo do solo
+        const carrotGeo = new THREE.ConeGeometry(0.2, 1.2, 16);
         const carrot = new THREE.Mesh(carrotGeo, rootMaterial);
-        carrot.position.set(x, -0.55, 0);
-        carrot.rotation.x = Math.PI; // afunila para baixo
+        carrot.position.set(x, -0.6, 0);
+        carrot.rotation.x = Math.PI;
         modelGroup.add(carrot);
       });
 
-      // Plântulas em excesso a cortar com tesoura rente à terra (Vermelhas)
+      // Plântulas a Mondar (Vermelhas com tesoura rente)
       [-1.5, -0.5, 0.5, 1.5].forEach((x) => {
         const weed = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.5, 8), suckerMaterial);
-        weed.position.set(x, 0.25, 0.05);
+        weed.position.set(x, 0.25, 0.04);
         weed.rotation.z = 0.15;
         modelGroup.add(weed);
 
-        // Anel de corte na base
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.02, 6, 16), cutRingMaterial);
-        ring.position.set(x, 0.04, 0.05);
-        ring.rotation.x = Math.PI / 2;
-        modelGroup.add(ring);
+        addMiniShears(new THREE.Vector3(x, 0.05, 0.06));
       });
+
+      // ETIQUETAS FLUTUANTES
+      if (showLabels) {
+        const lStrong = createLabelSprite("MANTER: Cenoura Forte (Cresce livre!)", {
+          bgColor: "#15803d",
+          textColor: "#ffffff",
+          borderColor: "#22c55e",
+          icon: "👑"
+        });
+        lStrong.position.set(0, 1.4, 0);
+        modelGroup.add(lStrong);
+
+        const lWeed = createLabelSprite("CORTAR COM TESOURA RENTE AO CHÃO", {
+          bgColor: "#dc2626",
+          textColor: "#ffffff",
+          borderColor: "#b91c1c",
+          icon: "✂️"
+        });
+        lWeed.position.set(0.6, 0.65, 0.1);
+        modelGroup.add(lWeed);
+
+        const lRuler = createLabelSprite(`Espaçamento Ideal: ${spacingCm}`, {
+          bgColor: "#fef3c7",
+          textColor: "#92400e",
+          borderColor: "#f59e0b",
+          icon: "📏"
+        });
+        lRuler.position.set(0, -1.3, 0.9);
+        modelGroup.add(lRuler);
+      }
     }
 
-    // Loop de renderização
+    // Loop de Renderização & Animação
     let clock = new THREE.Clock();
     function animate() {
       reqIdRef.current = requestAnimationFrame(animate);
       controls.update();
 
       const time = clock.getElapsedTime();
-      suckerMaterial.emissiveIntensity = 0.25 + 0.25 * Math.sin(time * 3.5);
+      suckerMaterial.emissiveIntensity = 0.3 + 0.25 * Math.sin(time * 3.5);
 
       renderer.render(scene, camera);
     }
@@ -303,93 +418,140 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
       if (reqIdRef.current) cancelAnimationFrame(reqIdRef.current);
       controls.dispose();
       renderer.dispose();
-      stemMaterial.dispose();
-      leafMaterial.dispose();
-      suckerMaterial.dispose();
-      cutRingMaterial.dispose();
-      rootMaterial.dispose();
     };
-  }, [diagramType, autoRotate]);
+  }, [diagramType, autoRotate, showLabels]);
 
-  function handleResetCamera() {
+  function handleResetFront() {
     if (!cameraRef.current || !controlsRef.current) return;
     if (diagramType === "solanaceae_sucker") {
-      cameraRef.current.position.set(2.5, 3.2, 5.0);
+      cameraRef.current.position.set(2.4, 3.0, 4.8);
       controlsRef.current.target.set(0, 1.6, 0);
     } else {
-      cameraRef.current.position.set(0, 3.8, 6.5);
-      controlsRef.current.target.set(0, 1.2, 0);
+      cameraRef.current.position.set(0, 3.6, 6.2);
+      controlsRef.current.target.set(0, 1.0, 0);
     }
     controlsRef.current.update();
   }
 
+  function handleViewTop() {
+    if (!cameraRef.current || !controlsRef.current) return;
+    cameraRef.current.position.set(0, 7.5, 0.1);
+    controlsRef.current.target.set(0, 1.0, 0);
+    controlsRef.current.update();
+  }
+
+  function handleZoom(factor) {
+    if (!cameraRef.current || !controlsRef.current) return;
+    cameraRef.current.position.multiplyScalar(factor);
+    controlsRef.current.update();
+  }
+
   return (
-    <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm space-y-3 p-4">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-lime-600 text-white flex items-center justify-center font-bold shadow-xs">
+    <div className="bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-sm space-y-3 p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2.5">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-lime-500 to-emerald-600 text-white flex items-center justify-center font-extrabold text-base shadow-md shadow-lime-200">
             3D
           </div>
           <div>
-            <h4 className="font-bold text-stone-800 text-sm flex items-center gap-1.5">
-              <span>{name} em 3D Interativo</span>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-lime-100 text-lime-800 border border-lime-200">
-                360° Órbita
-              </span>
+            <h4 className="font-extrabold text-stone-800 text-sm sm:text-base leading-tight">
+              {name} em Modelo 3D Interativo
             </h4>
-            <p className="text-xs text-stone-500">Arrasta para rodar em 360° • Zoom com roda ou pinça</p>
+            <p className="text-xs text-stone-500">Gira com o dedo para ver as raízes e a axila foliar</p>
           </div>
         </div>
 
         {spacingCm && (
-          <div className="flex items-center gap-1.5 bg-lime-50 border border-lime-200 px-2.5 py-1 rounded-xl text-xs font-bold text-lime-800">
-            <Ruler className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-1.5 bg-lime-50 border border-lime-200 px-3 py-1.5 rounded-xl text-xs font-bold text-lime-800 shadow-2xs">
+            <Ruler className="w-4 h-4" />
             <span>Espaçamento: {spacingCm}</span>
           </div>
         )}
       </div>
 
-      <div className="relative w-full h-72 sm:h-80 rounded-2xl overflow-hidden bg-gradient-to-b from-stone-100/60 via-slate-50 to-lime-50/30 border border-stone-200/80 shadow-inner">
+      <div className="relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden bg-gradient-to-b from-lime-50/60 via-emerald-50/20 to-teal-50/40 border border-lime-100 shadow-inner">
         <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing touch-none" />
 
         <div className="absolute top-3 right-3 flex flex-col gap-1.5 z-10">
           <button
             onClick={() => setAutoRotate(!autoRotate)}
-            className="p-2 rounded-xl bg-white/90 hover:bg-white text-stone-700 shadow-md backdrop-blur-xs border border-stone-200 transition-colors"
-            title={autoRotate ? "Pausar Rotação" : "Ativar Rotação"}
+            className={`p-2.5 rounded-2xl shadow-md border transition-all flex items-center gap-1 text-xs font-bold ${
+              autoRotate ? "bg-lime-600 text-white border-lime-700" : "bg-white/95 text-stone-700 border-stone-200 hover:bg-white"
+            }`}
+            title="Girar Sozinho (360°)"
           >
-            {autoRotate ? <Pause className="w-4 h-4 text-lime-600" /> : <Play className="w-4 h-4" />}
+            {autoRotate ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+            <span className="hidden sm:inline">{autoRotate ? "Pausar" : "Girar"}</span>
           </button>
+
           <button
-            onClick={handleResetCamera}
-            className="p-2 rounded-xl bg-white/90 hover:bg-white text-stone-700 shadow-md backdrop-blur-xs border border-stone-200 transition-colors"
-            title="Repor Ângulo"
+            onClick={handleResetFront}
+            className="p-2.5 rounded-2xl bg-white/95 hover:bg-white text-stone-700 shadow-md border border-stone-200 transition-colors flex items-center gap-1 text-xs font-bold"
+            title="Ver de Frente"
           >
             <RotateCcw className="w-4 h-4" />
+            <span className="hidden sm:inline">Frente</span>
+          </button>
+
+          <button
+            onClick={handleViewTop}
+            className="p-2.5 rounded-2xl bg-white/95 hover:bg-white text-stone-700 shadow-md border border-stone-200 transition-colors flex items-center gap-1 text-xs font-bold"
+            title="Ver de Cima"
+          >
+            <Eye className="w-4 h-4 text-lime-700" />
+            <span className="hidden sm:inline">De Cima</span>
+          </button>
+
+          <div className="flex gap-1">
+            <button
+              onClick={() => handleZoom(0.85)}
+              className="p-2 flex-1 rounded-xl bg-white/95 hover:bg-white text-stone-700 shadow-md border border-stone-200 flex items-center justify-center font-bold"
+              title="Aproximar (+)"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => handleZoom(1.18)}
+              className="p-2 flex-1 rounded-xl bg-white/95 hover:bg-white text-stone-700 shadow-md border border-stone-200 flex items-center justify-center font-bold"
+              title="Afastar (-)"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </button>
+          </div>
+
+          <button
+            onClick={() => setShowLabels(!showLabels)}
+            className={`p-2 rounded-2xl shadow-md border text-xs font-bold transition-all text-center ${
+              showLabels ? "bg-amber-100 text-amber-900 border-amber-300" : "bg-white/95 text-stone-500 border-stone-200"
+            }`}
+          >
+            {showLabels ? "🏷️ Ocultar Texto" : "🏷️ Ver Texto"}
           </button>
         </div>
 
-        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-2 pointer-events-none">
-          <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-stone-200/80 shadow-sm flex items-center gap-3 text-[11px] font-semibold pointer-events-auto">
-            <span className="flex items-center gap-1.5 text-rose-700 font-bold">
-              <span className="w-3 h-3 rounded-full bg-rose-500 inline-block shadow-2xs animate-pulse" />
-              ✂️ Mondar / Ladrão Axilar
-            </span>
-            <span className="flex items-center gap-1.5 text-lime-800 font-bold">
-              <span className="w-3 h-3 rounded-full bg-lime-600 inline-block shadow-2xs" />
-              🌿 Manter Alinhado
-            </span>
+        <div className="absolute bottom-3 left-3 right-3 pointer-events-none flex justify-center">
+          <div className="bg-white/95 backdrop-blur-md px-4 py-2 rounded-2xl border-2 border-stone-200/80 shadow-lg flex flex-wrap items-center justify-center gap-4 text-xs font-bold pointer-events-auto">
+            <div className="flex items-center gap-2 text-rose-700 bg-rose-50 px-2.5 py-1 rounded-xl border border-rose-200">
+              <span className="w-3.5 h-3.5 rounded-full bg-rose-600 inline-block shadow-xs animate-pulse" />
+              <span>✂️ VERMELHO = RETIRAR (Ladrão / Excesso)</span>
+            </div>
+            <div className="flex items-center gap-2 text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
+              <span className="w-3.5 h-3.5 rounded-full bg-emerald-600 inline-block shadow-xs" />
+              <span>🌿 VERDE = MANTER (Planta forte)</span>
+            </div>
           </div>
-
-          <span className="hidden sm:inline-block bg-black/40 text-white text-[10px] px-2.5 py-1 rounded-lg backdrop-blur-xs">
-            Gira livremente em 360°
-          </span>
         </div>
       </div>
 
-      <p className="text-xs text-stone-500 text-center">
-        💡 <b>Dica de exploração:</b> Roda o modelo para observar a raiz debaixo do solo ou o ângulo exato de 45° da axila.
-      </p>
+      <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-3.5 flex items-center gap-3 text-xs text-amber-950">
+        <span className="text-2xl shrink-0">👴👵</span>
+        <div>
+          <span className="font-extrabold block text-amber-900">Como funciona este esquema de monda 3D:</span>
+          <span className="leading-relaxed">
+            Roda a planta para ver a raiz e a axila da folha. O que está a <b>vermelho ✂️</b> é o que se corta (ou com a tesoura rente ao chão ou partindo o ladrão com o polegar). O que está a <b>verde 🌿</b> é a planta que fica para crescer viçosa e saudável!
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
