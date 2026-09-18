@@ -3,6 +3,9 @@
 // podas sazonais e mondas (apenas de culturas que o utilizador tem plantadas)
 // para gerar a lista do que fazer hoje.
 
+import { PODA_SCHEMAS } from "./pruningThinningSchemas";
+import { getLastWateredMap } from "./smartAlerts";
+
 const WATER_FREQ = {
   "Abundante": 1,
   "Moderada": 2,
@@ -144,24 +147,34 @@ export function computeDailyTasks({ plantings, plants, myAnimals, farmAnimals, p
   const faById = {};
   (farmAnimals || []).forEach(a => { faById[a.id] = a; });
   const currentMonth = new Date().getMonth() + 1;
+  const today = new Date().toISOString().split("T")[0];
+  const lastWateredMap = getLastWateredMap();
 
   // Apenas plantações ativas (exclui as já colhidas)
   const activePlantings = (plantings || []).filter(pl => pl.status !== "Colhida");
   const activePlantNames = activePlantings.map(pl => pl.plant_name).filter(Boolean);
 
-  // Rega — frequência conforme necessidades de água da planta
+  // Rega — frequência conforme necessidades de água da planta e última rega
   activePlantings.forEach(pl => {
     const plant = plantByName[pl.plant_name];
     const water = plant?.water_requirements || "Moderada";
     const freq = WATER_FREQ[water] || 2;
-    const dayIdx = daysSince(pl.planted_date);
-    if (dayIdx % freq === 0) {
+    const lastWatered = lastWateredMap[pl.id] || pl.planted_date || today;
+    const isWateredToday = lastWateredMap[pl.id] === today;
+    const daysSinceWater = daysSince(lastWatered);
+
+    if (daysSinceWater >= freq || isWateredToday) {
       tasks.rega.push({
         id: `rega-${pl.id}`,
+        plantingId: pl.id,
+        plantName: pl.plant_name,
         title: `Regar ${pl.plant_name}`,
         detail: `Rega ${water.toLowerCase()}${pl.location ? ` · ${pl.location}` : ""}`,
         emoji: pl.plant_emoji || "🌱",
-        color: pl.plant_color || "#84cc16",
+        color: pl.plant_color || "#0ea5e9",
+        waterReq: water,
+        wateredToday: isWateredToday,
+        isOverdue: daysSinceWater > freq && !isWateredToday,
       });
     }
   });
@@ -192,13 +205,18 @@ export function computeDailyTasks({ plantings, plants, myAnimals, farmAnimals, p
       const cleanTitle = po.name.toLowerCase().startsWith("poda")
         ? po.name
         : `Podar ${po.name}`;
+      const schema = PODA_SCHEMAS[po.id] || {};
 
       tasks.podas.push({
         id: `poda-${po.id}`,
+        podaId: po.id,
+        podaName: po.name,
         title: cleanTitle,
         detail: po.when_info || "Época de poda",
         how: po.how,
         tips: po.tips,
+        diagramType: schema.diagramType || "cup_shape",
+        goldenRule: schema.goldenRule || "",
         emoji: po.emoji || "✂️",
         color: po.color || "#16a34a",
       });
@@ -211,14 +229,18 @@ export function computeDailyTasks({ plantings, plants, myAnimals, farmAnimals, p
       const cleanTitle = mo.name.toLowerCase().startsWith("monda")
         ? mo.name
         : `Monda: ${mo.name}`;
+      const isTomato = mo.id.includes("tomate") || normalize(mo.name).includes("tomate");
 
       tasks.mondas.push({
         id: `monda-${mo.id}`,
+        mondaId: mo.id,
+        mondaName: mo.name,
         title: cleanTitle,
         detail: mo.when_stage || mo.when_info || "Época de desbaste e monda",
         spacing: mo.spacing || "",
         how: mo.how,
         tips: mo.tips,
+        diagramType: isTomato ? "solanaceae_sucker" : "root_thinning",
         emoji: mo.emoji || "🌱",
         color: mo.color || "#84cc16",
       });

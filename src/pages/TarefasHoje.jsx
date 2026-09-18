@@ -1,9 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
-import { Loader2, ArrowLeft, Bell, BellOff, Droplets, PawPrint, Scissors, Sprout, Plus } from "lucide-react";
+import { Loader2, ArrowLeft, Bell, BellOff, Droplets, PawPrint, Scissors, Sprout, Plus, Box, Check, X } from "lucide-react";
 import { computeDailyTasks, countTasks } from "@/lib/dailyTasks";
 import { notifyPermission, requestNotifyPermission, sendNotify, shouldNotifyToday, notifySupported } from "@/lib/notify";
+import { markPlantingWatered, getLastWateredMap } from "@/lib/smartAlerts";
+import SmartAlertsBanner from "@/components/quinta/SmartAlertsBanner";
+import Poda3DViewer from "@/components/podas/Poda3DViewer";
+import Monda3DViewer from "@/components/mondas/Monda3DViewer";
 import { useToast } from "@/components/ui/use-toast";
 import { cachedList } from "@/lib/offlineCatalog";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
@@ -15,7 +19,7 @@ const SECTIONS = [
   { key: "mondas", icon: Sprout, label: "Mondas", color: "#84cc16", emoji: "🌱" },
 ];
 
-function TaskItem({ task }) {
+function TaskItem({ task, onWater, onOpen3D }) {
   return (
     <div className="bg-white rounded-2xl border border-stone-200/80 overflow-hidden shadow-sm w-full min-w-0">
       <div className="flex items-stretch w-full min-w-0">
@@ -30,9 +34,21 @@ function TaskItem({ task }) {
               {task.emoji}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-stone-800 text-sm leading-snug break-words">
-                {task.title}
-              </p>
+              <div className="flex items-center justify-between gap-1 flex-wrap">
+                <p className="font-semibold text-stone-800 text-sm leading-snug break-words">
+                  {task.title}
+                </p>
+                {task.wateredToday && (
+                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Check className="w-3 h-3" /> Regado Hoje
+                  </span>
+                )}
+                {task.isOverdue && (
+                  <span className="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    Atrasada
+                  </span>
+                )}
+              </div>
               {task.detail && (
                 <p className="text-xs text-stone-500 leading-snug break-words mt-0.5">
                   {task.detail}
@@ -49,6 +65,18 @@ function TaskItem({ task }) {
               </p>
               <p className="text-xs text-stone-600 leading-relaxed break-words">
                 {task.how}
+              </p>
+            </div>
+          )}
+
+          {/* Dica de ouro da poda */}
+          {task.goldenRule && (
+            <div className="bg-emerald-50/70 border border-emerald-100 rounded-xl p-2.5 min-w-0">
+              <p className="text-xs font-semibold text-emerald-900 mb-0.5 flex items-center gap-1">
+                <span>⭐</span> Regra de Ouro da Poda
+              </p>
+              <p className="text-xs text-emerald-800 leading-relaxed break-words">
+                {task.goldenRule}
               </p>
             </div>
           )}
@@ -88,6 +116,52 @@ function TaskItem({ task }) {
               </p>
             </div>
           )}
+
+          {/* Botões de Ação Interativa */}
+          <div className="flex items-center gap-2 pt-1 flex-wrap">
+            {task.plantingId && (
+              <button
+                onClick={() => onWater(task.plantingId, task.plantName || task.title)}
+                disabled={task.wateredToday}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
+                  task.wateredToday
+                    ? "bg-emerald-600 text-white cursor-default"
+                    : task.isOverdue
+                    ? "bg-rose-600 hover:bg-rose-700 text-white active:scale-95"
+                    : "bg-sky-600 hover:bg-sky-700 text-white active:scale-95"
+                }`}
+              >
+                {task.wateredToday ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Regado Hoje ✓</span>
+                  </>
+                ) : (
+                  <>
+                    <Droplets className="w-3.5 h-3.5" />
+                    <span>Regar Agora ✓</span>
+                  </>
+                )}
+              </button>
+            )}
+
+            {task.diagramType && (
+              <button
+                onClick={() =>
+                  onOpen3D({
+                    type: task.id.startsWith("poda") ? "poda" : "monda",
+                    name: task.podaName || task.mondaName || task.title,
+                    diagramType: task.diagramType,
+                    spacingCm: task.spacing,
+                  })
+                }
+                className="px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs active:scale-95"
+              >
+                <Box className="w-3.5 h-3.5" />
+                <span>Ver Esquema 3D</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -97,40 +171,73 @@ function TaskItem({ task }) {
 export default function TarefasHoje() {
   const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState({ rega: [], animais: [], podas: [], mondas: [] });
+  const [data, setData] = useState({
+    plantings: [],
+    plants: [],
+    myAnimals: [],
+    farmAnimals: [],
+    podas: [],
+    mondas: []
+  });
+  const [active3DModal, setActive3DModal] = useState(null);
   const [perm, setPerm] = useState(notifyPermission());
   const [hasData, setHasData] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const [plantings, plants, myAnimals, farmAnimals, podas, mondas] = await Promise.all([
-          base44.entities.Planting.list("-planted_date").catch(() => []),
-          cachedList("plants", () => base44.entities.Plant.list()),
-          base44.entities.MyAnimal.list().catch(() => []),
-          cachedList("farmanimals", () => base44.entities.FarmAnimal.list()),
-          cachedList("podas", () => base44.entities.Podas.list()),
-          cachedList("mondas", () => base44.entities.Mondas.list()),
-        ]);
-        const t = computeDailyTasks({ plantings, plants, myAnimals, farmAnimals, podas, mondas });
-        setTasks(t);
-        setHasData(plantings.length > 0 || myAnimals.length > 0);
-        if (notifySupported() && Notification.permission === "granted" && shouldNotifyToday()) {
-          const n = countTasks(t);
-          if (n > 0) {
-            const parts = [];
-            if (t.rega?.length) parts.push(`${t.rega.length} rega(s)`);
-            if (t.animais?.length) parts.push(`${t.animais.length} animal(is)`);
-            if (t.podas?.length) parts.push(`${t.podas.length} poda(s)`);
-            if (t.mondas?.length) parts.push(`${t.mondas.length} monda(s)`);
-            sendNotify("Tarefas de hoje 🌱", `Tens ${n} tarefas: ${parts.join(", ")}.`);
-          }
+  const loadAll = useCallback(async () => {
+    try {
+      const [plantings, plants, myAnimals, farmAnimals, podas, mondas] = await Promise.all([
+        base44.entities.Planting.list("-planted_date").catch(() => []),
+        cachedList("plants", () => base44.entities.Plant.list()),
+        base44.entities.MyAnimal.list().catch(() => []),
+        cachedList("farmanimals", () => base44.entities.FarmAnimal.list()),
+        cachedList("podas", () => base44.entities.Podas.list()),
+        cachedList("mondas", () => base44.entities.Mondas.list()),
+      ]);
+      const raw = { plantings, plants, myAnimals, farmAnimals, podas, mondas };
+      setData(raw);
+      const t = computeDailyTasks(raw);
+      setTasks(t);
+      setHasData(plantings.length > 0 || myAnimals.length > 0);
+      if (notifySupported() && Notification.permission === "granted" && shouldNotifyToday()) {
+        const n = countTasks(t);
+        if (n > 0) {
+          const parts = [];
+          if (t.rega?.length) parts.push(`${t.rega.length} rega(s)`);
+          if (t.animais?.length) parts.push(`${t.animais.length} animal(is)`);
+          if (t.podas?.length) parts.push(`${t.podas.length} poda(s)`);
+          if (t.mondas?.length) parts.push(`${t.mondas.length} monda(s)`);
+          sendNotify("Tarefas de hoje 🌱", `Tens ${n} tarefas: ${parts.join(", ")}.`);
         }
-      } finally {
-        setLoading(false);
       }
-    })();
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
+
+  // Atualizar quando houver rega
+  useEffect(() => {
+    const handleUpdate = () => {
+      if (data.plantings.length > 0) {
+        setTasks(computeDailyTasks(data));
+      }
+    };
+    window.addEventListener("hortaviva_watered_update", handleUpdate);
+    return () => window.removeEventListener("hortaviva_watered_update", handleUpdate);
+  }, [data]);
+
+  const handleWater = (plantingId, plantName) => {
+    markPlantingWatered(plantingId);
+    toast({
+      title: "Rega Registada! 💧",
+      description: `${plantName} foi marcada como regada hoje com sucesso.`,
+    });
+    setTasks(computeDailyTasks(data));
+  };
 
   const enableNotifications = async () => {
     const p = await requestNotifyPermission();
@@ -194,15 +301,20 @@ export default function TarefasHoje() {
               <Plus className="w-4 h-4" /> Ir para a Minha Quinta
             </Link>
           </div>
-        ) : total === 0 ? (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">🌿</div>
-            <h2 className="text-lg font-semibold text-stone-700 mb-1">Tudo em dia!</h2>
-            <p className="text-sm text-stone-500">Não tens tarefas de rega, podas ou mondas marcadas para hoje.</p>
-          </div>
         ) : (
           <>
-            {/* Resumo */}
+            {/* Banner de Alertas Inteligentes da Quinta */}
+            <SmartAlertsBanner
+              plantings={data.plantings}
+              plants={data.plants}
+              myAnimals={data.myAnimals}
+              farmAnimals={data.farmAnimals}
+              podas={data.podas}
+              mondas={data.mondas}
+              onOpen3D={(modalData) => setActive3DModal(modalData)}
+            />
+
+            {/* Resumo das secções */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
               {SECTIONS.map(s => (
                 <div key={s.key} className="bg-white rounded-2xl border border-stone-200/80 p-3 sm:p-4 text-center shadow-sm min-w-0">
@@ -212,23 +324,7 @@ export default function TarefasHoje() {
               ))}
             </div>
 
-            {/* Banner de notificações se não ativas */}
-            {perm !== "granted" && (
-              <button
-                onClick={enableNotifications}
-                className="w-full flex items-center gap-3 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-2xl p-3.5 sm:p-4 shadow-lg shadow-teal-200/40 active:scale-[0.99] transition-all text-left min-w-0"
-              >
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-                  <Bell className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm leading-tight">Ativar lembretes automáticos</p>
-                  <p className="text-xs text-white/80 mt-0.5 truncate sm:whitespace-normal">Receber notificação diária com as tuas tarefas</p>
-                </div>
-              </button>
-            )}
-
-            {/* Secções de tarefas */}
+            {/* Secções de tarefas detalhadas com botões interativos */}
             {SECTIONS.map(s => {
               const list = tasks[s.key] || [];
               if (list.length === 0) return null;
@@ -243,7 +339,14 @@ export default function TarefasHoje() {
                     <span className="text-xs text-stone-400 shrink-0">({list.length})</span>
                   </div>
                   <div className="space-y-2.5 w-full min-w-0">
-                    {list.map(t => <TaskItem key={t.id} task={t} />)}
+                    {list.map(t => (
+                      <TaskItem
+                        key={t.id}
+                        task={t}
+                        onWater={handleWater}
+                        onOpen3D={(modalData) => setActive3DModal(modalData)}
+                      />
+                    ))}
                   </div>
                 </section>
               );
@@ -257,6 +360,54 @@ export default function TarefasHoje() {
           🌱 Minha Horta — Nunca te esqueças de nada
         </span>
       </footer>
+
+      {/* Modal 3D Interativo acionado das Tarefas */}
+      {active3DModal && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-2 sm:p-4 animate-in fade-in duration-150"
+          onClick={() => setActive3DModal(null)}
+        >
+          <div
+            className="bg-white w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92dvh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-stone-200 bg-stone-50/80">
+              <div className="flex items-center gap-2">
+                <span className="text-xl sm:text-2xl">{active3DModal.type === "poda" ? "✂️" : "🌱"}</span>
+                <div>
+                  <h3 className="font-extrabold text-stone-800 text-sm sm:text-base leading-tight">
+                    Esquema 3D: {active3DModal.name}
+                  </h3>
+                  <p className="text-xs text-stone-500">
+                    {active3DModal.type === "poda" ? "Técnica de corte e poda de pomar" : "Técnica de desbaste e monda de horta"}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActive3DModal(null)}
+                className="w-9 h-9 rounded-full bg-stone-200/80 hover:bg-stone-300 text-stone-700 flex items-center justify-center transition-colors"
+                title="Fechar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-3 sm:p-4 overflow-y-auto">
+              {active3DModal.type === "poda" ? (
+                <Poda3DViewer
+                  diagramType={active3DModal.diagramType}
+                  name={active3DModal.name}
+                />
+              ) : (
+                <Monda3DViewer
+                  diagramType={active3DModal.diagramType}
+                  name={active3DModal.name}
+                  spacingCm={active3DModal.spacingCm}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
