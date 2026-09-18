@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Scissors, Sprout, CheckCircle2, XCircle, Lightbulb, Ruler, Utensils, Sparkles } from "lucide-react";
+import { Scissors, Sprout, CheckCircle2, XCircle, Lightbulb, Ruler, Utensils, Sparkles, Box, Layers } from "lucide-react";
 import { MONDA_SCHEMAS } from "@/lib/pruningThinningSchemas";
+import Monda3DViewer from "./Monda3DViewer";
 
 // --- SVG DIAGRAMS PARA MONDAS ---
 
@@ -291,14 +292,48 @@ export default function MondaSchemaViewer({ monda }) {
     ]
   };
 
+  const [viewDimension, setViewDimension] = useState("3d"); // '3d' | '2d'
+
   return (
-    <div className="space-y-6">
-      {/* 1. Diagrama Vetorial Específico */}
-      {schema.diagramType === "solanaceae_sucker" && <SolanaceaeSuckerDiagram />}
-      {schema.diagramType === "cucurbit_trail" && <CucurbitDiagram name={monda?.name} />}
-      {schema.diagramType === "herb_pinch" && <ApicalPinchDiagram />}
-      {schema.diagramType !== "solanaceae_sucker" && schema.diagramType !== "cucurbit_trail" && schema.diagramType !== "herb_pinch" && (
-        <RootThinningDiagram name={monda?.name} spacingCm={schema.spacingCm} />
+    <div className="space-y-5">
+      {/* Comutador 3D / 2D */}
+      <div className="flex items-center justify-between gap-1.5 bg-stone-100 p-1 rounded-2xl border border-stone-200/80">
+        <button
+          onClick={() => setViewDimension("3d")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+            viewDimension === "3d"
+              ? "bg-lime-600 text-white shadow-sm"
+              : "text-stone-600 hover:text-stone-900"
+          }`}
+        >
+          <Box className="w-3.5 h-3.5" />
+          <span>🎮 Modelo 3D Interativo (360°)</span>
+        </button>
+        <button
+          onClick={() => setViewDimension("2d")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+            viewDimension === "2d"
+              ? "bg-lime-600 text-white shadow-sm"
+              : "text-stone-600 hover:text-stone-900"
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5" />
+          <span>📐 Esquema 2D Vetorial</span>
+        </button>
+      </div>
+
+      {viewDimension === "3d" ? (
+        <Monda3DViewer diagramType={schema.diagramType} name={monda?.name} spacingCm={schema.spacingCm} />
+      ) : (
+        <>
+          {/* 1. Diagrama Vetorial Específico */}
+          {schema.diagramType === "solanaceae_sucker" && <SolanaceaeSuckerDiagram />}
+          {schema.diagramType === "cucurbit_trail" && <CucurbitDiagram name={monda?.name} />}
+          {schema.diagramType === "herb_pinch" && <ApicalPinchDiagram />}
+          {schema.diagramType !== "solanaceae_sucker" && schema.diagramType !== "cucurbit_trail" && schema.diagramType !== "herb_pinch" && (
+            <RootThinningDiagram name={monda?.name} spacingCm={schema.spacingCm} />
+          )}
+        </>
       )}
 
       {/* 2. Destaque do Espaçamento Final em Régua */}

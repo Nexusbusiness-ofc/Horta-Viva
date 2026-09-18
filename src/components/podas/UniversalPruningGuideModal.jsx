@@ -1,9 +1,12 @@
 import React, { useState } from "react";
-import { Scissors, Ruler, Sparkles, X, Lightbulb, ShieldCheck, CheckCircle2, AlertTriangle, BookOpen } from "lucide-react";
+import { Scissors, Ruler, Sparkles, X, Lightbulb, ShieldCheck, CheckCircle2, AlertTriangle, BookOpen, Box, Layers } from "lucide-react";
 import { CutAngleDiagram, TreeArchitectureDiagram } from "./PodaSchemaViewer";
+import Poda3DViewer from "./Poda3DViewer";
+import Monda3DViewer from "@/components/mondas/Monda3DViewer";
 
 export default function UniversalPruningGuideModal({ isOpen, onClose }) {
   const [activeTab, setActiveTab] = useState("cut_angle");
+  const [is3D, setIs3D] = useState(true);
 
   if (!isOpen) return null;
 
@@ -15,14 +18,14 @@ export default function UniversalPruningGuideModal({ isOpen, onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Cabeçalho */}
-        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md px-6 py-4 border-b border-stone-200 flex items-center justify-between">
+        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md px-5 sm:px-6 py-4 border-b border-stone-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-700 flex items-center justify-center text-white shadow-md shadow-emerald-200">
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-extrabold text-stone-800">Guia Universal de Técnicas & Esquemas</h3>
-              <p className="text-xs text-stone-500">Regras de ouro de corte, desbaste e cicatrização</p>
+              <h3 className="text-base sm:text-lg font-extrabold text-stone-800">Guia de Técnicas & Esquemas 3D</h3>
+              <p className="text-xs text-stone-500">Corte a 45°, regra dos 3 cortes e desladroamento axilar</p>
             </div>
           </div>
           <button
@@ -34,41 +37,60 @@ export default function UniversalPruningGuideModal({ isOpen, onClose }) {
         </div>
 
         {/* Barra de Abas de Navegação */}
-        <div className="px-6 pt-3 pb-1 border-b border-stone-100 bg-stone-50/50 flex gap-1.5 overflow-x-auto scrollbar-hide">
+        <div className="px-5 sm:px-6 pt-3 pb-1 border-b border-stone-100 bg-stone-50/50 flex items-center justify-between gap-2 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1.5 shrink-0">
+            <button
+              onClick={() => setActiveTab("cut_angle")}
+              className={`text-xs font-semibold py-2 px-3 rounded-xl transition-all ${activeTab === "cut_angle" ? "bg-emerald-600 text-white shadow-xs" : "bg-white border border-stone-200 text-stone-600 hover:bg-stone-100"}`}
+            >
+              📐 Bisel a 45°
+            </button>
+            <button
+              onClick={() => setActiveTab("three_cuts")}
+              className={`text-xs font-semibold py-2 px-3 rounded-xl transition-all ${activeTab === "three_cuts" ? "bg-emerald-600 text-white shadow-xs" : "bg-white border border-stone-200 text-stone-600 hover:bg-stone-100"}`}
+            >
+              🪵 3 Cortes
+            </button>
+            <button
+              onClick={() => setActiveTab("thinning")}
+              className={`text-xs font-semibold py-2 px-3 rounded-xl transition-all ${activeTab === "thinning" ? "bg-emerald-600 text-white shadow-xs" : "bg-white border border-stone-200 text-stone-600 hover:bg-stone-100"}`}
+            >
+              🌱 Monda
+            </button>
+            <button
+              onClick={() => setActiveTab("suckers")}
+              className={`text-xs font-semibold py-2 px-3 rounded-xl transition-all ${activeTab === "suckers" ? "bg-emerald-600 text-white shadow-xs" : "bg-white border border-stone-200 text-stone-600 hover:bg-stone-100"}`}
+            >
+              ✂️ Ladrão Axilar
+            </button>
+          </div>
+
+          {/* Alternador 3D / 2D */}
           <button
-            onClick={() => setActiveTab("cut_angle")}
-            className={`shrink-0 text-xs font-semibold py-2 px-3.5 rounded-xl transition-all ${activeTab === "cut_angle" ? "bg-emerald-600 text-white shadow-xs" : "bg-white border border-stone-200 text-stone-600 hover:bg-stone-100"}`}
+            onClick={() => setIs3D(!is3D)}
+            className={`shrink-0 flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-xl border transition-all ${
+              is3D
+                ? "bg-amber-500 text-white border-amber-600 shadow-xs"
+                : "bg-white text-stone-700 border-stone-300 hover:bg-stone-50"
+            }`}
           >
-            📐 Corte em Bisel a 45°
-          </button>
-          <button
-            onClick={() => setActiveTab("three_cuts")}
-            className={`shrink-0 text-xs font-semibold py-2 px-3.5 rounded-xl transition-all ${activeTab === "three_cuts" ? "bg-emerald-600 text-white shadow-xs" : "bg-white border border-stone-200 text-stone-600 hover:bg-stone-100"}`}
-          >
-            🪵 Técnica dos 3 Cortes
-          </button>
-          <button
-            onClick={() => setActiveTab("thinning")}
-            className={`shrink-0 text-xs font-semibold py-2 px-3.5 rounded-xl transition-all ${activeTab === "thinning" ? "bg-emerald-600 text-white shadow-xs" : "bg-white border border-stone-200 text-stone-600 hover:bg-stone-100"}`}
-          >
-            🌱 Monda de Sementeiras
-          </button>
-          <button
-            onClick={() => setActiveTab("suckers")}
-            className={`shrink-0 text-xs font-semibold py-2 px-3.5 rounded-xl transition-all ${activeTab === "suckers" ? "bg-emerald-600 text-white shadow-xs" : "bg-white border border-stone-200 text-stone-600 hover:bg-stone-100"}`}
-          >
-            ✂️ Desladroamento Axilar
+            {is3D ? <Box className="w-3.5 h-3.5" /> : <Layers className="w-3.5 h-3.5" />}
+            <span>{is3D ? "3D Ativo" : "Ver em 2D"}</span>
           </button>
         </div>
 
         {/* Conteúdo da Aba */}
-        <div className="p-6 space-y-5 flex-1">
+        <div className="p-5 sm:p-6 space-y-5 flex-1">
           {activeTab === "cut_angle" && (
             <div className="space-y-4">
-              <CutAngleDiagram
-                cutAngle="Bisel oblíquo a 45° com inclinação descendente oposta à gema"
-                cutHeight="5 a 7 mm acima do gomo voltado para o exterior"
-              />
+              {is3D ? (
+                <Poda3DViewer diagramType="cup_shape" name="Ângulo de Corte a 45°" />
+              ) : (
+                <CutAngleDiagram
+                  cutAngle="Bisel oblíquo a 45° com inclinação descendente oposta à gema"
+                  cutHeight="5 a 7 mm acima do gomo voltado para o exterior"
+                />
+              )}
 
               <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4 space-y-2 text-xs leading-relaxed text-emerald-950">
                 <h5 className="font-bold text-sm text-emerald-900 flex items-center gap-1.5">
@@ -87,7 +109,11 @@ export default function UniversalPruningGuideModal({ isOpen, onClose }) {
 
           {activeTab === "three_cuts" && (
             <div className="space-y-4">
-              <TreeArchitectureDiagram type="heavy_branch_3cut" name="Ramos Grossos" />
+              {is3D ? (
+                <Poda3DViewer diagramType="heavy_branch_3cut" name="Ramos Pesados (3 Cortes)" />
+              ) : (
+                <TreeArchitectureDiagram type="heavy_branch_3cut" name="Ramos Grossos" />
+              )}
 
               <div className="space-y-3 text-xs text-stone-700 leading-relaxed">
                 <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 space-y-2">
@@ -117,6 +143,10 @@ export default function UniversalPruningGuideModal({ isOpen, onClose }) {
 
           {activeTab === "thinning" && (
             <div className="space-y-4 text-xs text-stone-700 leading-relaxed">
+              {is3D ? (
+                <Monda3DViewer diagramType="root_thinning" name="Desbaste de Sementeira" spacingCm="5 a 10 cm" />
+              ) : null}
+
               <div className="bg-lime-50/70 border border-lime-200 rounded-2xl p-4 space-y-2">
                 <h5 className="font-bold text-lime-900 text-sm flex items-center gap-2">
                   <Ruler className="w-4 h-4 text-lime-700" />
@@ -157,6 +187,10 @@ export default function UniversalPruningGuideModal({ isOpen, onClose }) {
 
           {activeTab === "suckers" && (
             <div className="space-y-4 text-xs text-stone-700 leading-relaxed">
+              {is3D ? (
+                <Monda3DViewer diagramType="solanaceae_sucker" name="Desladroamento Axilar a 45°" />
+              ) : null}
+
               <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4 space-y-2">
                 <h5 className="font-bold text-emerald-900 text-sm flex items-center gap-2">
                   <Scissors className="w-4 h-4 text-emerald-700" />

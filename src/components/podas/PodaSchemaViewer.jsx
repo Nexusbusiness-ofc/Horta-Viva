@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Scissors, CheckCircle2, XCircle, AlertTriangle, Lightbulb, Wrench, ShieldCheck, ChevronRight } from "lucide-react";
+import { Scissors, CheckCircle2, XCircle, AlertTriangle, Lightbulb, Wrench, ShieldCheck, ChevronRight, Box, Layers } from "lucide-react";
 import { PODA_SCHEMAS } from "@/lib/pruningThinningSchemas";
+import Poda3DViewer from "./Poda3DViewer";
 
 // --- SVG DIAGRAMS ---
 
@@ -471,13 +472,47 @@ export default function PodaSchemaViewer({ poda }) {
     ]
   };
 
-  return (
-    <div className="space-y-6">
-      {/* 1. Ângulo de Corte Anatómico */}
-      <CutAngleDiagram cutAngle={schema.cutAngle} cutHeight={schema.cutHeight} />
+  const [viewDimension, setViewDimension] = useState("3d"); // '3d' | '2d'
 
-      {/* 2. Diagrama de Arquitetura da Árvore */}
-      <TreeArchitectureDiagram type={schema.diagramType} name={poda?.name} />
+  return (
+    <div className="space-y-5">
+      {/* Comutador 3D / 2D */}
+      <div className="flex items-center justify-between gap-1.5 bg-stone-100 p-1 rounded-2xl border border-stone-200/80">
+        <button
+          onClick={() => setViewDimension("3d")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+            viewDimension === "3d"
+              ? "bg-emerald-600 text-white shadow-sm"
+              : "text-stone-600 hover:text-stone-900"
+          }`}
+        >
+          <Box className="w-3.5 h-3.5" />
+          <span>🎮 Modelo 3D Interativo (360°)</span>
+        </button>
+        <button
+          onClick={() => setViewDimension("2d")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+            viewDimension === "2d"
+              ? "bg-emerald-600 text-white shadow-sm"
+              : "text-stone-600 hover:text-stone-900"
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5" />
+          <span>📐 Esquema 2D Vetorial</span>
+        </button>
+      </div>
+
+      {viewDimension === "3d" ? (
+        <Poda3DViewer diagramType={schema.diagramType} name={poda?.name} />
+      ) : (
+        <>
+          {/* 1. Ângulo de Corte Anatómico */}
+          <CutAngleDiagram cutAngle={schema.cutAngle} cutHeight={schema.cutHeight} />
+
+          {/* 2. Diagrama de Arquitetura da Árvore */}
+          <TreeArchitectureDiagram type={schema.diagramType} name={poda?.name} />
+        </>
+      )}
 
       {/* 3. Caixa de Regra de Ouro do Podador */}
       {schema.goldenRule && (
