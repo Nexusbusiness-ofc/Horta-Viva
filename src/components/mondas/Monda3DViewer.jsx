@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { RotateCcw, Play, Pause, ZoomIn, ZoomOut, Eye, Ruler, Scissors, CheckCircle2, XCircle } from "lucide-react";
+import { RotateCcw, Play, Pause, ZoomIn, ZoomOut, Eye, Ruler, Scissors, CheckCircle2, XCircle, Maximize2, Minimize2 } from "lucide-react";
 
 // --- GERADOR DE ETIQUETAS 3D FLUTUANTES NÍTIDAS ---
 function createLabelSprite(text, {
@@ -77,6 +77,7 @@ function createLabelSprite(text, {
 }
 
 export default function Monda3DViewer({ diagramType = "root_thinning", name = "Cultura", spacingCm = "5 cm" }) {
+  const rootRef = useRef(null);
   const containerRef = useRef(null);
   const rendererRef = useRef(null);
   const controlsRef = useRef(null);
@@ -86,6 +87,7 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
 
   const [autoRotate, setAutoRotate] = useState(false);
   const [showLabels, setShowLabels] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     if (!sceneRef.current) return;
@@ -407,19 +409,79 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
       if (!container || !camera || !renderer) return;
       const w = container.clientWidth;
       const h = container.clientHeight;
+      if (w === 0 || h === 0) return;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     }
+
+    const resizeObserver = new ResizeObserver(() => {
+      handleResize();
+    });
+    resizeObserver.observe(container);
     window.addEventListener("resize", handleResize);
 
     return () => {
+      resizeObserver.disconnect();
       window.removeEventListener("resize", handleResize);
       if (reqIdRef.current) cancelAnimationFrame(reqIdRef.current);
       controls.dispose();
       renderer.dispose();
     };
   }, [diagramType, autoRotate, showLabels]);
+
+  // Listener para saída nativa de ecrã inteiro (ex: tecla Esc)
+  useEffect(() => {
+    const handleFsChange = () => {
+      if (!document.fullscreenElement) {
+        setIsFullscreen(false);
+      }
+    };
+    document.addEventListener("fullscreenchange", handleFsChange);
+    return () => document.removeEventListener("fullscreenchange", handleFsChange);
+  }, []);
+
+  // Bloquear scroll de fundo quando em tela toda
+  useEffect(() => {
+    if (isFullscreen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isFullscreen]);
+
+  // Redimensionar Three.js quando alterna tela toda
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (containerRef.current && cameraRef.current && rendererRef.current) {
+        const w = containerRef.current.clientWidth;
+        const h = containerRef.current.clientHeight;
+        if (w > 0 && h > 0) {
+          cameraRef.current.aspect = w / h;
+          cameraRef.current.updateProjectionMatrix();
+          rendererRef.current.setSize(w, h);
+        }
+      }
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [isFullscreen]);
+
+  const toggleFullscreen = () => {
+    if (!isFullscreen) {
+      setIsFullscreen(true);
+      if (rootRef.current?.requestFullscreen) {
+        rootRef.current.requestFullscreen().catch(() => {});
+      }
+    } else {
+      setIsFullscreen(false);
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+  };
 
   function handleResetFront() {
     if (!cameraRef.current || !controlsRef.current) return;
@@ -447,32 +509,80 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
   }
 
   return (
-    <div className="bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-sm space-y-3 p-4 sm:p-5">
+    <div
+      ref={rootRef}
+      className={
+        isFullscreen
+          ? "fixed inset-0 z-[9999] bg-stone-950 flex flex-col p-3 sm:p-5 w-screen h-screen overflow-hidden animate-in fade-in duration-200"
+          : "bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-sm space-y-3 p-4 sm:p-5 relative"
+      }
+    >
+      {/* Cabeçalho */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2.5">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-lime-500 to-emerald-600 text-white flex items-center justify-center font-extrabold text-base shadow-md shadow-lime-200">
             3D
           </div>
           <div>
-            <h4 className="font-extrabold text-stone-800 text-sm sm:text-base leading-tight">
+            <h4 className={`font-extrabold text-sm sm:text-base leading-tight ${isFullscreen ? "text-white" : "text-stone-800"}`}>
               {name} em Modelo 3D Interativo
             </h4>
-            <p className="text-xs text-stone-500">Gira com o dedo para ver as raízes e a axila foliar</p>
+            <p className={`text-xs ${isFullscreen ? "text-stone-400" : "text-stone-500"}`}>
+              {isFullscreen ? "Modo Tela Toda — Gira e faz zoom para inspecionar cada detalhe" : "Gira com o dedo para ver as raízes e a axila foliar"}
+            </p>
           </div>
         </div>
 
-        {spacingCm && (
-          <div className="flex items-center gap-1.5 bg-lime-50 border border-lime-200 px-3 py-1.5 rounded-xl text-xs font-bold text-lime-800 shadow-2xs">
-            <Ruler className="w-4 h-4" />
-            <span>Espaçamento: {spacingCm}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {spacingCm && (
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border shadow-2xs ${
+              isFullscreen ? "bg-stone-900 border-stone-800 text-lime-400" : "bg-lime-50 border-lime-200 text-lime-800"
+            }`}>
+              <Ruler className="w-4 h-4" />
+              <span>Espaçamento: {spacingCm}</span>
+            </div>
+          )}
+
+          <button
+            onClick={toggleFullscreen}
+            className={`px-3.5 py-2 rounded-2xl text-xs font-bold flex items-center gap-1.5 shadow-md transition-all active:scale-95 ${
+              isFullscreen
+                ? "bg-rose-600 hover:bg-rose-700 text-white"
+                : "bg-lime-600 hover:bg-lime-700 text-white"
+            }`}
+            title={isFullscreen ? "Sair da Tela Toda (Esc)" : "Ver em Tela Toda"}
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            <span>{isFullscreen ? "Sair da Tela Toda" : "Tela Toda"}</span>
+          </button>
+        </div>
       </div>
 
-      <div className="relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden bg-gradient-to-b from-lime-50/60 via-emerald-50/20 to-teal-50/40 border border-lime-100 shadow-inner">
+      {/* Canvas 3D com Controles Flutuantes */}
+      <div
+        className={
+          isFullscreen
+            ? "relative flex-1 w-full rounded-2xl overflow-hidden bg-gradient-to-b from-stone-900 via-stone-950 to-black border border-stone-800 shadow-2xl"
+            : "relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden bg-gradient-to-b from-lime-50/60 via-emerald-50/20 to-teal-50/40 border border-lime-100 shadow-inner"
+        }
+      >
         <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing touch-none" />
 
+        {/* Botões de Controlo Flutuantes */}
         <div className="absolute top-3 right-3 flex flex-col gap-1.5 z-10">
+          <button
+            onClick={toggleFullscreen}
+            className={`p-2.5 rounded-2xl shadow-md border transition-all flex items-center gap-1 text-xs font-bold ${
+              isFullscreen
+                ? "bg-rose-600 text-white border-rose-700 hover:bg-rose-700"
+                : "bg-lime-600 text-white border-lime-700 hover:bg-lime-700"
+            }`}
+            title={isFullscreen ? "Sair da Tela Toda" : "Ver em Tela Toda"}
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            <span className="hidden sm:inline">{isFullscreen ? "Sair" : "Tela Toda"}</span>
+          </button>
+
           <button
             onClick={() => setAutoRotate(!autoRotate)}
             className={`p-2.5 rounded-2xl shadow-md border transition-all flex items-center gap-1 text-xs font-bold ${
@@ -543,10 +653,10 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
         </div>
       </div>
 
-      <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-3.5 flex items-center gap-3 text-xs text-amber-950">
+      <div className={`border rounded-2xl p-3.5 flex items-center gap-3 text-xs ${isFullscreen ? "bg-stone-900 border-stone-800 text-stone-300" : "bg-amber-50/80 border-amber-200 text-amber-950"}`}>
         <span className="text-2xl shrink-0">💡</span>
         <div>
-          <span className="font-extrabold block text-amber-900">Como funciona este esquema de monda 3D:</span>
+          <span className={`font-extrabold block ${isFullscreen ? "text-amber-400" : "text-amber-900"}`}>Como funciona este esquema de monda 3D:</span>
           <span className="leading-relaxed">
             Roda a planta para ver a raiz e a axila da folha. O que está a <b>vermelho ✂️</b> é o que se corta (ou com a tesoura rente ao chão ou partindo o ladrão com o polegar). O que está a <b>verde 🌿</b> é a planta que fica para crescer viçosa e saudável!
           </span>

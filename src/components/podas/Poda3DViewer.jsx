@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { RotateCcw, Play, Pause, ZoomIn, ZoomOut, Eye, Sun, Scissors, CheckCircle2, Sparkles, HelpCircle } from "lucide-react";
+import { RotateCcw, Play, Pause, ZoomIn, ZoomOut, Eye, Sun, Scissors, CheckCircle2, Sparkles, HelpCircle, Maximize2, Minimize2 } from "lucide-react";
 
 // --- GERADOR DE ETIQUETAS 3D FLUTUANTES (SUPER NÍTIDAS E À PROVA DE DÚVIDAS) ---
 function createLabelSprite(text, {
@@ -82,6 +82,7 @@ function createLabelSprite(text, {
 }
 
 export default function Poda3DViewer({ diagramType = "cup_shape", name = "Árvore" }) {
+  const rootRef = useRef(null);
   const containerRef = useRef(null);
   const rendererRef = useRef(null);
   const controlsRef = useRef(null);
@@ -92,6 +93,7 @@ export default function Poda3DViewer({ diagramType = "cup_shape", name = "Árvor
   const [modelMode, setModelMode] = useState("canopy"); // 'canopy' | 'cut_angle'
   const [autoRotate, setAutoRotate] = useState(false); // por defeito parado para facilitar a leitura inicial
   const [showLabels, setShowLabels] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Atualizar visibilidade das etiquetas
   useEffect(() => {
@@ -554,19 +556,79 @@ export default function Poda3DViewer({ diagramType = "cup_shape", name = "Árvor
       if (!container || !camera || !renderer) return;
       const w = container.clientWidth;
       const h = container.clientHeight;
+      if (w === 0 || h === 0) return;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     }
+
+    const resizeObserver = new ResizeObserver(() => {
+      handleResize();
+    });
+    resizeObserver.observe(container);
     window.addEventListener("resize", handleResize);
 
     return () => {
+      resizeObserver.disconnect();
       window.removeEventListener("resize", handleResize);
       if (reqIdRef.current) cancelAnimationFrame(reqIdRef.current);
       controls.dispose();
       renderer.dispose();
     };
   }, [diagramType, modelMode, autoRotate, showLabels]);
+
+  // Listener para saída nativa de ecrã inteiro (ex: tecla Esc)
+  useEffect(() => {
+    const handleFsChange = () => {
+      if (!document.fullscreenElement) {
+        setIsFullscreen(false);
+      }
+    };
+    document.addEventListener("fullscreenchange", handleFsChange);
+    return () => document.removeEventListener("fullscreenchange", handleFsChange);
+  }, []);
+
+  // Bloquear scroll de fundo quando em tela toda
+  useEffect(() => {
+    if (isFullscreen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isFullscreen]);
+
+  // Redimensionar Three.js quando alterna tela toda
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (containerRef.current && cameraRef.current && rendererRef.current) {
+        const w = containerRef.current.clientWidth;
+        const h = containerRef.current.clientHeight;
+        if (w > 0 && h > 0) {
+          cameraRef.current.aspect = w / h;
+          cameraRef.current.updateProjectionMatrix();
+          rendererRef.current.setSize(w, h);
+        }
+      }
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [isFullscreen]);
+
+  const toggleFullscreen = () => {
+    if (!isFullscreen) {
+      setIsFullscreen(true);
+      if (rootRef.current?.requestFullscreen) {
+        rootRef.current.requestFullscreen().catch(() => {});
+      }
+    } else {
+      setIsFullscreen(false);
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+  };
 
   // Funções de Controlo Simples de Câmara (Botões Grandes para Qualquer Utilizador)
   function handleResetFront() {
@@ -595,7 +657,14 @@ export default function Poda3DViewer({ diagramType = "cup_shape", name = "Árvor
   }
 
   return (
-    <div className="bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-sm space-y-3 p-4 sm:p-5">
+    <div
+      ref={rootRef}
+      className={
+        isFullscreen
+          ? "fixed inset-0 z-[9999] bg-stone-950 flex flex-col p-3 sm:p-5 w-screen h-screen overflow-hidden animate-in fade-in duration-200"
+          : "bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-sm space-y-3 p-4 sm:p-5 relative"
+      }
+    >
       {/* Cabeçalho de Seleção Simples */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2.5">
@@ -603,44 +672,80 @@ export default function Poda3DViewer({ diagramType = "cup_shape", name = "Árvor
             3D
           </div>
           <div>
-            <h4 className="font-extrabold text-stone-800 text-sm sm:text-base leading-tight">
+            <h4 className={`font-extrabold text-sm sm:text-base leading-tight ${isFullscreen ? "text-white" : "text-stone-800"}`}>
               {name} em Modelo 3D Interativo
             </h4>
-            <p className="text-xs text-stone-500">Gira com o dedo ou rato para ver todos os lados</p>
+            <p className={`text-xs ${isFullscreen ? "text-stone-400" : "text-stone-500"}`}>
+              {isFullscreen ? "Modo Tela Toda — Gira e faz zoom para inspecionar cada detalhe" : "Gira com o dedo ou rato para ver todos os lados"}
+            </p>
           </div>
         </div>
 
-        {/* Alternador de Visão: Árvore vs Corte a 45° */}
-        <div className="flex items-center gap-1.5 bg-stone-100 p-1.5 rounded-2xl border border-stone-200">
+        {/* Alternador de Visão & Botão de Tela Toda */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className={`flex items-center gap-1.5 p-1.5 rounded-2xl border ${isFullscreen ? "bg-stone-900 border-stone-800" : "bg-stone-100 border-stone-200"}`}>
+            <button
+              onClick={() => setModelMode("canopy")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                modelMode === "canopy"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : isFullscreen ? "text-stone-300 hover:text-white" : "text-stone-600 hover:text-stone-900"
+              }`}
+            >
+              🌳 Árvore Completa
+            </button>
+            <button
+              onClick={() => setModelMode("cut_angle")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                modelMode === "cut_angle"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : isFullscreen ? "text-stone-300 hover:text-white" : "text-stone-600 hover:text-stone-900"
+              }`}
+            >
+              📐 Corte a 45°
+            </button>
+          </div>
+
           <button
-            onClick={() => setModelMode("canopy")}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              modelMode === "canopy"
-                ? "bg-emerald-600 text-white shadow-sm"
-                : "text-stone-600 hover:text-stone-900"
+            onClick={toggleFullscreen}
+            className={`px-3.5 py-2 rounded-2xl text-xs font-bold flex items-center gap-1.5 shadow-md transition-all active:scale-95 ${
+              isFullscreen
+                ? "bg-rose-600 hover:bg-rose-700 text-white"
+                : "bg-emerald-600 hover:bg-emerald-700 text-white"
             }`}
+            title={isFullscreen ? "Sair da Tela Toda (Esc)" : "Ver em Tela Toda"}
           >
-            🌳 Árvore Completa
-          </button>
-          <button
-            onClick={() => setModelMode("cut_angle")}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              modelMode === "cut_angle"
-                ? "bg-emerald-600 text-white shadow-sm"
-                : "text-stone-600 hover:text-stone-900"
-            }`}
-          >
-            📐 Corte a 45°
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            <span>{isFullscreen ? "Sair da Tela Toda" : "Tela Toda"}</span>
           </button>
         </div>
       </div>
 
       {/* Canvas 3D com Controles Flutuantes */}
-      <div className="relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden bg-gradient-to-b from-emerald-50/60 via-green-50/20 to-lime-50/40 border border-emerald-100 shadow-inner">
+      <div
+        className={
+          isFullscreen
+            ? "relative flex-1 w-full rounded-2xl overflow-hidden bg-gradient-to-b from-stone-900 via-stone-950 to-black border border-stone-800 shadow-2xl"
+            : "relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden bg-gradient-to-b from-emerald-50/60 via-green-50/20 to-lime-50/40 border border-emerald-100 shadow-inner"
+        }
+      >
         <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing touch-none" />
 
         {/* Botões Grandes e Fáceis de Usar (no canto superior direito) */}
         <div className="absolute top-3 right-3 flex flex-col gap-1.5 z-10">
+          <button
+            onClick={toggleFullscreen}
+            className={`p-2.5 rounded-2xl shadow-md border transition-all flex items-center gap-1 text-xs font-bold ${
+              isFullscreen
+                ? "bg-rose-600 text-white border-rose-700 hover:bg-rose-700"
+                : "bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700"
+            }`}
+            title={isFullscreen ? "Sair da Tela Toda (Esc)" : "Ver em Tela Toda"}
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            <span className="hidden sm:inline">{isFullscreen ? "Sair" : "Tela Toda"}</span>
+          </button>
+
           <button
             onClick={() => setAutoRotate(!autoRotate)}
             className={`p-2.5 rounded-2xl shadow-md border transition-all flex items-center gap-1 text-xs font-bold ${
@@ -713,10 +818,10 @@ export default function Poda3DViewer({ diagramType = "cup_shape", name = "Árvor
       </div>
 
       {/* Cartão de Ajuda Simples */}
-      <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-3.5 flex items-center gap-3 text-xs text-amber-950">
+      <div className={`border rounded-2xl p-3.5 flex items-center gap-3 text-xs ${isFullscreen ? "bg-stone-900 border-stone-800 text-stone-300" : "bg-amber-50/80 border-amber-200 text-amber-950"}`}>
         <span className="text-2xl shrink-0">💡</span>
         <div>
-          <span className="font-extrabold block text-amber-900">Como funciona este esquema 3D:</span>
+          <span className={`font-extrabold block ${isFullscreen ? "text-amber-400" : "text-amber-900"}`}>Como funciona este esquema 3D:</span>
           <span className="leading-relaxed">
             Roda a árvore até veres o centro livre! Os ramos a <b>vermelho com a tesoura ✂️</b> são os que deves cortar porque roubam força. Os ramos a <b>verde 🌿</b> são os que ficam para dar fruta doce.
           </span>
