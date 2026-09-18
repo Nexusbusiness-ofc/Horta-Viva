@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { Loader2, ArrowLeft, Scissors, Sprout, Search, X } from "lucide-react";
+import { Loader2, ArrowLeft, Scissors, Sprout, Search, X, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
 import PodaCard from "@/components/podas/PodaCard";
 import PodaDetail from "@/components/podas/PodaDetail";
 import MondaCard from "@/components/mondas/MondaCard";
 import MondaDetail from "@/components/mondas/MondaDetail";
+import UniversalPruningGuideModal from "@/components/podas/UniversalPruningGuideModal";
 import { cachedList } from "@/lib/offlineCatalog";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
 import { ViewModeToggle, useViewMode } from "@/components/ui/ViewModeToggle";
@@ -18,6 +19,7 @@ export default function PodasMondas() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todas");
   const [selected, setSelected] = useState(null);
+  const [showUniversalGuide, setShowUniversalGuide] = useState(false);
   const [viewMode, setViewMode] = useViewMode("hortaviva_podas_view_mode", "large");
 
   useEffect(() => {
@@ -119,6 +121,26 @@ export default function PodasMondas() {
           </div>
         )}
 
+        {/* Banner de Destaque para o Guia Universal de Esquemas */}
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-green-700 rounded-2xl p-4 text-white shadow-md shadow-emerald-200/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 shadow-inner">
+              <span className="text-2xl">📐</span>
+            </div>
+            <div>
+              <h3 className="font-extrabold text-sm sm:text-base leading-tight">Guia Universal de Técnicas &amp; Esquemas</h3>
+              <p className="text-xs text-emerald-100 mt-0.5">Anatomia do corte em bisel a 45°, regra dos 3 cortes e réguas de desbaste</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowUniversalGuide(true)}
+            className="self-start sm:self-auto shrink-0 px-4 py-2 bg-white text-emerald-800 hover:bg-emerald-50 rounded-xl font-bold text-xs transition-all shadow-sm flex items-center gap-1.5"
+          >
+            <span>Ver Guia e Esquemas</span>
+            <span>➔</span>
+          </button>
+        </div>
+
         {/* Header com ViewModeToggle */}
         <div className="flex items-center justify-between gap-3 pt-1">
           <div className="flex items-center gap-2">
@@ -156,6 +178,8 @@ export default function PodasMondas() {
 
       {selected && tab === "podas" && <PodaDetail poda={selected} onClose={() => setSelected(null)} />}
       {selected && tab === "mondas" && <MondaDetail monda={selected} onClose={() => setSelected(null)} />}
+
+      <UniversalPruningGuideModal isOpen={showUniversalGuide} onClose={() => setShowUniversalGuide(false)} />
     </div>
   );
 }
