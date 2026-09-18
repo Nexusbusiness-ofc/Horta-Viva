@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, Loader2, ArrowLeft, Sprout, PawPrint, Camera, Cloud, Sparkles, RefreshCw, X } from "lucide-react";
+import { Plus, Loader2, ArrowLeft, Sprout, PawPrint, Camera, Cloud, Sparkles, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import PlantingForm from "@/components/quinta/PlantingForm";
 import PlantingCard from "@/components/quinta/PlantingCard";
@@ -8,9 +8,6 @@ import MyAnimalForm from "@/components/quinta/MyAnimalForm";
 import MyAnimalCard from "@/components/quinta/MyAnimalCard";
 import ReminderBanner from "@/components/quinta/ReminderBanner";
 import TreatmentReminders from "@/components/quinta/TreatmentReminders";
-import SmartAlertsBanner from "@/components/quinta/SmartAlertsBanner";
-import Poda3DViewer from "@/components/podas/Poda3DViewer";
-import Monda3DViewer from "@/components/mondas/Monda3DViewer";
 import SyncBackupModal from "@/components/quinta/SyncBackupModal";
 import { getAutoStatus } from "@/lib/plantingCare";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
@@ -35,9 +32,6 @@ export default function MinhaQuinta() {
   const [plants, setPlants] = useState([]);
   const [myAnimals, setMyAnimals] = useState([]);
   const [farmAnimals, setFarmAnimals] = useState([]);
-  const [podas, setPodas] = useState([]);
-  const [mondas, setMondas] = useState([]);
-  const [active3DModal, setActive3DModal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showAnimalForm, setShowAnimalForm] = useState(false);
@@ -55,13 +49,11 @@ export default function MinhaQuinta() {
   const load = async () => {
     setLoading(true);
     try {
-      const [p, allPlants, ma, fa, allPodas, allMondas] = await Promise.all([
+      const [p, allPlants, ma, fa] = await Promise.all([
         base44.entities.Planting.list("-planted_date").catch(() => []),
         cachedList("plants", () => base44.entities.Plant.list()),
         base44.entities.MyAnimal.list("-added_date").catch(() => []),
         cachedList("farmanimals", () => base44.entities.FarmAnimal.list()),
-        cachedList("podas", () => base44.entities.Podas.list()),
-        cachedList("mondas", () => base44.entities.Mondas.list()),
       ]);
       const updates = [];
       for (const pl of p) {
@@ -75,8 +67,6 @@ export default function MinhaQuinta() {
       setPlants(allPlants);
       setMyAnimals(ma);
       setFarmAnimals(fa);
-      setPodas(allPodas);
-      setMondas(allMondas);
       if (updates.length) {
         try {
           await Promise.all(updates.map(u => base44.entities.Planting.update(u.id, u.data)));
@@ -444,21 +434,8 @@ export default function MinhaQuinta() {
               <div className="flex justify-center py-20">
                 <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
               </div>
-            ) : (
-              <>
-                {/* Alertas Inteligentes da Quinta */}
-                <SmartAlertsBanner
-                  plantings={plantings}
-                  plants={plants}
-                  myAnimals={myAnimals}
-                  farmAnimals={farmAnimals}
-                  podas={podas}
-                  mondas={mondas}
-                  onOpen3D={(modalData) => setActive3DModal(modalData)}
-                />
-
-                {tab === "plantacoes" ? (
-                  plantings.length === 0 ? (
+            ) : tab === "plantacoes" ? (
+              plantings.length === 0 ? (
                 <div className="text-center py-20">
                   <div className="text-6xl mb-4">🌱</div>
                   <h2 className="text-lg font-semibold text-stone-700 mb-1">A tua quinta está vazia</h2>
@@ -533,8 +510,6 @@ export default function MinhaQuinta() {
                 </div>
               )
             )}
-              </>
-            )}
           </>
         )}
       </main>
@@ -566,54 +541,6 @@ export default function MinhaQuinta() {
         onClose={() => setShowUpgradeModal(false)}
         reason={upgradeReason}
       />
-
-      {/* Modal Interativo de Esquema 3D acionado a partir dos Alertas */}
-      {active3DModal && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-2 sm:p-4 animate-in fade-in duration-150"
-          onClick={() => setActive3DModal(null)}
-        >
-          <div
-            className="bg-white w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92dvh]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between p-4 border-b border-stone-200 bg-stone-50/80">
-              <div className="flex items-center gap-2">
-                <span className="text-xl sm:text-2xl">{active3DModal.type === "poda" ? "✂️" : "🌱"}</span>
-                <div>
-                  <h3 className="font-extrabold text-stone-800 text-sm sm:text-base leading-tight">
-                    Esquema 3D: {active3DModal.name}
-                  </h3>
-                  <p className="text-xs text-stone-500">
-                    {active3DModal.type === "poda" ? "Técnica de corte e poda de pomar" : "Técnica de desbaste e monda de horta"}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setActive3DModal(null)}
-                className="w-9 h-9 rounded-full bg-stone-200/80 hover:bg-stone-300 text-stone-700 flex items-center justify-center transition-colors"
-                title="Fechar"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-3 sm:p-4 overflow-y-auto">
-              {active3DModal.type === "poda" ? (
-                <Poda3DViewer
-                  diagramType={active3DModal.diagramType}
-                  name={active3DModal.name}
-                />
-              ) : (
-                <Monda3DViewer
-                  diagramType={active3DModal.diagramType}
-                  name={active3DModal.name}
-                  spacingCm={active3DModal.spacingCm}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
