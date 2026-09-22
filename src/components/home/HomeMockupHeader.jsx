@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, X, Scan, Bell, Sprout, Menu } from "lucide-react";
+import { Search, X, Scan, Bell, Menu } from "lucide-react";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
 
 export default function HomeMockupHeader({
@@ -10,16 +10,22 @@ export default function HomeMockupHeader({
   pendingTasksCount = 1,
 }) {
   const [isFocused, setIsFocused] = useState(false);
+  const logoUrl = `${import.meta.env.BASE_URL}logo.jpg`;
 
   return (
     <header className="w-full bg-gradient-to-b from-[#185e3a] via-[#14532d] to-[#0f4423] text-white pt-3 sm:pt-4 pb-5 px-4 sm:px-6 rounded-b-[28px] sm:rounded-b-[36px] shadow-xl shadow-emerald-950/15">
       <div className="max-w-xl mx-auto">
         {/* Linha Superior: Logo + Título à esquerda / Notificações + Menu à direita */}
         <div className="flex items-center justify-between mb-3.5">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/15 backdrop-blur-md flex items-center justify-center text-white shadow-inner">
-              <Sprout className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-300" />
-            </div>
+          <div className="flex items-center gap-2.5">
+            <img
+              src={logoUrl}
+              alt="Horta Viva"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover shadow-md border border-white/25 shrink-0"
+              onError={(e) => {
+                e.currentTarget.src = "./logo.jpg";
+              }}
+            />
             <div>
               <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-none">
                 Horta Viva
