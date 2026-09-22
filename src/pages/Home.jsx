@@ -1,33 +1,41 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { Loader2, Sprout, Camera, Star } from "lucide-react";
-import { Link } from "react-router-dom";
-import SearchBar from "@/components/plant/SearchBar";
-import MonthSelector from "@/components/plant/MonthSelector";
+import { Loader2, Sparkles, Filter } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import HomeMockupHeader from "@/components/home/HomeMockupHeader";
+import MockupHeroCard from "@/components/home/MockupHeroCard";
+import QuickActionCards from "@/components/home/QuickActionCards";
+import PopularCarousel from "@/components/home/PopularCarousel";
+import CategoryFilterPills from "@/components/home/CategoryFilterPills";
 import PlantCard from "@/components/plant/PlantCard";
 import PlantDetail from "@/components/plant/PlantDetail";
+import MonthSelector from "@/components/plant/MonthSelector";
 import AIAssistant from "@/components/plant/AIAssistant";
-import NavigationDrawer from "@/components/home/NavigationDrawer";
-import HeroCarousel from "@/components/home/HeroCarousel";
 import DailyCuriosityCard from "@/components/home/DailyCuriosityCard";
 import HomeExploreGrid from "@/components/home/HomeExploreGrid";
 import OnboardingProfile from "@/components/profile/OnboardingProfile";
-import AuthButton from "@/components/auth/AuthButton";
 import { cachedList } from "@/lib/offlineCatalog";
 import { ViewModeToggle, useViewMode } from "@/components/ui/ViewModeToggle";
 import { useSubscription } from "@/lib/subscription";
 import UpgradeModal from "@/components/subscription/UpgradeModal";
 
-const MONTH_NAMES = ["", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+const MONTH_NAMES = [
+  "", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+];
 
 export default function Home() {
+  const navigate = useNavigate();
   const [plants, setPlants] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("all");
   const [selectedMonth, setSelectedMonth] = useState(0);
-  const [searchResults, setSearchResults] = useState(null);
+  const [showMonthFilter, setShowMonthFilter] = useState(false);
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [aiQuery, setAiQuery] = useState(null);
   const [showProModal, setShowProModal] = useState(false);
+  const [pendingTasksCount, setPendingTasksCount] = useState(1);
   const [viewMode, setViewMode] = useViewMode("hortaviva_plant_view_mode", "large");
   const { isPro, isPlus } = useSubscription();
 
@@ -35,189 +43,285 @@ export default function Home() {
     cachedList("plants", () => base44.entities.Plant.list())
       .then(setPlants)
       .finally(() => setLoading(false));
+
+    // Carregar contagem de plantações ou tarefas para o badge de notificações
+    base44.entities.Planting.list("-planted_date")
+      .then((plantings) => {
+        if (plantings && plantings.length > 0) {
+          setPendingTasksCount(Math.min(plantings.length, 9));
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const currentMonth = new Date().getMonth() + 1;
 
+  // Filtragem de plantas por pesquisa, categoria e mês
   const visiblePlants = useMemo(() => {
-    if (searchResults !== null) return searchResults;
-    if (selectedMonth === 0) return plants;
-    return plants.filter(p =>
-      (p.sow_months || []).includes(selectedMonth) ||
-      (p.plant_months || []).includes(selectedMonth) ||
-      (p.harvest_months || []).includes(selectedMonth)
-    );
-  }, [plants, selectedMonth, searchResults]);
+    let list = plants;
 
-  const monthLabel = selectedMonth === 0
-    ? "Este mês"
-    : MONTH_NAMES[selectedMonth];
+    // Filtro de pesquisa por texto
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      return list.filter(
+        (p) =>
+          (p.name || "").toLowerCase().includes(q) ||
+          (p.category || "").toLowerCase().includes(q) ||
+          (p.sow_instructions || "").toLowerCase().includes(q) ||
+          (p.care_instructions || "").toLowerCase().includes(q)
+      );
+    }
 
-  const plantsToSow = useMemo(() =>
-    plants.filter(p => (p.sow_months || []).includes(selectedMonth === 0 ? currentMonth : selectedMonth)),
-  [plants, selectedMonth, currentMonth]);
+    // Filtro por categoria do mockup
+    if (activeCategory !== "all") {
+      list = list.filter((p) => {
+        const catName = (p.category || "").toLowerCase();
+        const pName = (p.name || "").toLowerCase();
+        if (activeCategory === "hortalicas") {
+          return (
+            catName.includes("hortaliça") ||
+            catName.includes("hortalica") ||
+            catName.includes("folha") ||
+            pName.includes("alface") ||
+            pName.includes("couve") ||
+            pName.includes("espinafre")
+          );
+        }
+        if (activeCategory === "frutos") {
+          return (
+            catName.includes("fruto") ||
+            pName.includes("tomate") ||
+            pName.includes("pimento") ||
+            pName.includes("pepino") ||
+            pName.includes("morango")
+          );
+        }
+        if (activeCategory === "raizes") {
+          return (
+            catName.includes("raiz") ||
+            catName.includes("tubérculo") ||
+            catName.includes("tuberculo") ||
+            pName.includes("cenoura") ||
+            pName.includes("rabanete") ||
+            pName.includes("alho") ||
+            pName.includes("batata")
+          );
+        }
+        if (activeCategory === "aromaticas") {
+          return (
+            catName.includes("aromática") ||
+            catName.includes("aromatica") ||
+            catName.includes("erva") ||
+            pName.includes("salsa") ||
+            pName.includes("coentros") ||
+            pName.includes("alecrim") ||
+            pName.includes("manjericão")
+          );
+        }
+        return true;
+      });
+    }
+
+    // Filtro opcional por mês
+    if (selectedMonth !== 0) {
+      list = list.filter(
+        (p) =>
+          (p.sow_months || []).includes(selectedMonth) ||
+          (p.plant_months || []).includes(selectedMonth) ||
+          (p.harvest_months || []).includes(selectedMonth)
+      );
+    }
+
+    return list;
+  }, [plants, searchQuery, activeCategory, selectedMonth]);
+
+  const handleCategorySelect = (cat) => {
+    if (cat.isSpecialLink) {
+      navigate(cat.isSpecialLink);
+      return;
+    }
+    setActiveCategory(cat.id);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+  };
+
+  const isSearching = searchQuery.trim().length > 0;
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-emerald-50 via-green-50/40 to-lime-50/50">
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-gradient-to-r from-white/90 via-emerald-50/60 to-white/90 backdrop-blur-lg border-b border-emerald-100/60">
-        <div className="max-w-5xl mx-auto px-4 py-3">
-          <div className="flex items-center gap-2 sm:gap-3 mb-3">
-            <img 
-              src="./logo.jpg" 
-              alt="Horta Viva" 
-              className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl shadow-md border border-stone-200/60 object-cover shrink-0" 
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#f7f9f6] text-stone-800">
+      {/* 1. Topo Verde Floresta Arredondado com Barra de Pesquisa em Pílula (Idêntico ao Mockup) */}
+      <HomeMockupHeader
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onClearSearch={handleClearSearch}
+        pendingTasksCount={pendingTasksCount}
+      />
+
+      {/* Conteúdo Principal com medidas e espaçamentos idênticos ao layout mobile do mockup */}
+      <main className="max-w-xl mx-auto px-4 pt-3.5 pb-28 space-y-4">
+        {/* Quando o utilizador NÃO está a pesquisar, exibe todos os blocos do mockup */}
+        {!isSearching && (
+          <>
+            {/* 2. Cartão de Destaque / Carrossel com Broto e 3 Pontos (Idêntico ao Mockup) */}
+            <MockupHeroCard />
+
+            {/* 3. Dois Cartões de Acesso Rápido: Cuidado Diário & Mondas/Cobertura (Idênticos ao Mockup) */}
+            <QuickActionCards />
+
+            {/* 4. Carrossel Horizontal: "Muito Procuradas" com Salada Crocante, Cenoura Doce, etc. */}
+            <PopularCarousel
+              plants={plants}
+              onSelectPlant={setSelectedPlant}
+              onSeeAll={() => {
+                setActiveCategory("all");
+                window.scrollTo({ top: 400, behavior: "smooth" });
+              }}
             />
-            <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl font-extrabold text-stone-800 leading-tight truncate">Horta Viva</h1>
-              <p className="text-[11px] sm:text-xs text-stone-500 font-medium truncate">Agricultura & Guia de Cultivo</p>
-            </div>
-            <div className="ml-auto flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {/* Ícone Pro no topo do Home (apenas a estrela para poupar espaço) */}
-              <button
-                type="button"
-                onClick={() => setShowProModal(true)}
-                className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shadow-md transition-all active:scale-95 ${
-                  isPro 
-                    ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 border border-amber-300 shadow-amber-200/40" 
-                    : isPlus
-                    ? "bg-gradient-to-r from-emerald-400 to-teal-500 text-white border border-emerald-300 shadow-emerald-200/40"
-                    : "bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-amber-950 border border-amber-300/80 shadow-amber-300/50 animate-pulse hover:animate-none"
-                }`}
-                title={isPro ? "⭐ Plano Pro Ativo (Ilimitado)" : isPlus ? "🌱 Plano Plus Ativo (1,99€/mês)" : "⭐ Planos Horta Viva (a partir de 1,99€/mês)"}
-                aria-label="Planos Horta Viva"
-              >
-                <Star className={`w-5 h-5 shrink-0 ${isPlus ? "fill-white text-white" : "fill-amber-950 text-amber-950"}`} />
-              </button>
-              <AuthButton />
-              <NavigationDrawer />
-              <Link
-                to="/identificar"
-                className="shrink-0 flex items-center gap-1.5 bg-gradient-to-r from-teal-500 to-cyan-600 text-white text-sm font-medium px-2.5 sm:px-3 py-2 rounded-xl shadow-md shadow-teal-200/50 hover:shadow-lg transition-all active:scale-95"
-                title="Identificar planta por foto"
-              >
-                <Camera className="w-4 h-4" />
-                <span className="hidden md:inline">Identificar</span>
-              </Link>
-              <Link
-                to="/minha-quinta"
-                className="shrink-0 flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white text-sm font-medium px-3 sm:px-4 py-2 rounded-xl shadow-md shadow-emerald-200/50 hover:shadow-lg transition-all active:scale-95"
-              >
-                <Sprout className="w-4 h-4" />
-                <span className="hidden sm:inline">Minha Quinta</span>
-              </Link>
-            </div>
-          </div>
-          <SearchBar
-            plants={plants}
-            onResults={setSearchResults}
-            onAIQuery={setAiQuery}
-          />
-        </div>
-      </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-5 space-y-6">
-        {/* Hero carousel (hidden during search) */}
-        {searchResults === null && !loading && plants.length > 0 && (
-          <HeroCarousel plants={plants} onSelect={setSelectedPlant} />
+            {/* 5. Pílulas de Filtros de Categorias (Todos, Hortaliças, Frutos, Raízes, Aromáticas, Podas, Animais) */}
+            <CategoryFilterPills
+              activeCategory={activeCategory}
+              onSelectCategory={handleCategorySelect}
+            />
+          </>
         )}
 
-        {/* Curiosidade Diária Compacta & Elegante (oculta durante pesquisa) */}
-        {searchResults === null && !loading && (
-          <DailyCuriosityCard />
-        )}
-
-        {/* Grelha Dinâmica de Secções da Quinta com Imagens em Transição (Animais, Cogumelos, Curas, Podas) */}
-        {searchResults === null && !loading && (
-          <HomeExploreGrid />
-        )}
-
-        {/* Month selector (hidden during search) */}
-        {searchResults === null && (
-          <section>
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-semibold text-stone-700">📅 Escolher mês</h2>
-              {selectedMonth !== 0 && (
-                <button
-                  onClick={() => setSelectedMonth(0)}
-                  className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
-                >
-                  Voltar a "Este mês"
-                </button>
-              )}
-            </div>
-            <MonthSelector selectedMonth={selectedMonth} onSelect={setSelectedMonth} />
-          </section>
-        )}
-
-        {/* Search results label */}
-        {searchResults !== null && (
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-stone-700">
-              🔍 {searchResults.length} resultado{searchResults.length !== 1 ? "s" : ""}
+        {/* Informação de Pesquisa Ativa */}
+        {isSearching && (
+          <div className="flex items-center justify-between pt-1">
+            <h2 className="text-sm font-bold text-stone-700">
+              🔍 {visiblePlants.length} resultado{visiblePlants.length !== 1 ? "s" : ""} para "{searchQuery}"
             </h2>
             <button
-              onClick={() => setSearchResults(null)}
-              className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+              onClick={handleClearSearch}
+              className="text-xs text-emerald-700 hover:text-emerald-800 font-bold"
             >
               Limpar pesquisa
             </button>
           </div>
         )}
 
-        {/* Month summary */}
-        {searchResults === null && selectedMonth !== 0 && (
-          <div className="bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 rounded-2xl px-5 py-4 text-white shadow-lg shadow-emerald-300/40">
-            <p className="text-sm font-medium opacity-90">Em {monthLabel}</p>
-            <p className="text-2xl font-bold">{plantsToSow.length} planta{plantsToSow.length !== 1 ? "s" : ""} para semear 🌱</p>
+        {/* 6. Catálogo de Plantas & Alimentos */}
+        <section className="space-y-3 pt-1">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <h2 className="text-sm font-black text-stone-800">
+                🌱 Catálogo de Alimentos
+              </h2>
+              <span className="text-[11px] text-stone-400 font-bold">
+                ({visiblePlants.length})
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Botão de filtro sazonal por mês */}
+              <button
+                type="button"
+                onClick={() => setShowMonthFilter((prev) => !prev)}
+                className={`text-xs font-bold px-2.5 py-1 rounded-xl border flex items-center gap-1 transition-all ${
+                  selectedMonth !== 0 || showMonthFilter
+                    ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                    : "bg-white text-stone-600 border-stone-200"
+                }`}
+                title="Filtrar por mês do ano"
+              >
+                <Filter className="w-3 h-3 text-emerald-700" />
+                <span>{selectedMonth === 0 ? "Mês" : MONTH_NAMES[selectedMonth]}</span>
+              </button>
+
+              <ViewModeToggle mode={viewMode} onChange={setViewMode} />
+            </div>
           </div>
+
+          {/* Seletor de Mês Expansível */}
+          {showMonthFilter && (
+            <div className="bg-white p-3 rounded-2xl border border-stone-200/80 shadow-xs animate-in fade-in duration-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-stone-700">📅 Época de plantio / colheita:</span>
+                {selectedMonth !== 0 && (
+                  <button
+                    onClick={() => setSelectedMonth(0)}
+                    className="text-[11px] text-emerald-700 font-bold hover:underline"
+                  >
+                    Ver todos
+                  </button>
+                )}
+              </div>
+              <MonthSelector selectedMonth={selectedMonth} onSelect={setSelectedMonth} />
+            </div>
+          )}
+
+          {/* Lista / Grelha de Plantas */}
+          {loading ? (
+            <div className="flex justify-center py-16">
+              <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+            </div>
+          ) : visiblePlants.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-3xl border border-stone-200/70 p-6">
+              <div className="text-4xl mb-2">🌿</div>
+              <p className="text-sm font-bold text-stone-700">Nenhum alimento encontrado nesta categoria.</p>
+              <button
+                onClick={() => {
+                  setActiveCategory("all");
+                  setSelectedMonth(0);
+                  setSearchQuery("");
+                }}
+                className="mt-3 text-xs text-emerald-700 font-bold underline"
+              >
+                Limpar filtros e ver todas as plantas
+              </button>
+            </div>
+          ) : (
+            <div
+              className={
+                viewMode === "grid"
+                  ? "grid grid-cols-2 sm:grid-cols-3 gap-2.5"
+                  : "grid grid-cols-1 sm:grid-cols-2 gap-3"
+              }
+            >
+              {visiblePlants.map((p) => (
+                <PlantCard
+                  key={p.id}
+                  plant={p}
+                  onClick={() => setSelectedPlant(p)}
+                  compact={viewMode === "grid"}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* 7. Curiosidade Diária Compacta (apenas quando não está em pesquisa ativa) */}
+        {!isSearching && (
+          <>
+            <DailyCuriosityCard />
+            <HomeExploreGrid />
+          </>
         )}
 
-        {/* Plants header with ViewModeToggle */}
-        <div className="flex items-center justify-between gap-3 pt-1">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-bold text-stone-700">🌱 Catálogo de Alimentos</h2>
-            <span className="text-xs text-stone-400 font-medium">({visiblePlants.length})</span>
+        {/* 8. Assistente IA Integrado */}
+        <section className="bg-white rounded-3xl p-4 border border-stone-200/80 shadow-xs">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-lg">🤖</span>
+            <h2 className="text-sm font-black text-stone-800">Assistente Agrónomo IA</h2>
           </div>
-          <ViewModeToggle mode={viewMode} onChange={setViewMode} />
-        </div>
-
-        {/* Plants grid */}
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-          </div>
-        ) : visiblePlants.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-5xl mb-3">🌿</div>
-            <p className="text-stone-500">Nenhuma planta encontrada.</p>
-          </div>
-        ) : (
-          <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-3.5" : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"}>
-            {visiblePlants.map(p => (
-              <PlantCard key={p.id} plant={p} onClick={() => setSelectedPlant(p)} compact={viewMode === "grid"} />
-            ))}
-          </div>
-        )}
-
-        {/* AI Assistant */}
-        <section>
-          <h2 className="text-sm font-semibold text-stone-700 mb-2">🤖 Assistente IA</h2>
           <AIAssistant query={aiQuery} plants={plants} onClearQuery={() => setAiQuery(null)} />
         </section>
       </main>
 
-      <footer className="text-center pt-4 pb-28 text-xs">
-        <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent font-medium">
-          🌱 Minha Horta — Cultiva com sabedoria
-        </span>
+      {/* Rodapé suave */}
+      <footer className="text-center pt-2 pb-24 text-xs text-stone-400">
+        <span>🌱 Horta Viva — Cultiva com sabedoria</span>
       </footer>
 
+      {/* Modal de Detalhes da Planta ao Clicar */}
       {selectedPlant && (
         <PlantDetail plant={selectedPlant} onClose={() => setSelectedPlant(null)} />
       )}
 
-      {/* Modal de Upgrade Pro no Home */}
+      {/* Modal Pro */}
       <UpgradeModal
         isOpen={showProModal}
         onClose={() => setShowProModal(false)}

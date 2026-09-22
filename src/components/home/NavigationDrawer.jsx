@@ -18,7 +18,7 @@ const SECTIONS = [
   { to: "/identificar", emoji: "📸", label: "Identificar Planta", desc: "Tira foto e descobre", color: "#0891b2" },
 ];
 
-export default function NavigationDrawer() {
+export default function NavigationDrawer({ trigger, triggerClassName, triggerIcon }) {
   const [open, setOpen] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
   const { isStandalone, hasPrompt, triggerInstall } = usePWAInstall();
@@ -27,12 +27,14 @@ export default function NavigationDrawer() {
     <>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
-          <button
-            className="shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-white border border-stone-200 text-stone-600 hover:border-emerald-300 hover:text-emerald-600 transition-colors shadow-sm"
-            aria-label="Menu de secções"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
+          {trigger || (
+            <button
+              className={triggerClassName || "shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-white border border-stone-200 text-stone-600 hover:border-emerald-300 hover:text-emerald-600 transition-colors shadow-sm"}
+              aria-label="Menu de secções"
+            >
+              {triggerIcon || <Menu className="w-6 h-6" />}
+            </button>
+          )}
         </SheetTrigger>
         <SheetContent side="left" className="w-[290px] sm:w-[330px] p-0 flex flex-col">
           <SheetHeader className="px-5 pt-5 pb-3 border-b border-stone-100 flex flex-row items-center gap-3 shrink-0">
