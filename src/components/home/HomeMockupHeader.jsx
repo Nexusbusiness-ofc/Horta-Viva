@@ -92,12 +92,12 @@ export default function HomeMockupHeader({
               <X className="w-4 h-4" />
             </button>
           )}
-          {/* Botão Scan/Foto para Identificar Planta por IA */}
+          {/* Botão Scan/Foto para Identificador IA (Plantas & Animais) */}
           <Link
             to="/identificar"
             className="shrink-0 text-stone-500 hover:text-emerald-700 active:scale-95 transition-all p-1 rounded-full hover:bg-emerald-50"
-            title="Identificar planta por foto"
-            aria-label="Identificar planta por foto"
+            title="Identificador IA (plantas e animais por foto)"
+            aria-label="Identificador IA (plantas e animais por foto)"
           >
             <Scan className="w-4 h-4 sm:w-5 sm:h-5 text-stone-500 hover:text-emerald-700" />
           </Link>

@@ -15,7 +15,7 @@ const SECTIONS = [
   { to: "/podas-mondas", emoji: "✂️", label: "Podas & Mondas", desc: "Guias de poda e monda", color: "#15803d" },
   { to: "/animais", emoji: "🐔", label: "Animais da Quinta", desc: "Criação de animais", color: "#ea580c" },
   { to: "/cogumelos", emoji: "🍄", label: "Cogumelos", desc: "Catálogo micológico", color: "#d97706" },
-  { to: "/identificar", emoji: "📸", label: "Identificar Planta", desc: "Tira foto e descobre", color: "#0891b2" },
+  { to: "/identificar", emoji: "📸", label: "Identificador IA", desc: "Plantas e animais da quinta", color: "#0891b2" },
 ];
 
 export default function NavigationDrawer({ trigger, triggerClassName, triggerIcon }) {

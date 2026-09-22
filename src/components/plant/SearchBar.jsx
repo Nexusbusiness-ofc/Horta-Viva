@@ -64,7 +64,7 @@ export default function SearchBar({ plants, onResults, onAIQuery }) {
         <Link
           to="/identificar"
           className="shrink-0 flex items-center gap-1.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 text-xs sm:text-sm font-semibold px-2.5 sm:px-3 py-1.5 rounded-xl transition-all duration-200 active:scale-95 shadow-sm"
-          title="Tirar foto para identificar planta"
+          title="Identificador IA (plantas e animais por foto)"
         >
           <Camera className="w-4 h-4 text-cyan-700" />
           <span className="hidden sm:inline">Foto</span>

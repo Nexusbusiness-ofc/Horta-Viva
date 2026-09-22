@@ -252,11 +252,11 @@ export default function MinhaQuinta() {
             </button>
             <Link
               to="/identificar"
-              title="Identificar planta com foto"
+              title="Identificador IA (plantas e animais com foto)"
               className="shrink-0 flex items-center gap-1.5 text-xs font-semibold px-2.5 sm:px-3 py-2 rounded-xl border bg-cyan-50 border-cyan-200 text-cyan-800 hover:bg-cyan-100 shadow-sm transition-all"
             >
               <Camera className="w-4 h-4 text-cyan-700" />
-              <span className="hidden sm:inline">Identificar</span>
+              <span className="hidden sm:inline">Identificador IA</span>
             </Link>
             {tab !== "pro" && (
               <button

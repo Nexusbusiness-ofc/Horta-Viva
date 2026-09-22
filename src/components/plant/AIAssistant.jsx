@@ -41,7 +41,7 @@ export default function AIAssistant({ query, plants, onClearQuery }) {
         {
           role: "assistant",
           text: isPlus
-            ? `⭐ **Limite mensal de ${PLUS_AI_LIMIT} utilizações da IA atingido.**\n\nJá utilizaste as tuas ${PLUS_AI_LIMIT} consultas de IA deste mês no Plano Plus. Para conversares com o Assistente IA sem restrições e identificares plantas por foto sem limites, atualiza para o **Horta Viva Pro** por 2,99€/mês.`
+            ? `⭐ **Limite mensal de ${PLUS_AI_LIMIT} utilizações da IA atingido.**\n\nJá utilizaste as tuas ${PLUS_AI_LIMIT} consultas de IA deste mês no Plano Plus. Para conversares com o Assistente IA sem restrições e identificares plantas e animais por foto sem limites, atualiza para o **Horta Viva Pro** por 2,99€/mês.`
             : `⭐ **Limite de ${FREE_AI_LIMIT} utilizações gratuitas de IA atingido.**\n\nJá utilizaste os teus 2 usos gratuitos de IA. Escolhe o **Plano Plus** (1,99€/mês com 4 consultas e 3 fotos) ou o **Horta Viva Pro** (2,99€/mês com acesso ilimitado)!`,
         }
       ]);
@@ -79,7 +79,7 @@ Responde de forma clara, prática e direta em português europeu. Se a pergunta 
       if (matched) {
         setMessages(prev => [...prev, {
           role: "assistant",
-          text: `🌱 **${matched.name}** (${matched.category || "Hortícola"}):\n\n• **Sementeira:** ${(matched.sow_months||[]).join(", ") || "—"}\n• **Plantação:** ${(matched.plant_months||[]).join(", ") || "—"}\n• **Colheita:** ${(matched.harvest_months||[]).join(", ") || "—"}\n• **Sol:** ${matched.sun_requirements || "Sol pleno"}\n• **Rega:** ${matched.water_requirements || "Moderada"}\n• **Dicas:** ${matched.sow_instructions || matched.plant_instructions || "Manter solo fértil e regado."}\n\n💡 *Dica: Podes também identificar plantas por foto abrindo a câmara no topo!*`
+          text: `🌱 **${matched.name}** (${matched.category || "Hortícola"}):\n\n• **Sementeira:** ${(matched.sow_months||[]).join(", ") || "—"}\n• **Plantação:** ${(matched.plant_months||[]).join(", ") || "—"}\n• **Colheita:** ${(matched.harvest_months||[]).join(", ") || "—"}\n• **Sol:** ${matched.sun_requirements || "Sol pleno"}\n• **Rega:** ${matched.water_requirements || "Moderada"}\n• **Dicas:** ${matched.sow_instructions || matched.plant_instructions || "Manter solo fértil e regado."}\n\n💡 *Dica: Podes também identificar plantas e animais por foto abrindo o Identificador IA no topo!*`
         }]);
       } else {
         setMessages(prev => [...prev, {
@@ -156,7 +156,7 @@ Responde de forma clara, prática e direta em português europeu. Se a pergunta 
           <Link
             to="/identificar"
             className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-1 rounded-xl transition-all shadow-sm"
-            title="Tirar foto a uma planta para identificar"
+            title="Identificador IA (plantas e animais por foto)"
           >
             <Camera className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Foto</span>
