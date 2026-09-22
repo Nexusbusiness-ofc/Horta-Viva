@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, X, Scan, Bell, Menu } from "lucide-react";
+import { Search, X, Scan, Bell, Menu, Sparkles } from "lucide-react";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
 
 export default function HomeMockupHeader({
   searchQuery,
   onSearchChange,
   onClearSearch,
+  onGoToAI,
   pendingTasksCount = 1,
 }) {
   const [isFocused, setIsFocused] = useState(false);
@@ -92,6 +93,31 @@ export default function HomeMockupHeader({
               <X className="w-4 h-4" />
             </button>
           )}
+          {/* Botão IA que leva diretamente para o Assistente IA */}
+          <button
+            type="button"
+            onClick={() => {
+              if (onGoToAI) {
+                onGoToAI(searchQuery);
+              } else {
+                const el = document.getElementById("assistente-ia");
+                if (el) {
+                  el.scrollIntoView({ behavior: "smooth", block: "start" });
+                  setTimeout(() => {
+                    const input = el.querySelector("input");
+                    if (input) input.focus();
+                  }, 400);
+                }
+              }
+            }}
+            className="shrink-0 inline-flex items-center gap-1 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-[11px] sm:text-xs font-bold px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full shadow-sm hover:shadow active:scale-95 transition-all"
+            title="Ir para o Assistente Agrónomo IA"
+            aria-label="Ir para o Assistente Agrónomo IA"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+            <span>IA</span>
+          </button>
+
           {/* Botão Scan/Foto para Identificador IA (Plantas & Animais) */}
           <Link
             to="/identificar"

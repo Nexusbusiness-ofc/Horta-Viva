@@ -147,6 +147,21 @@ export default function Home() {
     setSearchQuery("");
   };
 
+  const handleGoToAI = (text) => {
+    if (text && text.trim()) {
+      setAiQuery(text.trim());
+      setSearchQuery("");
+    }
+    const el = document.getElementById("assistente-ia");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      setTimeout(() => {
+        const input = el.querySelector("input");
+        if (input) input.focus();
+      }, 500);
+    }
+  };
+
   const isSearching = searchQuery.trim().length > 0;
 
   return (
@@ -156,6 +171,7 @@ export default function Home() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onClearSearch={handleClearSearch}
+        onGoToAI={handleGoToAI}
         pendingTasksCount={pendingTasksCount}
       />
 
@@ -302,7 +318,7 @@ export default function Home() {
         )}
 
         {/* 8. Assistente IA Integrado */}
-        <section className="bg-white rounded-3xl p-4 border border-stone-200/80 shadow-xs">
+        <section id="assistente-ia" className="bg-white rounded-3xl p-4 border border-stone-200/80 shadow-xs scroll-mt-20">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-lg">🤖</span>
             <h2 className="text-sm font-black text-stone-800">Assistente Agrónomo IA</h2>
