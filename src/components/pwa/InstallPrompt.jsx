@@ -105,7 +105,7 @@ export default function InstallPrompt() {
       <div className="fixed bottom-20 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-30 animate-in fade-in slide-in-from-bottom-5 duration-300">
         <div className="bg-white/95 backdrop-blur-md rounded-2xl p-3.5 sm:p-4 shadow-2xl border border-emerald-200/90 flex items-center gap-3">
           <img
-            src="./icons/icon-192x192.png"
+            src={`${import.meta.env.BASE_URL}icons/icon-192x192.png`}
             alt="Horta Viva"
             className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl object-cover shadow-md border border-stone-200/60 shrink-0"
           />
@@ -172,7 +172,7 @@ export function InstallInstructionsModal({ onClose }) {
 
         <div className="flex items-center gap-3 mb-4">
           <img
-            src="./icons/icon-192x192.png"
+            src={`${import.meta.env.BASE_URL}icons/icon-192x192.png`}
             alt="Horta Viva"
             className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl shadow-md border border-stone-200/60 shrink-0"
           />

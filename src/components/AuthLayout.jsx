@@ -7,7 +7,7 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center mb-3">
             <img 
-              src="./logo.jpg" 
+              src={`${import.meta.env.BASE_URL}logo.jpg`} 
               alt="Horta Viva" 
               className="w-20 h-20 rounded-2xl shadow-md border-2 border-emerald-100 object-cover" 
             />

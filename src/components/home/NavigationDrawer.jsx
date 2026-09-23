@@ -38,7 +38,7 @@ export default function NavigationDrawer({ trigger, triggerClassName, triggerIco
         </SheetTrigger>
         <SheetContent side="left" className="w-[290px] sm:w-[330px] p-0 flex flex-col">
           <SheetHeader className="px-5 pt-5 pb-3 border-b border-stone-100 flex flex-row items-center gap-3 shrink-0">
-            <img src="./icons/icon-192x192.png" alt="Horta Viva" className="w-10 h-10 rounded-xl object-cover shadow-sm border border-stone-200/60 shrink-0" />
+            <img src={`${import.meta.env.BASE_URL}icons/icon-192x192.png`} alt="Horta Viva" className="w-10 h-10 rounded-xl object-cover shadow-sm border border-stone-200/60 shrink-0" />
             <div>
               <SheetTitle className="text-left text-lg font-bold text-stone-800 leading-tight">Horta Viva</SheetTitle>
               <p className="text-xs text-stone-500 text-left">Menu & Secções</p>

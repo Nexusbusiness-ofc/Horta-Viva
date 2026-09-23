@@ -3,7 +3,7 @@
   "name": "Horta Viva — Guia de Cultivo",
   "short_name": "Horta Viva",
   "description": "Guia prático de cultivo, horta biológica, animais, podas, mondas e identificação de plantas e animais por IA.",
-  "start_url": "./index.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "display_override": [
@@ -72,28 +72,28 @@
       "name": "Minha Quinta",
       "short_name": "Quinta",
       "description": "Consultar as minhas plantações e animais",
-      "url": "./index.html#/minha-quinta",
+      "url": "./minha-quinta/",
       "icons": [{ "src": "./icons/icon-192x192.png", "sizes": "192x192" }]
     },
     {
       "name": "Tarefas de Hoje",
       "short_name": "Tarefas",
       "description": "Rega, alimentação e cuidados diários",
-      "url": "./index.html#/tarefas-hoje",
+      "url": "./tarefas-hoje/",
       "icons": [{ "src": "./icons/icon-192x192.png", "sizes": "192x192" }]
     },
     {
       "name": "Identificador IA",
       "short_name": "Identificador",
       "description": "Tirar foto para identificar plantas e animais com IA",
-      "url": "./index.html#/identificar",
+      "url": "./identificar/",
       "icons": [{ "src": "./icons/icon-192x192.png", "sizes": "192x192" }]
     },
     {
       "name": "Animais da Quinta",
       "short_name": "Animais",
       "description": "Catálogo e guia de criação de animais",
-      "url": "./index.html#/animais",
+      "url": "./animais/",
       "icons": [{ "src": "./icons/icon-192x192.png", "sizes": "192x192" }]
     }
   ]

@@ -4,6 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
     
+    <!-- Script de Roteamento SPA e Migração de URLs Antigas (#) -->
+    <script type="text/javascript">
+      (function(l) {
+        // Se foi redirecionado pelo 404.html do GitHub Pages (?/rota)
+        if (l.search && l.search[1] === '/') {
+          var decoded = l.search.slice(1).split('&').map(function(s) { 
+            return s.replace(/~and~/g, '&');
+          }).join('?');
+          window.history.replaceState(null, null,
+              l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+        // Se acedeu com o formato antigo com cardinal (ex: /#/podas-mondas)
+        else if (l.hash && l.hash.startsWith('#/')) {
+          var cleanPath = l.hash.slice(2);
+          var prefix = l.pathname.endsWith('/') ? l.pathname : l.pathname + '/';
+          window.history.replaceState(null, null, prefix + cleanPath);
+        }
+      }(window.location));
+    </script>
+    
     <!-- PWA & Mobile Meta Tags -->
     <meta name="theme-color" content="#059669" />
     <meta name="mobile-web-app-capable" content="yes" />
