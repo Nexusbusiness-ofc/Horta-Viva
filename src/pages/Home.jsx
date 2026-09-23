@@ -5,13 +5,12 @@ import { useNavigate } from "react-router-dom";
 import HomeMockupHeader from "@/components/home/HomeMockupHeader";
 import MockupHeroCard from "@/components/home/MockupHeroCard";
 import QuickActionCards from "@/components/home/QuickActionCards";
-import PopularCarousel from "@/components/home/PopularCarousel";
+import DailyCuriositiesCarousel from "@/components/home/DailyCuriositiesCarousel";
 import CategoryFilterPills from "@/components/home/CategoryFilterPills";
 import PlantCard from "@/components/plant/PlantCard";
 import PlantDetail from "@/components/plant/PlantDetail";
 import MonthSelector from "@/components/plant/MonthSelector";
 import AIAssistant from "@/components/plant/AIAssistant";
-import DailyCuriosityCard from "@/components/home/DailyCuriosityCard";
 import HomeExploreGrid from "@/components/home/HomeExploreGrid";
 import OnboardingProfile from "@/components/profile/OnboardingProfile";
 import { cachedList } from "@/lib/offlineCatalog";
@@ -186,15 +185,8 @@ export default function Home() {
             {/* 3. Dois Cartões de Acesso Rápido: Cuidado Diário & Mondas/Cobertura (Idênticos ao Mockup) */}
             <QuickActionCards />
 
-            {/* 4. Carrossel Horizontal: "Muito Procuradas" com Salada Crocante, Cenoura Doce, etc. */}
-            <PopularCarousel
-              plants={plants}
-              onSelectPlant={setSelectedPlant}
-              onSeeAll={() => {
-                setActiveCategory("all");
-                window.scrollTo({ top: 400, behavior: "smooth" });
-              }}
-            />
+            {/* 4. Carrossel Horizontal: Curiosidades Diárias da Horta */}
+            <DailyCuriositiesCarousel />
 
             {/* 5. Pílulas de Filtros de Categorias (Todos, Hortaliças, Frutos, Raízes, Aromáticas, Podas, Animais) */}
             <CategoryFilterPills
@@ -309,12 +301,9 @@ export default function Home() {
           )}
         </section>
 
-        {/* 7. Curiosidade Diária Compacta (apenas quando não está em pesquisa ativa) */}
+        {/* 7. Explorar Outras Áreas da App (apenas quando não está em pesquisa ativa) */}
         {!isSearching && (
-          <>
-            <DailyCuriosityCard />
-            <HomeExploreGrid />
-          </>
+          <HomeExploreGrid />
         )}
 
         {/* 8. Assistente IA Integrado */}
