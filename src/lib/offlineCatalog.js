@@ -5,7 +5,7 @@ import { resolveAssetUrl } from "./utils";
 // Cache offline simples para catálogos de consulta rápida na horta.
 // Guarda o resultado da última carga com sucesso no localStorage e
 // devolve a cache ou catálogo pré-carregado quando o pedido à API falha (ex: sem rede ou backend).
-const PREFIX = "hv_offline_v7_";
+const PREFIX = "hv_offline_v8_";
 
 try {
   if (typeof window !== "undefined" && window.localStorage) {
