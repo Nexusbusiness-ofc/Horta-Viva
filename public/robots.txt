@@ -1,4 +1,13 @@
 User-agent: *
 Allow: /
 
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Googlebot-Favicons
+Allow: /
+
 Sitemap: https://nexusbusiness-ofc.github.io/Horta-Viva/sitemap.xml

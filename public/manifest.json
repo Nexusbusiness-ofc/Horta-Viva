@@ -2,7 +2,7 @@
   "id": "pt.hortaviva.app",
   "name": "Horta Viva — Guia de Cultivo",
   "short_name": "Horta Viva",
-  "description": "Guia prático de cultivo, horta biológica, animais, podas, mondas e identificação de plantas por IA.",
+  "description": "Guia prático de cultivo, horta biológica, animais, podas, mondas e identificação de plantas e animais por IA.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -24,6 +24,18 @@
   ],
   "prefer_related_applications": false,
   "icons": [
+    {
+      "src": "./icons/favicon-48x48.png",
+      "sizes": "48x48",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/favicon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "./icons/icon-192x192.png",
       "sizes": "192x192",
@@ -71,9 +83,9 @@
       "icons": [{ "src": "./icons/icon-192x192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Identificar Planta",
-      "short_name": "Identificar",
-      "description": "Tirar foto para identificar com IA",
+      "name": "Identificador IA",
+      "short_name": "Identificador",
+      "description": "Tirar foto para identificar plantas e animais com IA",
       "url": "./index.html#/identificar",
       "icons": [{ "src": "./icons/icon-192x192.png", "sizes": "192x192" }]
     },
