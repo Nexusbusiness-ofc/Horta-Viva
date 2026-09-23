@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Compass } from "lucide-react";
 import { resolveAssetUrl } from "@/lib/utils";
 
 const SECTIONS = [
@@ -28,24 +28,25 @@ const SECTIONS = [
     ],
   },
   {
-    id: "cogumelos",
-    title: "Cogumelos Silvestres",
-    desc: "Identificação e toxicidade",
-    badge: "Guia Micológico",
-    emoji: "🍄",
-    to: "/cogumelos",
-    accent: "from-amber-600/30 to-yellow-500/20",
-    border: "group-hover:border-yellow-400/60",
-    intervalMs: 4500,
+    id: "podas",
+    title: "Podas & Mondas",
+    desc: "Épocas, desbaste e corte",
+    badge: "Maneio & IA",
+    emoji: "✂️",
+    to: "/podas-mondas",
+    accent: "from-emerald-500/30 to-green-600/20",
+    border: "group-hover:border-emerald-400/60",
+    intervalMs: 4400,
     delayMs: 1200,
     images: [
-      "./images/mushrooms/boletus.jpg",
-      "./images/mushrooms/tortulho.jpg",
-      "./images/mushrooms/cantarela.jpg",
-      "./images/mushrooms/miscaro.jpg",
-      "./images/mushrooms/morchella.jpg",
-      "./images/mushrooms/sancha.jpg",
-      "./images/mushrooms/amanita_muscaria.jpg",
+      "./images/podas/oliveira.jpg",
+      "./images/podas/vinha.jpg",
+      "./images/podas/macieira.jpg",
+      "./images/podas/laranjeira.jpg",
+      "./images/mondas/tomateiro.jpg",
+      "./images/podas/pessegueiro.jpg",
+      "./images/mondas/cenoura.jpg",
+      "./images/podas/cerejeira.jpg",
     ],
   },
   {
@@ -55,7 +56,7 @@ const SECTIONS = [
     badge: "Saúde Vegetal",
     emoji: "🌿",
     to: "/calendario-curas",
-    accent: "from-purple-500/30 to-teal-500/20",
+    accent: "from-teal-500/30 to-emerald-600/20",
     border: "group-hover:border-emerald-400/60",
     intervalMs: 4200,
     delayMs: 2400,
@@ -70,25 +71,24 @@ const SECTIONS = [
     ],
   },
   {
-    id: "podas",
-    title: "Podas & Mondas",
-    desc: "Épocas, desbaste e corte",
-    badge: "Maneio & Vigor",
-    emoji: "✂️",
-    to: "/podas-mondas",
-    accent: "from-emerald-500/30 to-green-600/20",
-    border: "group-hover:border-emerald-400/60",
+    id: "cogumelos",
+    title: "Cogumelos Silvestres",
+    desc: "Identificação e toxicidade",
+    badge: "Guia Micológico",
+    emoji: "🍄",
+    to: "/cogumelos",
+    accent: "from-amber-600/30 to-yellow-500/20",
+    border: "group-hover:border-yellow-400/60",
     intervalMs: 4600,
     delayMs: 3600,
     images: [
-      "./images/podas/oliveira.jpg",
-      "./images/podas/vinha.jpg",
-      "./images/podas/macieira.jpg",
-      "./images/podas/laranjeira.jpg",
-      "./images/mondas/tomateiro.jpg",
-      "./images/podas/pessegueiro.jpg",
-      "./images/mondas/cenoura.jpg",
-      "./images/podas/cerejeira.jpg",
+      "./images/mushrooms/boletus.jpg",
+      "./images/mushrooms/tortulho.jpg",
+      "./images/mushrooms/cantarela.jpg",
+      "./images/mushrooms/miscaro.jpg",
+      "./images/mushrooms/morchella.jpg",
+      "./images/mushrooms/sancha.jpg",
+      "./images/mushrooms/amanita_muscaria.jpg",
     ],
   },
 ];
@@ -185,23 +185,25 @@ function SectionFadingCard({ section }) {
 
 export default function HomeExploreGrid() {
   return (
-    <section aria-label="Secções da Quinta" className="space-y-2.5">
-      <div className="flex items-center justify-between px-1">
+    <section aria-label="Explorar a Quinta" className="space-y-2.5">
+      <div className="flex items-center justify-between px-0.5">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm sm:text-base font-bold text-stone-800 flex items-center gap-1.5">
-            <span>🧭</span>
-            <span>Explorar a Quinta</span>
+          <div className="w-7 h-7 rounded-xl bg-emerald-100 border border-emerald-200/80 flex items-center justify-center text-emerald-700 shadow-2xs">
+            <Compass className="w-4 h-4 text-emerald-700" />
+          </div>
+          <h2 className="text-sm sm:text-base font-black text-stone-800 tracking-tight flex items-center gap-1.5 leading-none">
+            Explorar a Quinta
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 hidden sm:inline-block">
+              Guias &amp; Maneio
+            </span>
           </h2>
-          <span className="text-[10px] sm:text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full border border-emerald-200">
-            Guias Práticos
-          </span>
         </div>
-        <span className="text-xs text-stone-400 font-medium hidden sm:inline">
-          Toque para abrir
+        <span className="text-xs text-stone-400 font-medium">
+          4 áreas
         </span>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
         {SECTIONS.map((sec) => (
           <SectionFadingCard key={sec.id} section={sec} />
         ))}

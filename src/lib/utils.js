@@ -14,5 +14,7 @@ export function resolveAssetUrl(url) {
   let cleaned = url;
   if (cleaned.startsWith("./")) cleaned = cleaned.slice(2);
   if (cleaned.startsWith("/")) cleaned = cleaned.slice(1);
-  return "./" + cleaned;
+  const base = (typeof import.meta !== "undefined" && import.meta.env?.BASE_URL) || "/";
+  const prefix = base.endsWith("/") ? base : base + "/";
+  return prefix + cleaned;
 }

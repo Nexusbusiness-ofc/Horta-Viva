@@ -188,7 +188,10 @@ export default function Home() {
             {/* 4. Carrossel Horizontal: Curiosidades Diárias da Horta */}
             <DailyCuriositiesCarousel />
 
-            {/* 5. Pílulas de Filtros de Categorias (Todos, Hortaliças, Frutos, Raízes, Aromáticas, Podas, Animais) */}
+            {/* 5. Grelha em Destaque: 4 Áreas da App com Imagens Representativas */}
+            <HomeExploreGrid />
+
+            {/* 6. Pílulas de Filtros de Categorias (Todos, Hortaliças, Frutos, Raízes, Aromáticas, Podas, Animais) */}
             <CategoryFilterPills
               activeCategory={activeCategory}
               onSelectCategory={handleCategorySelect}
@@ -300,11 +303,6 @@ export default function Home() {
             </div>
           )}
         </section>
-
-        {/* 7. Explorar Outras Áreas da App (apenas quando não está em pesquisa ativa) */}
-        {!isSearching && (
-          <HomeExploreGrid />
-        )}
 
         {/* 8. Assistente IA Integrado */}
         <section id="assistente-ia" className="bg-white rounded-3xl p-4 border border-stone-200/80 shadow-xs scroll-mt-20">
