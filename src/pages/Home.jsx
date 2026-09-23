@@ -4,7 +4,6 @@ import { Loader2, Sparkles, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import HomeMockupHeader from "@/components/home/HomeMockupHeader";
 import MockupHeroCard from "@/components/home/MockupHeroCard";
-import QuickActionCards from "@/components/home/QuickActionCards";
 import DailyCuriositiesCarousel from "@/components/home/DailyCuriositiesCarousel";
 import CategoryFilterPills from "@/components/home/CategoryFilterPills";
 import PlantCard from "@/components/plant/PlantCard";
@@ -182,10 +181,7 @@ export default function Home() {
             {/* 2. Cartão de Destaque / Carrossel com Broto e 3 Pontos (Idêntico ao Mockup) */}
             <MockupHeroCard />
 
-            {/* 3. Dois Cartões de Acesso Rápido: Cuidado Diário & Mondas/Cobertura (Idênticos ao Mockup) */}
-            <QuickActionCards />
-
-            {/* 4. Carrossel Horizontal: Curiosidades Diárias da Horta */}
+            {/* 3. Carrossel Horizontal: Curiosidades Diárias da Horta */}
             <DailyCuriositiesCarousel />
 
             {/* 5. Grelha em Destaque: 4 Áreas da App com Imagens Representativas */}
