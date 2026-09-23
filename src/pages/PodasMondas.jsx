@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { Loader2, ArrowLeft, Scissors, Sprout, Search, X, BookOpen } from "lucide-react";
+import { Loader2, ArrowLeft, Scissors, Sprout, Search, X, BookOpen, Sparkles, Camera } from "lucide-react";
 import { Link } from "react-router-dom";
 import PodaCard from "@/components/podas/PodaCard";
 import PodaDetail from "@/components/podas/PodaDetail";
 import MondaCard from "@/components/mondas/MondaCard";
 import MondaDetail from "@/components/mondas/MondaDetail";
 import UniversalPruningGuideModal from "@/components/podas/UniversalPruningGuideModal";
+import PodaMondaAIModal from "@/components/podas/PodaMondaAIModal";
 import { cachedList } from "@/lib/offlineCatalog";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
 import { ViewModeToggle, useViewMode } from "@/components/ui/ViewModeToggle";
@@ -20,6 +21,7 @@ export default function PodasMondas() {
   const [category, setCategory] = useState("Todas");
   const [selected, setSelected] = useState(null);
   const [showUniversalGuide, setShowUniversalGuide] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
   const [viewMode, setViewMode] = useViewMode("hortaviva_podas_view_mode", "large");
 
   useEffect(() => {
@@ -84,6 +86,14 @@ export default function PodasMondas() {
               <span className="hidden sm:inline">Guia de Esquemas</span>
               <span className="sm:hidden">Esquemas</span>
             </button>
+            <button
+              onClick={() => setShowAIModal(true)}
+              className="flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md shadow-emerald-200/50 transition-all shrink-0 active:scale-95"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-emerald-200 animate-pulse" />
+              <span className="hidden sm:inline">Analisar com IA</span>
+              <span className="sm:hidden">Analisar IA</span>
+            </button>
           </div>
         </div>
       </header>
@@ -128,6 +138,36 @@ export default function PodasMondas() {
             <p>A monda é o desbaste das plântulas nascidas da sementeira direta: removem-se as mais fracas para que as melhores tenham espaço, luz e nutrientes para crescer. Inclui também o <b>deserbamento</b> (remover as ervas daninhas concorrentes).</p>
           </div>
         )}
+
+        {/* Banner de Destaque para o Analisador de IA por Foto */}
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-green-700 rounded-3xl p-4 sm:p-5 text-white shadow-lg shadow-emerald-200/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-emerald-500/30">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 shadow-inner">
+              <span className="text-2xl">📸</span>
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-extrabold text-sm sm:text-base leading-tight">
+                  Analisador Inteligente de Podas &amp; Mondas
+                </h3>
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-100 border border-emerald-300/30">
+                  Novo • IA
+                </span>
+              </div>
+              <p className="text-xs text-emerald-100 mt-1 max-w-xl leading-relaxed">
+                Dúvidas sobre onde cortar ou desbastar? Fotografa os ramos ou sementeiras. A IA pergunta o que queres fazer e ensina-te exatamente o que cortar e como fazer!
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowAIModal(true)}
+            className="self-stretch sm:self-auto shrink-0 px-4 py-2.5 bg-white text-emerald-800 hover:bg-emerald-50 rounded-xl font-extrabold text-xs transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
+          >
+            <Sparkles className="w-4 h-4 text-emerald-600" />
+            <span>Fotografar &amp; Analisar</span>
+            <span>➔</span>
+          </button>
+        </div>
 
         {/* Banner de Destaque para o Guia Universal de Esquemas */}
         <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-green-700 rounded-2xl p-4 text-white shadow-md shadow-emerald-200/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -188,6 +228,14 @@ export default function PodasMondas() {
       {selected && tab === "mondas" && <MondaDetail monda={selected} onClose={() => setSelected(null)} />}
 
       <UniversalPruningGuideModal isOpen={showUniversalGuide} onClose={() => setShowUniversalGuide(false)} />
+      <PodaMondaAIModal 
+        isOpen={showAIModal} 
+        onClose={() => setShowAIModal(false)} 
+        onOpenUniversalGuide={() => {
+          setShowAIModal(false);
+          setShowUniversalGuide(true);
+        }}
+      />
     </div>
   );
 }
