@@ -19,7 +19,9 @@ import {
   FREE_PLANTATIONS_LIMIT, 
   FREE_ANIMALS_LIMIT,
   PLUS_PLANTATIONS_LIMIT,
-  PLUS_ANIMALS_LIMIT 
+  PLUS_ANIMALS_LIMIT,
+  PRO_PLANTATIONS_LIMIT,
+  PRO_ANIMALS_LIMIT
 } from "@/lib/subscription";
 import UpgradeModal from "@/components/subscription/UpgradeModal";
 import ProSubscriptionView from "@/components/subscription/ProSubscriptionView";
@@ -43,7 +45,7 @@ export default function MinhaQuinta() {
   const [syncingNow, setSyncingNow] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState("plantacoes");
-  const { isPro, isPlus, tier, plantationsLimit, animalsLimit, canAddPlantation, canAddAnimal } = useSubscription();
+  const { isUltra, isPro, isPlus, tier, plantationsLimit, animalsLimit, canAddPlantation, canAddAnimal } = useSubscription();
   const requireAuth = useRequireAuth();
 
   const load = async () => {
@@ -285,7 +287,7 @@ export default function MinhaQuinta() {
               <span className={`text-[10px] sm:text-[11px] px-1.5 py-0.5 rounded-full font-bold transition-all ${
                 tab === "plantacoes" ? "bg-white/20 text-white" : "bg-stone-100 text-stone-600"
               }`}>
-                {isPro ? `${plantings.length}` : `${plantings.length}/${plantationsLimit}`}
+                {isUltra ? `${plantings.length}` : `${plantings.length}/${plantationsLimit}`}
               </span>
             </button>
             <button
@@ -301,7 +303,7 @@ export default function MinhaQuinta() {
               <span className={`text-[10px] sm:text-[11px] px-1.5 py-0.5 rounded-full font-bold transition-all ${
                 tab === "animais" ? "bg-white/20 text-white" : "bg-stone-100 text-stone-600"
               }`}>
-                {isPro ? `${myAnimals.length}` : `${myAnimals.length}/${animalsLimit}`}
+                {isUltra ? `${myAnimals.length}` : `${myAnimals.length}/${animalsLimit}`}
               </span>
             </button>
             <button
@@ -309,15 +311,17 @@ export default function MinhaQuinta() {
               className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold py-2 px-2 sm:px-3 rounded-xl transition-all ${
                 tab === "pro"
                   ? "bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-white shadow-md"
-                  : isPro
-                    ? "bg-emerald-50/70 border border-emerald-300 text-emerald-800 hover:bg-emerald-100/60"
+                  : isUltra
+                    ? "bg-purple-50/70 border border-purple-300 text-purple-800 hover:bg-purple-100/60"
+                    : isPro
+                    ? "bg-amber-50/70 border border-amber-300 text-amber-800 hover:bg-amber-100/60"
                     : isPlus
                     ? "bg-emerald-50/70 border border-emerald-300 text-emerald-800 hover:bg-emerald-100/60"
-                    : "bg-amber-50/60 border border-amber-300 text-amber-800 hover:bg-amber-100/60"
+                    : "bg-stone-50 border border-stone-300 text-stone-700 hover:bg-stone-100/60"
               }`}
             >
-              <Sparkles className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${tab === "pro" ? "text-white" : "text-amber-500"}`} /> 
-              <span>{isPro ? "Pro Ativo" : isPlus ? "Plus Ativo" : "Planos & Pro"}</span>
+              <Sparkles className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${tab === "pro" ? "text-white" : isUltra ? "text-purple-600" : "text-amber-500"}`} /> 
+              <span>{isUltra ? "Ultra Ativo" : isPro ? "Pro Ativo" : isPlus ? "Plus Ativo" : "Planos & Pro"}</span>
             </button>
           </div>
         </div>
@@ -355,7 +359,7 @@ export default function MinhaQuinta() {
         ) : (
           <>
             {/* Banner de Limite de Plantações */}
-            {!isPro && tab === "plantacoes" && plantings.length >= plantationsLimit && (
+            {!isUltra && tab === "plantacoes" && plantings.length >= plantationsLimit && (
               <div className="bg-gradient-to-r from-amber-50 via-emerald-50/40 to-teal-50 border border-amber-200 rounded-3xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-200 flex items-center justify-center shrink-0 text-amber-600 text-lg">
@@ -367,13 +371,15 @@ export default function MinhaQuinta() {
                         Limite atingido ({plantings.length}/{plantationsLimit} plantações)
                       </h3>
                       <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                        {isPlus ? "Upgrade Pro" : "A partir de 1,99€"}
+                        {isPro ? "Upgrade Ultra" : isPlus ? "Upgrade Pro" : "A partir de 1,99€"}
                       </span>
                     </div>
                     <p className="text-xs text-stone-600 mt-0.5 max-w-md">
-                      {isPlus
-                        ? `O Plano Plus permite até ${PLUS_PLANTATIONS_LIMIT} plantações. Para canteiros ilimitados, faz upgrade para o Horta Viva Pro (2,99€/mês)!`
-                        : `No plano base podes registar até ${FREE_PLANTATIONS_LIMIT} plantações. Desbloqueia até ${PLUS_PLANTATIONS_LIMIT} no Plano Plus (1,99€/mês) ou ilimitadas no Pro (2,99€/mês)!`
+                      {isPro
+                        ? `O Plano Pro permite até ${PRO_PLANTATIONS_LIMIT} plantações. Para canteiros infinitos, faz upgrade para o Horta Viva Ultra (3,99€/mês)!`
+                        : isPlus
+                        ? `O Plano Plus permite até ${PLUS_PLANTATIONS_LIMIT} plantações. Desbloqueia até ${PRO_PLANTATIONS_LIMIT} no Pro (2,99€/mês) ou infinitas no Ultra (3,99€/mês)!`
+                        : `No plano base podes registar até ${FREE_PLANTATIONS_LIMIT} plantações. Desbloqueia até ${PLUS_PLANTATIONS_LIMIT} no Plano Plus (1,99€/mês), ${PRO_PLANTATIONS_LIMIT} no Pro (2,99€) ou infinitas no Ultra (3,99€)!`
                       }
                     </p>
                   </div>
@@ -387,13 +393,13 @@ export default function MinhaQuinta() {
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md shadow-emerald-200/50 transition-all active:scale-95 whitespace-nowrap"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  {isPlus ? "Upgrade Pro (2,99€)" : "Ver Planos (1,99€)"}
+                  {isPro ? "Upgrade Ultra (3,99€)" : isPlus ? "Upgrade Pro (2,99€)" : "Ver Planos (1,99€)"}
                 </button>
               </div>
             )}
 
             {/* Banner de Limite de Animais */}
-            {!isPro && tab === "animais" && myAnimals.length >= animalsLimit && (
+            {!isUltra && tab === "animais" && myAnimals.length >= animalsLimit && (
               <div className="bg-gradient-to-r from-amber-50 via-orange-50/40 to-amber-50 border border-amber-200 rounded-3xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-200 flex items-center justify-center shrink-0 text-amber-600 text-lg">
@@ -405,13 +411,15 @@ export default function MinhaQuinta() {
                         Limite atingido ({myAnimals.length}/{animalsLimit} animais)
                       </h3>
                       <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                        {isPlus ? "Upgrade Pro" : "A partir de 1,99€"}
+                        {isPro ? "Upgrade Ultra" : isPlus ? "Upgrade Pro" : "A partir de 1,99€"}
                       </span>
                     </div>
                     <p className="text-xs text-stone-600 mt-0.5 max-w-md">
-                      {isPlus
-                        ? `O Plano Plus permite até ${PLUS_ANIMALS_LIMIT} animais. Para animais ilimitados e tarefas automáticas diárias, faz upgrade para o Pro (2,99€/mês)!`
-                        : `No plano base podes registar até ${FREE_ANIMALS_LIMIT} animais. Desbloqueia até ${PLUS_ANIMALS_LIMIT} no Plano Plus (1,99€/mês) ou ilimitados no Pro (2,99€/mês)!`
+                      {isPro
+                        ? `O Plano Pro permite até ${PRO_ANIMALS_LIMIT} animais. Para animais infinitos e tarefas automáticas diárias, faz upgrade para o Ultra (3,99€/mês)!`
+                        : isPlus
+                        ? `O Plano Plus permite até ${PLUS_ANIMALS_LIMIT} animais. Desbloqueia até ${PRO_ANIMALS_LIMIT} no Pro (2,99€/mês) ou infinitos no Ultra (3,99€/mês)!`
+                        : `No plano base podes registar até ${FREE_ANIMALS_LIMIT} animais. Desbloqueia até ${PLUS_ANIMALS_LIMIT} no Plano Plus (1,99€/mês), ${PRO_ANIMALS_LIMIT} no Pro (2,99€) ou infinitos no Ultra (3,99€)!`
                       }
                     </p>
                   </div>
@@ -425,7 +433,7 @@ export default function MinhaQuinta() {
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 via-amber-600 to-orange-700 hover:from-orange-600 hover:to-amber-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md shadow-orange-200/50 transition-all active:scale-95 whitespace-nowrap"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  {isPlus ? "Upgrade Pro (2,99€)" : "Ver Planos (1,99€)"}
+                  {isPro ? "Upgrade Ultra (3,99€)" : isPlus ? "Upgrade Pro (2,99€)" : "Ver Planos (1,99€)"}
                 </button>
               </div>
             )}

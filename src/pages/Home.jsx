@@ -35,7 +35,7 @@ export default function Home() {
   const [showProModal, setShowProModal] = useState(false);
   const [pendingTasksCount, setPendingTasksCount] = useState(1);
   const [viewMode, setViewMode] = useViewMode("hortaviva_plant_view_mode", "large");
-  const { isPro, isPlus } = useSubscription();
+  const { isUltra, isPro, isPlus, isPaid } = useSubscription();
 
   useEffect(() => {
     cachedList("plants", () => base44.entities.Plant.list())

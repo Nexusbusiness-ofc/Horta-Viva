@@ -11,7 +11,7 @@ export default function AIAssistant({ query, plants, onClearQuery }) {
   const [loading, setLoading] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const scrollRef = useRef(null);
-  const { isPro, isPlus, remainingAI, remainingFreeAI, canUseAI, aiLimit } = useSubscription();
+  const { isUltra, isPro, isPlus, remainingAI, remainingFreeAI, canUseAI, aiLimit } = useSubscription();
 
   useEffect(() => {
     if (query) {
@@ -41,8 +41,8 @@ export default function AIAssistant({ query, plants, onClearQuery }) {
         {
           role: "assistant",
           text: isPlus
-            ? `⭐ **Limite mensal de ${PLUS_AI_LIMIT} utilizações da IA atingido.**\n\nJá utilizaste as tuas ${PLUS_AI_LIMIT} consultas de IA deste mês no Plano Plus. Para conversares com o Assistente IA sem restrições e identificares plantas e animais por foto sem limites, atualiza para o **Horta Viva Pro** por 2,99€/mês.`
-            : `⭐ **Limite de ${FREE_AI_LIMIT} utilizações gratuitas de IA atingido.**\n\nJá utilizaste os teus 2 usos gratuitos de IA. Escolhe o **Plano Plus** (1,99€/mês com 4 consultas e 3 fotos) ou o **Horta Viva Pro** (2,99€/mês com acesso ilimitado)!`,
+            ? `⭐ **Limite mensal de ${PLUS_AI_LIMIT} chats com a IA atingido.**\n\nJá utilizaste os teus ${PLUS_AI_LIMIT} chats com a IA deste mês no Plano Plus. Para conversares com o Assistente IA sem restrições, atualiza para o **Horta Viva Pro** (2,99€/mês) ou **Ultra** (3,99€/mês)!`
+            : `⭐ **Limite mensal de ${FREE_AI_LIMIT} chats com a IA atingido.**\n\nJá utilizaste as tuas ${FREE_AI_LIMIT} conversas gratuitas com a IA deste mês. Escolhe o **Plano Plus** (1,99€/mês com 20 chats) ou o **Horta Viva Pro** (2,99€/mês com IA ilimitada)!`,
         }
       ]);
       return;
@@ -70,7 +70,7 @@ Responde de forma clara, prática e direta em português europeu. Se a pergunta 
 
       setMessages(prev => [...prev, { role: "assistant", text: res }]);
 
-      if (!isPro) {
+      if (!isPro && !isUltra) {
         incrementAIUsage();
       }
     } catch (e) {
@@ -120,7 +120,14 @@ Responde de forma clara, prática e direta em português europeu. Se a pergunta 
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {isPro ? (
+          {isUltra ? (
+            <span
+              className="flex items-center gap-1 bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-xl shadow-2xs"
+              title="Plano Ultra ativo"
+            >
+              🚀 Ultra Ilimitado
+            </span>
+          ) : isPro ? (
             <span
               className="flex items-center gap-1 bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-xl shadow-2xs"
               title="Plano Pro ativo"
@@ -135,7 +142,7 @@ Responde de forma clara, prática e direta em português europeu. Se a pergunta 
               title="Quota de IA mensal do Plano Plus"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>{remainingAI} de {PLUS_AI_LIMIT} usos/mês</span>
+              <span>{remainingAI} de {PLUS_AI_LIMIT} chats/mês</span>
             </button>
           ) : (
             <button
@@ -146,7 +153,7 @@ Responde de forma clara, prática e direta em português europeu. Se a pergunta 
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
               {remainingFreeAI > 0 ? (
-                <span>{remainingFreeAI} {remainingFreeAI === 1 ? "uso grátis" : "usos grátis"}</span>
+                <span>{remainingFreeAI} de {FREE_AI_LIMIT} chats grátis</span>
               ) : (
                 <span className="font-bold text-amber-200">Planos (1,99€)</span>
               )}
@@ -206,7 +213,7 @@ Responde de forma clara, prática e direta em português europeu. Se a pergunta 
       </div>
 
       {/* Banner de limite de IA atingido */}
-      {!isPro && remainingAI === 0 && (
+      {!isPro && !isUltra && remainingAI === 0 && (
         <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-emerald-50 border-t border-amber-200/80 px-4 py-3 flex items-center justify-between gap-3 animate-in fade-in">
           <div className="flex items-center gap-2.5 min-w-0">
             <span className="text-amber-600 text-lg">⭐</span>
@@ -214,13 +221,13 @@ Responde de forma clara, prática e direta em português europeu. Se a pergunta 
               <p className="text-xs font-bold text-stone-800 leading-tight">
                 {isPlus
                   ? `Limite mensal de IA atingido (${PLUS_AI_LIMIT}/${PLUS_AI_LIMIT})`
-                  : `Usos gratuitos de IA esgotados (${FREE_AI_LIMIT}/${FREE_AI_LIMIT})`
+                  : `Limite mensal de IA atingido (${FREE_AI_LIMIT}/${FREE_AI_LIMIT})`
                 }
               </p>
               <p className="text-[11px] text-stone-500 truncate">
                 {isPlus
-                  ? "Atualiza para o Horta Viva Pro (2,99€/mês) para conversas e fotos sem limites."
-                  : "Ativa o Plano Plus (1,99€/mês) ou Pro (2,99€/mês) para continuares a conversar com a IA."
+                  ? "Atualiza para o Horta Viva Pro (2,99€/mês) para conversas sem limites."
+                  : "Ativa o Plano Plus (1,99€ com 20 chats) ou Pro (2,99€ com IA ilimitada)."
                 }
               </p>
             </div>

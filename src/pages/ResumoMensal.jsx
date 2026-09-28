@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Sprout, Scissors, PawPrint, Calendar, Loader2, ChevronRight } from "lucide-react";
+import { ArrowLeft, Sprout, Scissors, PawPrint, Calendar, Loader2, ChevronRight, Lock, Sparkles } from "lucide-react";
 import { generateAllCuras } from "@/lib/careSchedule";
 import { cachedList } from "@/lib/offlineCatalog";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
+import { useSubscription } from "@/lib/subscription";
+import UpgradeModal from "@/components/subscription/UpgradeModal";
 
 const MONTH_NAMES_FULL = ["", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 const WEEKDAYS_SHORT = ["D", "S", "T", "Q", "Q", "S", "S"];
@@ -15,6 +17,11 @@ export default function ResumoMensal() {
   const [curas, setCuras] = useState([]);
   const [podas, setPodas] = useState([]);
   const [animals, setAnimals] = useState([]);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  const { isPro, isPlus, isUltra, monthlySummaryAccess, canAccessMonthlySummary } = useSubscription();
+  const isLocked = !canAccessMonthlySummary;
+  const isShortSummary = monthlySummaryAccess === "short";
 
   useEffect(() => {
     Promise.all([
@@ -57,6 +64,8 @@ export default function ResumoMensal() {
   for (let i = 0; i < firstWeekday; i++) calendarCells.push(null);
   for (let d = 1; d <= daysInMonth; d++) calendarCells.push(d);
 
+  const displayedCuras = isShortSummary ? curasMes.slice(0, 3) : curasMes;
+
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-emerald-50 via-green-50/40 to-lime-50/50">
       <header className="sticky top-0 z-30 bg-gradient-to-r from-white/90 via-emerald-50/60 to-white/90 backdrop-blur-lg border-b border-emerald-100/60">
@@ -77,13 +86,58 @@ export default function ResumoMensal() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-5 space-y-5">
+      <main className="max-w-5xl mx-auto px-4 py-5 space-y-5 relative min-h-[550px]">
+        {/* Modal de Upgrade */}
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          reason="resumo"
+          customTitle="Desbloquear Resumo Mensal"
+          customDescription="Acede ao calendário mensal de curas, podas em época e tarefas de animais na tua quinta."
+        />
+
+        {/* Overlay com Cadeado para Plano Gratuito (Desfocado) */}
+        {isLocked && !loading && (
+          <div className="absolute inset-0 z-20 flex items-start sm:items-center justify-center p-4 pt-10 sm:pt-4">
+            <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 sm:p-8 max-w-md w-full border border-stone-200/90 shadow-2xl text-center space-y-4 animate-in fade-in zoom-in-95 sticky top-24">
+              <div className="w-16 h-16 rounded-3xl bg-amber-500/10 border border-amber-200 flex items-center justify-center mx-auto text-amber-600 shadow-inner">
+                <Lock className="w-8 h-8" />
+              </div>
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-bold uppercase tracking-wider mb-2">
+                  <span>🔒 Recurso Bloqueado</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-stone-800">Resumo Mensal Exclusivo</h2>
+                <p className="text-xs sm:text-sm text-stone-600 mt-2 leading-relaxed">
+                  O Resumo Mensal com estatísticas de curas, calendário e tarefas de animais está disponível a partir do <strong>Plano Plus (1,99€/mês)</strong> ou completo no <strong>Plano Pro (2,99€)</strong> e <strong>Ultra (3,99€)</strong>.
+                </p>
+              </div>
+              <div className="pt-2 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setShowUpgradeModal(true)}
+                  className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-sm py-3.5 px-5 rounded-2xl shadow-lg shadow-emerald-600/25 active:scale-95 transition-all"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <span>Desbloquear Resumo Mensal (1,99€)</span>
+                </button>
+                <Link
+                  to="/"
+                  className="inline-block text-xs font-semibold text-stone-400 hover:text-stone-600 transition-colors"
+                >
+                  Voltar à Página Principal
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className="flex justify-center py-20">
             <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
           </div>
         ) : (
-          <>
+          <div className={`space-y-5 transition-all ${isLocked ? "filter blur-md select-none pointer-events-none opacity-30" : ""}`}>
             {/* Stats */}
             <div className="grid grid-cols-3 gap-3">
               <StatCard icon={<Sprout className="w-4 h-4" />} color="#16a34a" count={curasMes.length} label="curas no mês" link="/calendario-curas" />
@@ -148,9 +202,32 @@ export default function ResumoMensal() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {curasMes.map((c, i) => (
+                  {displayedCuras.map((c, i) => (
                     <CuraRow key={i} cura={c} todayStr={todayStr} />
                   ))}
+                </div>
+              )}
+
+              {/* Banner de Resumo Encurtado no Plano Plus */}
+              {isShortSummary && curasMes.length > 3 && (
+                <div className="mt-3 bg-gradient-to-r from-emerald-50 via-teal-50 to-amber-50 border border-emerald-200/80 rounded-2xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl">✂️</span>
+                    <div>
+                      <p className="font-bold text-xs text-stone-800">Resumo mensal encurtado (Plano Plus)</p>
+                      <p className="text-[11px] text-stone-500">
+                        A mostrar as primeiras 3 de {curasMes.length} curas. Faz upgrade para o Pro (2,99€) ou Ultra (3,99€) para veres o resumo detalhado!
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowUpgradeModal(true)}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-900 bg-amber-200/80 hover:bg-amber-300 px-3.5 py-1.5 rounded-xl transition-all shadow-xs shrink-0"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-700" />
+                    <span>Ver Resumo Detalhado (Pro)</span>
+                  </button>
                 </div>
               )}
             </section>
@@ -216,7 +293,7 @@ export default function ResumoMensal() {
                 </div>
               )}
             </section>
-          </>
+          </div>
         )}
       </main>
 

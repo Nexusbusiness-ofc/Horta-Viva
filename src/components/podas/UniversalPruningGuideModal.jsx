@@ -1,12 +1,16 @@
 import React, { useState } from "react";
-import { Scissors, Ruler, Sparkles, X, Lightbulb, ShieldCheck, CheckCircle2, AlertTriangle, BookOpen, Box, Layers } from "lucide-react";
+import { Scissors, Ruler, Sparkles, X, Lightbulb, ShieldCheck, CheckCircle2, AlertTriangle, BookOpen, Box, Layers, Lock } from "lucide-react";
 import { CutAngleDiagram, TreeArchitectureDiagram } from "./PodaSchemaViewer";
 import Poda3DViewer from "./Poda3DViewer";
 import Monda3DViewer from "@/components/mondas/Monda3DViewer";
+import { useSubscription } from "@/lib/subscription";
+import UpgradeModal from "@/components/subscription/UpgradeModal";
 
 export default function UniversalPruningGuideModal({ isOpen, onClose }) {
+  const { isPro, isPlus, isUltra, canAccessPruning2D, canAccessPruning3D, tier } = useSubscription();
   const [activeTab, setActiveTab] = useState("cut_angle");
-  const [is3D, setIs3D] = useState(true);
+  const [is3D, setIs3D] = useState(canAccessPruning3D);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   if (!isOpen) return null;
 
@@ -68,7 +72,7 @@ export default function UniversalPruningGuideModal({ isOpen, onClose }) {
           {/* Alternador 3D / 2D */}
           <button
             onClick={() => setIs3D(!is3D)}
-            className={`shrink-0 flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-xl border transition-all ${
+            className={`shrink-0 flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-xl border transition-all ${
               is3D
                 ? "bg-amber-500 text-white border-amber-600 shadow-xs"
                 : "bg-white text-stone-700 border-stone-300 hover:bg-stone-50"
@@ -76,11 +80,74 @@ export default function UniversalPruningGuideModal({ isOpen, onClose }) {
           >
             {is3D ? <Box className="w-3.5 h-3.5" /> : <Layers className="w-3.5 h-3.5" />}
             <span>{is3D ? "3D Ativo" : "Ver em 2D"}</span>
+            {is3D && !canAccessPruning3D && <Lock className="w-3 h-3 text-white/90" />}
+            {!is3D && !canAccessPruning2D && <Lock className="w-3 h-3 text-amber-500" />}
           </button>
         </div>
 
+        {/* Modal de Upgrade */}
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          reason="esquemas"
+          customTitle="Desbloquear Esquemas de Podas"
+          customDescription="Acede aos esquemas anatómicos 2D e simulações 3D interativas de podas e mondas."
+        />
+
         {/* Conteúdo da Aba */}
-        <div className="p-5 sm:p-6 space-y-5 flex-1">
+        <div className="p-5 sm:p-6 space-y-5 flex-1 relative">
+          {((is3D && !canAccessPruning3D) || (!is3D && !canAccessPruning2D)) && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs">
+              <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-6 max-w-sm w-full border border-stone-200 shadow-xl text-center space-y-3 animate-in fade-in zoom-in-95">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-200 flex items-center justify-center mx-auto text-amber-600">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-black text-stone-800 text-base">
+                    {is3D ? "Esquema 3D Bloqueado" : "Esquemas 2D Bloqueados"}
+                  </h4>
+                  <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                    {is3D
+                      ? (isPlus
+                          ? "O modelo 3D interativo está disponível no Plano Pro (2,99€) e Ultra (3,99€). Podes consultar a versão em Esquema 2D incluída no teu Plano Plus!"
+                          : "Os esquemas 2D e 3D de podas e mondas estão disponíveis a partir do Plano Plus (1,99€/mês).")
+                      : "Os esquemas técnicos e diagramas anatómicos estão disponíveis a partir do Plano Plus (1,99€/mês)."
+                    }
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 pt-1">
+                  {is3D && isPlus ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setIs3D(false)}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-xs transition-all"
+                      >
+                        Ver Esquema em 2D (Incluído no Plus)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowUpgradeModal(true)}
+                        className="w-full bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-xs py-2 px-3 rounded-xl transition-all"
+                      >
+                        Upgrade Pro (2,99€) para 3D
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowUpgradeModal(true)}
+                      className="w-full bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-md transition-all active:scale-95"
+                    >
+                      Desbloquear Esquemas (1,99€)
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className={((is3D && !canAccessPruning3D) || (!is3D && !canAccessPruning2D)) ? "filter blur-md pointer-events-none select-none opacity-30 space-y-5" : "space-y-5"}>
           {activeTab === "cut_angle" && (
             <div className="space-y-4">
               {is3D ? (
@@ -207,6 +274,7 @@ export default function UniversalPruningGuideModal({ isOpen, onClose }) {
               </div>
             </div>
           )}
+          </div>
         </div>
 
         {/* Rodapé com botão Fechar */}

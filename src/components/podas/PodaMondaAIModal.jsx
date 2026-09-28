@@ -11,6 +11,8 @@ import {
   incrementPhotoUsage, 
   incrementAIUsage,
   PLUS_PHOTO_LIMIT, 
+  PRO_PHOTO_LIMIT,
+  FREE_PHOTO_LIMIT,
   FREE_IDENTIFICATION_LIMIT 
 } from "@/lib/subscription";
 import UpgradeModal from "@/components/subscription/UpgradeModal";
@@ -42,7 +44,7 @@ export default function PodaMondaAIModal({ isOpen, onClose, onOpenUniversalGuide
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const { toast } = useToast();
-  const { isPro, isPlus, canIdentify, canUseAI, remainingPhotos } = useSubscription();
+  const { isUltra, isPro, isPlus, canIdentify, canUseAI, remainingPhotos } = useSubscription();
 
   // Ciclo das mensagens animadas de carregamento
   useEffect(() => {
@@ -96,23 +98,35 @@ export default function PodaMondaAIModal({ isOpen, onClose, onOpenUniversalGuide
       const data = await analyzePodaMondaWithGemini(image, userPreference);
       setResult(data);
 
-      if (!isPro) {
+      if (!isUltra) {
         const updatedCount = incrementPhotoUsage();
-        if (isPlus) {
+        if (isPro) {
+          toast({
+            title: `Análise IA concluída (${updatedCount} de ${PRO_PHOTO_LIMIT} fotos este mês)`,
+            description: updatedCount >= PRO_PHOTO_LIMIT
+              ? "Atingiste o teu limite de 15 fotos deste mês no Plano Pro. Para fotos infinitas, podes atualizar para o Ultra (3,99€)!"
+              : `Ainda tens ${Math.max(0, PRO_PHOTO_LIMIT - updatedCount)} análise(s) com IA este mês.`,
+          });
+        } else if (isPlus) {
           toast({
             title: `Análise IA concluída (${updatedCount} de ${PLUS_PHOTO_LIMIT} fotos este mês)`,
             description: updatedCount >= PLUS_PHOTO_LIMIT
-              ? "Atingiste o limite mensal do Plano Plus. Podes atualizar para Pro para fotos ilimitadas!"
+              ? "Atingiste o limite de 10 fotos deste mês no Plano Plus. Podes atualizar para Pro (15 fotos) ou Ultra (fotos infinitas)!"
               : `Ainda tens ${Math.max(0, PLUS_PHOTO_LIMIT - updatedCount)} análise(s) com IA este mês.`,
           });
         } else {
           toast({
-            title: `Análise IA concluída (${updatedCount} de ${FREE_IDENTIFICATION_LIMIT} fotos gratuitas)`,
-            description: updatedCount >= FREE_IDENTIFICATION_LIMIT
-              ? "Aproveitaste os 2 usos gratuitos! Atualiza para Plus ou Pro para continuar a analisar com IA."
-              : `Ainda tens ${Math.max(0, FREE_IDENTIFICATION_LIMIT - updatedCount)} análise gratuita restante.`,
+            title: `Análise IA concluída (${updatedCount} de ${FREE_PHOTO_LIMIT} fotos gratuitas este mês)`,
+            description: updatedCount >= FREE_PHOTO_LIMIT
+              ? "Aproveitaste os 3 usos gratuitos deste mês! Atualiza para Plus, Pro ou Ultra para continuar a analisar com IA."
+              : `Ainda tens ${Math.max(0, FREE_PHOTO_LIMIT - updatedCount)} análise(s) gratuita(s) restante(s) este mês.`,
           });
         }
+      } else {
+        toast({
+          title: "Análise IA concluída ⭐",
+          description: "Análise efetuada com sucesso com o Plano Ultra (fotos infinitas).",
+        });
       }
     } catch (err) {
       console.error("Erro ao analisar foto de poda/monda:", err);
@@ -130,7 +144,7 @@ export default function PodaMondaAIModal({ isOpen, onClose, onOpenUniversalGuide
     const textToSend = (presetText || chatInput).trim();
     if (!textToSend || !image || chatLoading) return;
 
-    if (!canUseAI && !isPro) {
+    if (!canUseAI) {
       setShowUpgradeModal(true);
       return;
     }
@@ -153,7 +167,7 @@ Pergunta: ${textToSend}`;
 
       const reply = await askGeminiAboutPhoto(image, systemPrompt);
       setChatMessages((prev) => [...prev, { role: "assistant", text: reply }]);
-      if (!isPro) incrementAIUsage();
+      if (!isPro && !isUltra) incrementAIUsage();
     } catch (err) {
       setChatMessages((prev) => [
         ...prev,

@@ -11,7 +11,7 @@ import { useToast } from "@/components/ui/use-toast";
 
 export default function Perfil() {
   const { user, checkUserAuth, logout, navigateToLogin } = useAuth();
-  const { isPro, isPlus } = useSubscription();
+  const { isUltra, isPro, isPlus } = useSubscription();
   const { toast } = useToast();
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [isGoogleLinked, setIsGoogleLinked] = useState(isGoogleConnected());
@@ -130,11 +130,13 @@ export default function Perfil() {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-stone-800">
-                  {isPro ? "Horta Viva Pro" : isPlus ? "Horta Viva Plus" : "Plano Gratuito"}
+                  {isUltra ? "Horta Viva Ultra" : isPro ? "Horta Viva Pro" : isPlus ? "Horta Viva Plus" : "Plano Gratuito"}
                 </h3>
                 <p className="text-xs text-stone-500">
-                  {isPro
-                    ? "Acesso ilimitado ativo"
+                  {isUltra
+                    ? "Acesso infinito ativo (3,99€/mês)"
+                    : isPro
+                    ? "Plano Pro ativo (2,99€/mês)"
                     : isPlus
                     ? "Plano Plus ativo (1,99€/mês)"
                     : "Plano Base gratuito"}
@@ -143,23 +145,27 @@ export default function Perfil() {
             </div>
             <span
               className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
-                isPro
-                  ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                isUltra
+                  ? "bg-purple-100 text-purple-800 border-purple-300"
+                  : isPro
+                  ? "bg-amber-100 text-amber-800 border-amber-300"
                   : isPlus
                   ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                  : "bg-amber-100 text-amber-800 border-amber-300"
+                  : "bg-stone-100 text-stone-700 border-stone-300"
               }`}
             >
-              {isPro ? "Pro Ativo" : isPlus ? "Plus (1,99€)" : "Plano Base"}
+              {isUltra ? "Ultra Ativo" : isPro ? "Pro Ativo" : isPlus ? "Plus (1,99€)" : "Plano Base"}
             </span>
           </div>
 
           <p className="text-xs text-stone-600 leading-relaxed">
-            {isPro
-              ? "Tens acesso ilimitado a IA botânica, identificações por foto, canteiros de plantações e animais na Minha Quinta."
+            {isUltra
+              ? "Tens acesso ilimitado e infinito a conversas com IA, fotos, plantações e animais na Minha Quinta, resumo detalhado e esquemas 3D/2D."
+              : isPro
+              ? "O teu plano Pro inclui conversas com IA ilimitadas, até 8 plantações, 7 animais, 15 fotos/mês, resumo detalhado e esquemas 3D/2D."
               : isPlus
-              ? "O teu plano Plus inclui até 6 plantações, 5 animais, 3 fotos IA/mês e 4 consultas do assistente IA/mês."
-              : "Desbloqueia mais recursos com o Plano Plus (1,99€/mês) ou acesso total sem limites com o Pro (2,99€/mês)."}
+              ? "O teu plano Plus inclui 20 chats IA/mês, até 5 plantações, 4 animais, 10 fotos IA/mês, resumo encurtado e esquemas 2D."
+              : "No plano gratuito tens 10 chats IA/mês, 3 plantações, 2 animais e 3 fotos IA/mês. Escolhe Plus (1,99€), Pro (2,99€) ou Ultra (3,99€)."}
           </p>
 
           <Link
@@ -167,11 +173,11 @@ export default function Perfil() {
             className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white font-bold text-xs sm:text-sm py-2.5 px-4 rounded-xl shadow-md shadow-amber-500/20 transition-all active:scale-95"
           >
             <Sparkles className="w-4 h-4" />
-            <span>{isPro ? "Ver Detalhes do Plano Pro" : isPlus ? "Ver e Gerir Planos / Upgrade Pro" : "Ver e Escolher Plano (a partir de 1,99€)"}</span>
+            <span>{isUltra ? "Ver Detalhes do Plano Ultra" : isPro ? "Ver Detalhes do Plano Pro / Upgrade Ultra" : isPlus ? "Ver e Gerir Planos / Upgrade Pro" : "Ver e Escolher Plano (a partir de 1,99€)"}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
 
-          {(isPro || isPlus) && (
+          {(isUltra || isPro || isPlus) && (
             <button
               type="button"
               onClick={async () => {

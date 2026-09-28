@@ -29,7 +29,7 @@ import InstallPrompt from '@/components/pwa/InstallPrompt';
 import BottomNav from '@/components/navigation/BottomNav';
 import BackToTopButton from '@/components/navigation/BackToTopButton';
 import { isGoogleConnected, hasValidGoogleToken, autoSyncGoogleDrive } from '@/lib/googleSync';
-import { activateProSubscription, activatePlusSubscription } from '@/lib/subscription';
+import { activateProSubscription, activatePlusSubscription, activateUltraSubscription } from '@/lib/subscription';
 import { useToast } from "@/components/ui/use-toast";
 
 const AuthenticatedApp = () => {
@@ -40,8 +40,15 @@ const AuthenticatedApp = () => {
     const hash = window.location.hash || "";
     const search = window.location.search || "";
     if (hash.includes("payment=success") || search.includes("payment=success")) {
+      const isUltraTier = hash.includes("tier=ultra") || search.includes("tier=ultra");
       const isPlusTier = hash.includes("tier=plus") || search.includes("tier=plus");
-      if (isPlusTier) {
+      if (isUltraTier) {
+        activateUltraSubscription({ verified: true, source: "stripe_checkout" });
+        toast({
+          title: "🎉 Horta Viva Ultra Ativado!",
+          description: "O teu plano Ultra (3,99€/mês) foi ativado com sucesso! Plantações, animais e fotos infinitas.",
+        });
+      } else if (isPlusTier) {
         activatePlusSubscription({ verified: true, source: "stripe_checkout" });
         toast({
           title: "🎉 Horta Viva Plus Ativado!",
@@ -51,7 +58,7 @@ const AuthenticatedApp = () => {
         activateProSubscription({ verified: true, source: "stripe_checkout" });
         toast({
           title: "🎉 Horta Viva Pro Ativado!",
-          description: "A tua subscrição Pro foi confirmada! Tens acesso ilimitado em todos os teus dispositivos.",
+          description: "A tua subscrição Pro (2,99€/mês) foi confirmada com sucesso!",
         });
       }
       if (isGoogleConnected()) {

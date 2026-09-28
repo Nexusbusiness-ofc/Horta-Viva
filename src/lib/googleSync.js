@@ -605,15 +605,16 @@ export async function syncSubscriptionWithGoogleAccount(interactive = true) {
     const subEmail = (sub?.google_email || sub?.customer_email || "").toLowerCase().trim();
     const isOwner = Boolean(activeEmail && subEmail && activeEmail === subEmail);
 
+    const isUltra = isOwner && sub && sub.active && (sub.tier === "ultra" || sub.plan === "ultra");
     const isPro = isOwner && sub && sub.active && (sub.tier === "pro" || sub.plan === "pro") && !sub.is_master;
     const isPlus = isOwner && sub && sub.active && (sub.tier === "plus" || sub.plan === "plus");
 
-    if (isPro || isPlus) {
+    if (isUltra || isPro || isPlus) {
       await uploadToGoogleDrive(false).catch(() => {});
       return {
         success: true,
         restored: true,
-        tier: isPro ? "pro" : "plus",
+        tier: isUltra ? "ultra" : isPro ? "pro" : "plus",
         email: googleUser?.email || sub.customer_email,
       };
     }

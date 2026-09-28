@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import { Scissors, CheckCircle2, XCircle, AlertTriangle, Lightbulb, Wrench, ShieldCheck, ChevronRight, Box, Layers } from "lucide-react";
+import { Scissors, CheckCircle2, XCircle, AlertTriangle, Lightbulb, Wrench, ShieldCheck, ChevronRight, Box, Layers, Lock, Sparkles } from "lucide-react";
 import { PODA_SCHEMAS } from "@/lib/pruningThinningSchemas";
 import Poda3DViewer from "./Poda3DViewer";
+import { useSubscription } from "@/lib/subscription";
+import UpgradeModal from "@/components/subscription/UpgradeModal";
 
 // --- SVG DIAGRAMS ---
 
@@ -472,15 +474,26 @@ export default function PodaSchemaViewer({ poda }) {
     ]
   };
 
-  const [viewDimension, setViewDimension] = useState("3d"); // '3d' | '2d'
+  const { isPro, isPlus, isUltra, canAccessPruning2D, canAccessPruning3D, tier } = useSubscription();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [viewDimension, setViewDimension] = useState(canAccessPruning3D ? "3d" : "2d");
 
   return (
     <div className="space-y-5">
+      {/* Modal de Upgrade */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        reason="esquemas"
+        customTitle="Desbloquear Esquemas de Podas"
+        customDescription="Acede aos esquemas vetoriais 2D e simulações 3D interativas de podas e mondas."
+      />
+
       {/* Comutador 3D / 2D */}
       <div className="flex items-center justify-between gap-1.5 bg-stone-100 p-1 rounded-2xl border border-stone-200/80">
         <button
           onClick={() => setViewDimension("3d")}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
             viewDimension === "3d"
               ? "bg-emerald-600 text-white shadow-sm"
               : "text-stone-600 hover:text-stone-900"
@@ -488,10 +501,11 @@ export default function PodaSchemaViewer({ poda }) {
         >
           <Box className="w-3.5 h-3.5" />
           <span>🎮 Modelo 3D Interativo (360°)</span>
+          {!canAccessPruning3D && <Lock className="w-3 h-3 text-amber-400 shrink-0" />}
         </button>
         <button
           onClick={() => setViewDimension("2d")}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
             viewDimension === "2d"
               ? "bg-emerald-600 text-white shadow-sm"
               : "text-stone-600 hover:text-stone-900"
@@ -499,19 +513,93 @@ export default function PodaSchemaViewer({ poda }) {
         >
           <Layers className="w-3.5 h-3.5" />
           <span>📐 Esquema 2D Vetorial</span>
+          {!canAccessPruning2D && <Lock className="w-3 h-3 text-amber-400 shrink-0" />}
         </button>
       </div>
 
       {viewDimension === "3d" ? (
-        <Poda3DViewer diagramType={schema.diagramType} name={poda?.name} />
+        <div className="relative rounded-3xl overflow-hidden">
+          <div className={!canAccessPruning3D ? "filter blur-md pointer-events-none select-none opacity-30" : ""}>
+            <Poda3DViewer diagramType={schema.diagramType} name={poda?.name} />
+          </div>
+          {!canAccessPruning3D && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs">
+              <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-6 max-w-sm w-full border border-stone-200 shadow-xl text-center space-y-3 animate-in fade-in zoom-in-95">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-200 flex items-center justify-center mx-auto text-amber-600">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-black text-stone-800 text-base">Esquema 3D Bloqueado</h4>
+                  <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                    {isPlus
+                      ? "O modelo 3D interativo está disponível no Plano Pro (2,99€) e Ultra (3,99€). Podes usar o Esquema 2D incluído no teu Plano Plus!"
+                      : "Os esquemas 2D e 3D de podas e mondas estão disponíveis a partir do Plano Plus (1,99€/mês)."}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 pt-1">
+                  {isPlus ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setViewDimension("2d")}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-xs transition-all"
+                      >
+                        Ver Esquema 2D (Incluído no Plus)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowUpgradeModal(true)}
+                        className="w-full bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-xs py-2 px-3 rounded-xl transition-all"
+                      >
+                        Upgrade Pro (2,99€) para 3D
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowUpgradeModal(true)}
+                      className="w-full bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-md transition-all active:scale-95"
+                    >
+                      Desbloquear Esquemas (1,99€)
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       ) : (
-        <>
-          {/* 1. Ângulo de Corte Anatómico */}
-          <CutAngleDiagram cutAngle={schema.cutAngle} cutHeight={schema.cutHeight} />
+        <div className="relative rounded-3xl overflow-hidden">
+          <div className={!canAccessPruning2D ? "filter blur-md pointer-events-none select-none opacity-30 space-y-4" : "space-y-4"}>
+            {/* 1. Ângulo de Corte Anatómico */}
+            <CutAngleDiagram cutAngle={schema.cutAngle} cutHeight={schema.cutHeight} />
 
-          {/* 2. Diagrama de Arquitetura da Árvore */}
-          <TreeArchitectureDiagram type={schema.diagramType} name={poda?.name} />
-        </>
+            {/* 2. Diagrama de Arquitetura da Árvore */}
+            <TreeArchitectureDiagram type={schema.diagramType} name={poda?.name} />
+          </div>
+          {!canAccessPruning2D && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs">
+              <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-6 max-w-sm w-full border border-stone-200 shadow-xl text-center space-y-3 animate-in fade-in zoom-in-95">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-200 flex items-center justify-center mx-auto text-amber-600">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-black text-stone-800 text-base">Esquemas 2D Bloqueados</h4>
+                  <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                    Os diagramas anatómicos vetoriais e cortes em bisel estão disponíveis a partir do <strong>Plano Plus (1,99€/mês)</strong>.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowUpgradeModal(true)}
+                  className="w-full bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-md transition-all active:scale-95"
+                >
+                  Desbloquear Esquemas (1,99€)
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {/* 3. Caixa de Regra de Ouro do Podador */}

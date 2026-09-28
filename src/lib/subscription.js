@@ -1,20 +1,34 @@
 import { useState, useEffect } from "react";
 
 // Links de Checkout Stripe Oficiais
-export const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/eVqaEX0i272p92Mc5tfjG00"; // Pro: 2,99€ / mês (Ilimitado)
-export const STRIPE_PLUS_PAYMENT_LINK = "https://buy.stripe.com/5kQ8wP8Oy1I5gvec5tfjG01"; // Plus: 1,99€ / mês (6 plantações, 5 animais, 3 fotos IA/mês, 4 chats IA/mês)
+export const STRIPE_PLUS_PAYMENT_LINK = "https://buy.stripe.com/5kQ8wP8Oy1I5gvec5tfjG01"; // Plus: 1,99€ / mês
+export const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/eVqaEX0i272p92Mc5tfjG00"; // Pro: 2,99€ / mês
+export const STRIPE_ULTRA_PAYMENT_LINK = "https://buy.stripe.com/eVqaEX0i272p92Mc5tfjG00"; // Ultra: 3,99€ / mês
 
-// Limites do Plano Gratuito (Base)
-export const FREE_AI_LIMIT = 2;
-export const FREE_IDENTIFICATION_LIMIT = 2;
-export const FREE_PLANTATIONS_LIMIT = 3;
-export const FREE_ANIMALS_LIMIT = 2;
+// Limites do Plano Gratuito (Base - 0€)
+export const FREE_AI_LIMIT = 10; // 10 chats/mês
+export const FREE_PHOTO_LIMIT = 3; // 3 vezes/mês
+export const FREE_IDENTIFICATION_LIMIT = 3;
+export const FREE_PLANTATIONS_LIMIT = 3; // 3 plantações
+export const FREE_ANIMALS_LIMIT = 2; // 2 animais
 
 // Limites do Plano Plus (1,99€ / mês)
-export const PLUS_PLANTATIONS_LIMIT = 6;
-export const PLUS_ANIMALS_LIMIT = 5;
-export const PLUS_PHOTO_LIMIT = 3; // 3 usos mensais de fotos com IA
-export const PLUS_AI_LIMIT = 4; // 4 usos mensais da IA
+export const PLUS_AI_LIMIT = 20; // 20 chats/mês
+export const PLUS_PHOTO_LIMIT = 10; // 10 vezes/mês
+export const PLUS_PLANTATIONS_LIMIT = 5; // 5 plantações
+export const PLUS_ANIMALS_LIMIT = 4; // 4 animais
+
+// Limites do Plano Pro (2,99€ / mês)
+export const PRO_AI_LIMIT = Infinity; // Ilimitada
+export const PRO_PHOTO_LIMIT = 15; // 15 vezes/mês
+export const PRO_PLANTATIONS_LIMIT = 8; // 8 plantações
+export const PRO_ANIMALS_LIMIT = 7; // 7 animais
+
+// Limites do Plano Ultra (3,99€ / mês)
+export const ULTRA_AI_LIMIT = Infinity; // Ilimitada
+export const ULTRA_PHOTO_LIMIT = Infinity; // Infinitas vezes/mês
+export const ULTRA_PLANTATIONS_LIMIT = Infinity; // Infinitas plantações
+export const ULTRA_ANIMALS_LIMIT = Infinity; // Infinitos animais
 
 const STORAGE_KEYS = {
   AI_USAGE_COUNT: "hortaviva_ai_usage_count",
@@ -174,7 +188,7 @@ function getActiveGoogleId() {
 }
 
 /**
- * Retorna o escalão atual do utilizador: "pro", "plus" ou "free".
+ * Retorna o escalão atual do utilizador: "ultra", "pro", "plus" ou "free".
  */
 export function getUserTier() {
   try {
@@ -183,10 +197,10 @@ export function getUserTier() {
       try {
         const sub = JSON.parse(raw);
         if (sub && sub.active === true && (sub.is_master === true || sub.plan === "lifetime")) {
-          // Master / Administrador: desbloqueia Pro incondicionalmente neste dispositivo
+          // Master / Administrador: desbloqueia Ultra incondicionalmente neste dispositivo
           localStorage.removeItem("hortaviva_logged_out");
           localStorage.removeItem(STORAGE_KEYS.LOGGED_OUT);
-          return "pro";
+          return "ultra";
         }
       } catch {}
     }
@@ -206,7 +220,7 @@ export function getUserTier() {
 
     // Se temos um utilizador autenticado ativo (Google ou Quinta)
     if (activeEmail) {
-      // A subscrição DEVE pertencer a este email. Se não coincidir, a conta não tem Pro!
+      // A subscrição DEVE pertencer a este email. Se não coincidir, a conta não tem plano ativo!
       if (!subEmail || subEmail !== activeEmail) {
         return "free";
       }
@@ -220,6 +234,7 @@ export function getUserTier() {
       }
     }
 
+    if (sub.tier === "ultra" || sub.plan === "ultra" || sub.price === "3.99€") return "ultra";
     if (sub.tier === "plus" || sub.plan === "plus" || sub.price === "1.99€") return "plus";
     return "pro";
   } catch {
@@ -228,7 +243,14 @@ export function getUserTier() {
 }
 
 /**
- * Verifica se o utilizador possui o plano Pro (2,99€ ou Vitalício) ativo.
+ * Verifica se o utilizador possui o plano Ultra (3,99€ ou Vitalício Master) ativo.
+ */
+export function isUltraSubscriber() {
+  return getUserTier() === "ultra";
+}
+
+/**
+ * Verifica se o utilizador possui o plano Pro (2,99€) ativo.
  */
 export function isProSubscriber() {
   return getUserTier() === "pro";
@@ -242,11 +264,11 @@ export function isPlusSubscriber() {
 }
 
 /**
- * Verifica se o utilizador possui qualquer subscrição paga ativa (Pro ou Plus).
+ * Verifica se o utilizador possui qualquer subscrição paga ativa (Ultra, Pro ou Plus).
  */
 export function isPaidSubscriber() {
   const tier = getUserTier();
-  return tier === "pro" || tier === "plus";
+  return tier === "ultra" || tier === "pro" || tier === "plus";
 }
 
 /**
@@ -337,22 +359,14 @@ export function activatePlusSubscription(details = {}) {
 }
 
 /**
- * Ativa a subscrição Pro (2,99€ / mês ou Vitalício para administrador).
+ * Ativa a subscrição Ultra (3,99€ / mês).
  * Requer validação por checkout Stripe, sincronização Google ou código master ("H_Viva").
  */
-export function activateProSubscription(details = {}) {
+export function activateUltraSubscription(details = {}) {
   try {
-    const emailRaw = (details.email || "").trim().toLowerCase();
-    const normalized = emailRaw.replace(/\s+/g, "");
     const isMaster =
       details.is_master === true ||
-      details.source === "master_code" ||
-      VALID_ADMIN_CODES.has(normalized);
-
-    // Se pedir expressamente plus e não for master
-    if (!isMaster && (details.tier === "plus" || details.plan === "plus")) {
-      return activatePlusSubscription(details);
-    }
+      details.source === "master_code";
 
     const isVerified =
       isMaster ||
@@ -360,7 +374,6 @@ export function activateProSubscription(details = {}) {
       details.source === "stripe_checkout" ||
       details.source === "google_sync" ||
       details.source === "cloud_sync" ||
-      details.source === "master_code" ||
       Boolean(details.session_id);
 
     if (!isVerified) {
@@ -380,13 +393,86 @@ export function activateProSubscription(details = {}) {
 
     const subData = {
       active: true,
-      plan: isMaster ? "lifetime" : (details.plan || "pro"),
-      tier: "pro",
-      price: isMaster ? "0.00€" : "2.99€",
+      plan: isMaster ? "lifetime" : "ultra",
+      tier: "ultra",
+      price: isMaster ? "0.00€" : "3.99€",
       currency: "eur",
       is_master: isMaster,
       activated_at: details.activated_at || new Date().toISOString(),
       session_id: details.session_id || (isMaster ? "master_admin" : null),
+      customer_email: targetEmail,
+      google_id: googleId,
+      google_email: details.google_email || googleUser?.email || targetEmail,
+    };
+    localStorage.setItem(STORAGE_KEYS.PRO_SUBSCRIPTION, JSON.stringify(subData));
+    localStorage.removeItem(STORAGE_KEYS.LOGGED_OUT);
+    localStorage.removeItem("hortaviva_logged_out");
+    emitSubscriptionChange();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Ativa a subscrição Pro (2,99€ / mês ou Vitalício para administrador).
+ * Requer validação por checkout Stripe, sincronização Google ou código master ("H_Viva").
+ */
+export function activateProSubscription(details = {}) {
+  try {
+    const emailRaw = (details.email || "").trim().toLowerCase();
+    const normalized = emailRaw.replace(/\s+/g, "");
+    const isMaster =
+      details.is_master === true ||
+      details.source === "master_code" ||
+      VALID_ADMIN_CODES.has(normalized);
+
+    // Se for master, ativa Ultra incondicionalmente
+    if (isMaster) {
+      return activateUltraSubscription({ ...details, is_master: true, source: "master_code", verified: true });
+    }
+
+    // Se pedir expressamente ultra
+    if (details.tier === "ultra" || details.plan === "ultra") {
+      return activateUltraSubscription(details);
+    }
+
+    // Se pedir expressamente plus e não for master
+    if (details.tier === "plus" || details.plan === "plus") {
+      return activatePlusSubscription(details);
+    }
+
+    const isVerified =
+      details.verified === true ||
+      details.source === "stripe_checkout" ||
+      details.source === "google_sync" ||
+      details.source === "cloud_sync" ||
+      Boolean(details.session_id);
+
+    if (!isVerified) {
+      console.warn("[Subscrição] Ativação rejeitada: introdução direta de email não verificada:", details.email);
+      return false;
+    }
+
+    let googleUser = null;
+    try {
+      const rawUser = localStorage.getItem("hortaviva_google_user_info");
+      if (rawUser) googleUser = JSON.parse(rawUser);
+    } catch {}
+
+    const currentEmail = getActiveUserEmail();
+    const googleId = details.google_id || googleUser?.id || googleUser?.sub || null;
+    const targetEmail = details.email || googleUser?.email || currentEmail;
+
+    const subData = {
+      active: true,
+      plan: details.plan || "pro",
+      tier: "pro",
+      price: "2.99€",
+      currency: "eur",
+      is_master: false,
+      activated_at: details.activated_at || new Date().toISOString(),
+      session_id: details.session_id || null,
       customer_email: targetEmail,
       google_id: googleId,
       google_email: details.google_email || googleUser?.email || targetEmail,
@@ -436,59 +522,63 @@ export async function resetSubscriptionToFree() {
 }
 
 /**
- * Verifica se o utilizador pode efetuar mais uma identificação de planta por fotografia.
- * - Pro: ilimitado
- * - Plus (1,99€): até 3 fotos por mês
- * - Grátis: até 2 fotos de teste
+ * Verifica se o utilizador pode efetuar mais uma identificação por fotografia
+ * (plantas, animais, podas e mondas).
+ * - Ultra (3,99€): infinitas vezes/mês
+ * - Pro (2,99€): até 15 vezes/mês
+ * - Plus (1,99€): até 10 vezes/mês
+ * - Gratuito: até 3 vezes/mês
  */
 export function canUsePhotoIdentification() {
   const tier = getUserTier();
-  if (tier === "pro") return true;
-  if (tier === "plus") {
-    const monthly = getMonthlyUsage();
-    return monthly.photos < PLUS_PHOTO_LIMIT;
-  }
-  return getPhotoUsageCount() < FREE_IDENTIFICATION_LIMIT;
+  if (tier === "ultra") return true;
+  const monthly = getMonthlyUsage();
+  if (tier === "pro") return monthly.photos < PRO_PHOTO_LIMIT;
+  if (tier === "plus") return monthly.photos < PLUS_PHOTO_LIMIT;
+  return monthly.photos < FREE_PHOTO_LIMIT;
 }
 
 /**
- * Verifica se o utilizador pode efetuar mais uma pergunta ao Assistente IA.
- * - Pro: ilimitado
- * - Plus (1,99€): até 4 utilizações por mês
- * - Grátis: até 2 utilizações de teste
+ * Verifica se o utilizador pode efetuar mais uma pergunta/chat com o Assistente IA.
+ * - Ultra (3,99€): ilimitada
+ * - Pro (2,99€): ilimitada
+ * - Plus (1,99€): até 20 chats/mês
+ * - Gratuito: até 10 chats/mês
  */
 export function canUseAI() {
   const tier = getUserTier();
-  if (tier === "pro") return true;
-  if (tier === "plus") {
-    const monthly = getMonthlyUsage();
-    return monthly.ai < PLUS_AI_LIMIT;
-  }
-  return getAIUsageCount() < FREE_AI_LIMIT;
+  if (tier === "ultra" || tier === "pro") return true;
+  const monthly = getMonthlyUsage();
+  if (tier === "plus") return monthly.ai < PLUS_AI_LIMIT;
+  return monthly.ai < FREE_AI_LIMIT;
 }
 
 /**
  * Verifica se o utilizador pode adicionar mais uma plantação à Minha Quinta.
- * - Pro: ilimitado
- * - Plus (1,99€): até 6 plantações
- * - Grátis: até 3 plantações
+ * - Ultra (3,99€): infinitas plantações
+ * - Pro (2,99€): até 8 plantações
+ * - Plus (1,99€): até 5 plantações
+ * - Gratuito: até 3 plantações
  */
 export function canAddPlantation(currentCount = 0) {
   const tier = getUserTier();
-  if (tier === "pro") return true;
+  if (tier === "ultra") return true;
+  if (tier === "pro") return currentCount < PRO_PLANTATIONS_LIMIT;
   if (tier === "plus") return currentCount < PLUS_PLANTATIONS_LIMIT;
   return currentCount < FREE_PLANTATIONS_LIMIT;
 }
 
 /**
  * Verifica se o utilizador pode adicionar mais um animal à Minha Quinta.
- * - Pro: ilimitado
- * - Plus (1,99€): até 5 animais
- * - Grátis: até 2 animais
+ * - Ultra (3,99€): infinitos animais
+ * - Pro (2,99€): até 7 animais
+ * - Plus (1,99€): até 4 animais
+ * - Gratuito: até 2 animais
  */
 export function canAddAnimal(currentCount = 0) {
   const tier = getUserTier();
-  if (tier === "pro") return true;
+  if (tier === "ultra") return true;
+  if (tier === "pro") return currentCount < PRO_ANIMALS_LIMIT;
   if (tier === "plus") return currentCount < PLUS_ANIMALS_LIMIT;
   return currentCount < FREE_ANIMALS_LIMIT;
 }
@@ -497,7 +587,12 @@ export function canAddAnimal(currentCount = 0) {
  * Retorna o URL oficial de checkout Stripe, preenchendo automaticamente o email do utilizador Google se disponível.
  */
 export function getCheckoutUrl(targetTier = "pro") {
-  const base = targetTier === "plus" ? STRIPE_PLUS_PAYMENT_LINK : STRIPE_PAYMENT_LINK;
+  const base =
+    targetTier === "ultra"
+      ? STRIPE_ULTRA_PAYMENT_LINK
+      : targetTier === "plus"
+      ? STRIPE_PLUS_PAYMENT_LINK
+      : STRIPE_PAYMENT_LINK;
   try {
     const rawGoogle = typeof window !== "undefined" ? localStorage.getItem("hortaviva_google_user_info") : null;
     if (rawGoogle) {
@@ -540,7 +635,7 @@ export function validateAndActivateSubscription(codeOrEmail) {
   if (VALID_ADMIN_CODES.has(trimmed)) {
     const currentEmail = getActiveUserEmail() || "master@hortaviva.local";
     const googleId = getActiveGoogleId();
-    const ok = activateProSubscription({
+    const ok = activateUltraSubscription({
       email: currentEmail,
       google_id: googleId,
       is_master: true,
@@ -550,9 +645,9 @@ export function validateAndActivateSubscription(codeOrEmail) {
     if (ok) {
       return {
         success: true,
-        tier: "pro",
+        tier: "ultra",
         isMaster: true,
-        message: "⭐ Plano Pro Desbloqueado com Sucesso! Acesso ilimitado de Administrador ativado.",
+        message: "⭐ Plano Ultra Desbloqueado com Sucesso! Acesso ilimitado de Administrador ativado.",
       };
     }
   }
@@ -594,26 +689,42 @@ export function useSubscription() {
     };
   }, []);
 
+  const isUltra = tier === "ultra";
   const isPro = tier === "pro";
   const isPlus = tier === "plus";
-  const isPaid = isPro || isPlus;
+  const isPaid = isUltra || isPro || isPlus;
 
-  const plantationsLimit = isPro ? Infinity : isPlus ? PLUS_PLANTATIONS_LIMIT : FREE_PLANTATIONS_LIMIT;
-  const animalsLimit = isPro ? Infinity : isPlus ? PLUS_ANIMALS_LIMIT : FREE_ANIMALS_LIMIT;
-  const photoLimit = isPro ? Infinity : isPlus ? PLUS_PHOTO_LIMIT : FREE_IDENTIFICATION_LIMIT;
-  const aiLimit = isPro ? Infinity : isPlus ? PLUS_AI_LIMIT : FREE_AI_LIMIT;
+  const plantationsLimit = isUltra ? Infinity : isPro ? PRO_PLANTATIONS_LIMIT : isPlus ? PLUS_PLANTATIONS_LIMIT : FREE_PLANTATIONS_LIMIT;
+  const animalsLimit = isUltra ? Infinity : isPro ? PRO_ANIMALS_LIMIT : isPlus ? PLUS_ANIMALS_LIMIT : FREE_ANIMALS_LIMIT;
+  const photoLimit = isUltra ? Infinity : isPro ? PRO_PHOTO_LIMIT : isPlus ? PLUS_PHOTO_LIMIT : FREE_PHOTO_LIMIT;
+  const aiLimit = (isUltra || isPro) ? Infinity : isPlus ? PLUS_AI_LIMIT : FREE_AI_LIMIT;
 
-  const currentPhotosUsed = isPlus ? monthlyUsage.photos : aiUsageCount;
-  const currentAIUsed = isPlus ? monthlyUsage.ai : aiUsageCount;
+  const currentPhotosUsed = monthlyUsage.photos || 0;
+  const currentAIUsed = monthlyUsage.ai || 0;
 
-  const remainingPhotos = isPro ? Infinity : Math.max(0, photoLimit - currentPhotosUsed);
-  const remainingAI = isPro ? Infinity : Math.max(0, aiLimit - currentAIUsed);
+  const remainingPhotos = isUltra ? Infinity : Math.max(0, photoLimit - currentPhotosUsed);
+  const remainingAI = (isUltra || isPro) ? Infinity : Math.max(0, aiLimit - currentAIUsed);
 
   const userCanIdentify = canUsePhotoIdentification();
   const userCanUseAI = canUseAI();
 
+  // Permissões de Resumo Mensal
+  // - Grátis: sem acesso ('none')
+  // - Plus: resumo encurtado ('short')
+  // - Pro / Ultra: resumo detalhado ('full')
+  const monthlySummaryAccess = (isUltra || isPro) ? "full" : isPlus ? "short" : "none";
+  const canAccessMonthlySummary = monthlySummaryAccess !== "none";
+
+  // Permissões de Esquemas de Podas e Mondas
+  // - Grátis: sem acesso a 2D nem 3D
+  // - Plus: sem acesso a 3D (bloqueado com cadeado), mas com acesso a 2D
+  // - Pro / Ultra: acesso a 3D e 2D
+  const canAccessPruning2D = isUltra || isPro || isPlus;
+  const canAccessPruning3D = isUltra || isPro;
+
   return {
     tier,
+    isUltra,
     isPro,
     isPlus,
     isPaid,
@@ -628,16 +739,25 @@ export function useSubscription() {
     freePlantationsLimit: FREE_PLANTATIONS_LIMIT,
     freeAnimalsLimit: FREE_ANIMALS_LIMIT,
     freeAILimit: FREE_AI_LIMIT,
+    freePhotoLimit: FREE_PHOTO_LIMIT,
     freeLimit: FREE_AI_LIMIT,
     plusPlantationsLimit: PLUS_PLANTATIONS_LIMIT,
     plusAnimalsLimit: PLUS_ANIMALS_LIMIT,
     plusPhotoLimit: PLUS_PHOTO_LIMIT,
     plusAILimit: PLUS_AI_LIMIT,
+    proPlantationsLimit: PRO_PLANTATIONS_LIMIT,
+    proAnimalsLimit: PRO_ANIMALS_LIMIT,
+    proPhotoLimit: PRO_PHOTO_LIMIT,
+    proAILimit: PRO_AI_LIMIT,
+    ultraPlantationsLimit: ULTRA_PLANTATIONS_LIMIT,
+    ultraAnimalsLimit: ULTRA_ANIMALS_LIMIT,
+    ultraPhotoLimit: ULTRA_PHOTO_LIMIT,
+    ultraAILimit: ULTRA_AI_LIMIT,
 
     // Contagens de uso
     currentPhotosUsed,
     currentAIUsed,
-    aiUsageCount,
+    aiUsageCount: currentAIUsed,
     usageCount: currentPhotosUsed,
 
     // Restantes
@@ -652,12 +772,21 @@ export function useSubscription() {
     canAddPlantation: (count = 0) => canAddPlantation(count),
     canAddAnimal: (count = 0) => canAddAnimal(count),
 
+    // Permissões específicas de Resumo Mensal e Podas
+    monthlySummaryAccess,
+    canAccessMonthlySummary,
+    canAccessPruning2D,
+    canAccessPruning3D,
+
     // Abertura de checkout Stripe
     openPlusCheckout: () => {
       window.open(getCheckoutUrl("plus"), "_blank", "noopener,noreferrer");
     },
     openProCheckout: () => {
       window.open(getCheckoutUrl("pro"), "_blank", "noopener,noreferrer");
+    },
+    openUltraCheckout: () => {
+      window.open(getCheckoutUrl("ultra"), "_blank", "noopener,noreferrer");
     },
     openCheckout: (targetTier = "pro") => {
       window.open(getCheckoutUrl(targetTier), "_blank", "noopener,noreferrer");
@@ -666,6 +795,7 @@ export function useSubscription() {
     // Ações de ativação / cancelamento
     activatePlus: activatePlusSubscription,
     activatePro: activateProSubscription,
+    activateUltra: activateUltraSubscription,
     cancelSubscription: cancelProSubscription,
     cancelPro: cancelProSubscription,
     resetSubscriptionToFree,

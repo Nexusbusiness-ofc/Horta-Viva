@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Sparkles, Check, ShieldCheck, ArrowRight, X, RefreshCw, Loader2 } from "lucide-react";
+import { Sparkles, Check, ShieldCheck, ArrowRight, X, RefreshCw, Loader2, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import GoogleIcon from "@/components/GoogleIcon";
 import { syncSubscriptionWithGoogleAccount } from "@/lib/googleSync";
@@ -7,12 +7,17 @@ import {
   getCheckoutUrl,
   validateAndActivateSubscription,
   useSubscription,
+  FREE_PLANTATIONS_LIMIT,
+  FREE_ANIMALS_LIMIT,
+  FREE_PHOTO_LIMIT,
+  FREE_AI_LIMIT,
   PLUS_PLANTATIONS_LIMIT,
   PLUS_ANIMALS_LIMIT,
   PLUS_PHOTO_LIMIT,
   PLUS_AI_LIMIT,
-  FREE_PLANTATIONS_LIMIT,
-  FREE_ANIMALS_LIMIT
+  PRO_PLANTATIONS_LIMIT,
+  PRO_ANIMALS_LIMIT,
+  PRO_PHOTO_LIMIT
 } from "@/lib/subscription";
 
 export default function UpgradeModal({ 
@@ -23,13 +28,13 @@ export default function UpgradeModal({
   customTitle,
   customDescription
 }) {
-  const [selectedPlan, setSelectedPlan] = useState("pro"); // "plus" | "pro"
+  const [selectedPlan, setSelectedPlan] = useState("pro"); // "plus" | "pro" | "ultra"
   const [showRestore, setShowRestore] = useState(false);
   const [emailInput, setEmailInput] = useState("");
   const [restoreSuccess, setRestoreSuccess] = useState(false);
   const [syncingGoogle, setSyncingGoogle] = useState(false);
   const [restoreMessage, setRestoreMessage] = useState(null);
-  const { isPro, isPlus, tier } = useSubscription();
+  const { isPro, isPlus, isUltra, tier } = useSubscription();
 
   if (!isOpen) return null;
 
@@ -45,9 +50,10 @@ export default function UpgradeModal({
       const res = await syncSubscriptionWithGoogleAccount(true);
       if (res.success && res.restored) {
         setRestoreSuccess(true);
+        const tierName = res.tier === "ultra" ? "Ultra" : res.tier === "pro" ? "Pro" : "Plus";
         setRestoreMessage({
           type: "success",
-          text: `Subscrição ${res.tier === "pro" ? "Pro" : "Plus"} sincronizada com sucesso com a Conta Google!`,
+          text: `Subscrição ${tierName} sincronizada com sucesso com a Conta Google!`,
         });
         setTimeout(() => {
           onClose();
@@ -84,18 +90,25 @@ export default function UpgradeModal({
   };
 
   const getHeaderInfo = () => {
+    if (isUltra) {
+      return {
+        tag: "🚀 Subscrição Ultra Ativa",
+        title: "Tens o Plano Ultra Ativo!",
+        desc: "Aproveita todas as funcionalidades sem quaisquer limites: plantações, animais e fotos infinitas.",
+      };
+    }
     if (isPro) {
       return {
         tag: "⭐ Subscrição Pro Ativa",
-        title: "Tens o Plano Pro Ativo!",
-        desc: "Aproveita todas as funcionalidades sem quaisquer limites neste dispositivo.",
+        title: "Tens o Plano Pro Ativo",
+        desc: "Até 8 plantações, 7 animais, 15 fotos/mês, IA ilimitada e esquemas 3D. Queres tudo infinito? Faz upgrade para o Ultra (3,99€)!",
       };
     }
     if (isPlus) {
       return {
         tag: "🌱 Plano Plus Ativo",
         title: "Tens o Plano Plus Ativo",
-        desc: "Queres funcionalidades ilimitadas? Atualiza para o Horta Viva Pro por apenas 2,99€/mês.",
+        desc: "Até 5 plantações, 4 animais, 10 fotos/mês e 20 chats/mês. Atualiza para o Pro (2,99€) ou Ultra (3,99€)!",
       };
     }
     if (reason === "home") {
@@ -105,32 +118,46 @@ export default function UpgradeModal({
         desc: customDescription || "Escolhe o plano que melhor se adapta à dimensão da tua horta e quinta familiar.",
       };
     }
+    if (reason === "resumo") {
+      return {
+        tag: "Resumo Mensal · Bloqueado",
+        title: customTitle || "Desbloquear Resumo Mensal",
+        desc: customDescription || "Disponível a partir do Plano Plus (1,99€/mês) ou completo no Pro e Ultra.",
+      };
+    }
+    if (reason === "esquemas") {
+      return {
+        tag: "Podas e Mondas · Esquemas",
+        title: customTitle || "Desbloquear Esquemas 2D e 3D",
+        desc: customDescription || "Esquemas 2D disponíveis no Plus (1,99€) e modelos 3D no Pro (2,99€) e Ultra (3,99€).",
+      };
+    }
     if (reason === "plantacoes") {
       return {
         tag: "Minha Quinta · Plantações",
         title: customTitle || "Limite de Plantações Atingido",
-        desc: customDescription || `O plano base permite até ${FREE_PLANTATIONS_LIMIT} plantações. Escolhe o Plano Plus (até ${PLUS_PLANTATIONS_LIMIT}) ou Pro (ilimitado)!`,
+        desc: customDescription || `O plano base permite até ${FREE_PLANTATIONS_LIMIT} plantações. Escolhe Plus (até ${PLUS_PLANTATIONS_LIMIT}), Pro (até ${PRO_PLANTATIONS_LIMIT}) ou Ultra (infinitas)!`,
       };
     }
     if (reason === "animais") {
       return {
         tag: "Minha Quinta · Animais",
         title: customTitle || "Limite de Animais Atingido",
-        desc: customDescription || `O plano base permite até ${FREE_ANIMALS_LIMIT} animais. Escolhe o Plano Plus (até ${PLUS_ANIMALS_LIMIT}) ou Pro (ilimitado)!`,
+        desc: customDescription || `O plano base permite até ${FREE_ANIMALS_LIMIT} animais. Escolhe Plus (até ${PLUS_ANIMALS_LIMIT}), Pro (até ${PRO_ANIMALS_LIMIT}) ou Ultra (infinitos)!`,
       };
     }
     if (reason === "ai") {
       return {
         tag: "Inteligência Artificial · IA",
         title: customTitle || "Limite de IA Atingido",
-        desc: customDescription || `Atingiste o limite de consultas de IA. Escolhe o Plano Plus (${PLUS_AI_LIMIT} usos/mês) ou Pro (ilimitado)!`,
+        desc: customDescription || `Atingiste o limite de ${FREE_AI_LIMIT} chats de IA/mês. Escolhe o Plano Plus (${PLUS_AI_LIMIT} chats/mês) ou Pro/Ultra (ilimitada)!`,
       };
     }
     if (reason === "photos") {
       return {
-        tag: "IA de Plantas · Foto",
+        tag: "Identificação por Foto · IA",
         title: customTitle || "Limite de Fotos por IA Atingido",
-        desc: customDescription || `Atingiste o limite de fotos por IA. Escolhe o Plano Plus (${PLUS_PHOTO_LIMIT} fotos/mês) ou Pro (ilimitado)!`,
+        desc: customDescription || `Atingiste o limite de ${FREE_PHOTO_LIMIT} fotos/mês. Escolhe Plus (${PLUS_PHOTO_LIMIT}/mês), Pro (${PRO_PHOTO_LIMIT}/mês) ou Ultra (infinitas)!`,
       };
     }
     return {
@@ -144,7 +171,7 @@ export default function UpgradeModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-stone-100 overflow-hidden relative flex flex-col my-auto max-h-[92vh]">
+      <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-stone-100 overflow-hidden relative flex flex-col my-auto max-h-[94vh]">
         {/* Botão fechar */}
         <button
           onClick={onClose}
@@ -167,39 +194,39 @@ export default function UpgradeModal({
           <h2 className="text-xl sm:text-2xl font-extrabold leading-tight">
             {headerInfo.title}
           </h2>
-          <p className="text-xs sm:text-sm text-emerald-100/90 mt-1 max-w-xs mx-auto">
+          <p className="text-xs sm:text-sm text-emerald-100/90 mt-1 max-w-sm mx-auto">
             {headerInfo.desc}
           </p>
         </div>
 
         {/* Corpo do modal com scroll interno se necessário */}
         <div className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
-          {/* Seletor de Planos (Plus 1,99€ vs Pro 2,99€) */}
-          {!isPro && (
+          {/* Seletor de Planos (Plus 1,99€ vs Pro 2,99€ vs Ultra 3,99€) */}
+          {!isUltra && (
             <div className="space-y-3">
               <p className="text-xs font-bold text-stone-500 uppercase tracking-wider text-center">
-                Selecione a opção desejada:
+                Selecione o plano desejado:
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 {/* Opção 1: Plano Plus 1,99€ */}
                 <div 
                   onClick={() => setSelectedPlan("plus")}
-                  className={`cursor-pointer rounded-2xl p-3.5 sm:p-4 border-2 transition-all relative flex flex-col justify-between ${
+                  className={`cursor-pointer rounded-2xl p-3 sm:p-3.5 border-2 transition-all relative flex flex-col justify-between ${
                     selectedPlan === "plus" 
                       ? "border-emerald-500 bg-emerald-50/50 shadow-md ring-2 ring-emerald-400/30" 
                       : "border-stone-200 hover:border-emerald-200 bg-white"
                   }`}
                 >
                   {isPlus && (
-                    <span className="absolute -top-2.5 left-3 text-[10px] font-extrabold bg-emerald-600 text-white px-2 py-0.5 rounded-full shadow-xs">
+                    <span className="absolute -top-2.5 left-2.5 text-[9px] font-extrabold bg-emerald-600 text-white px-2 py-0.5 rounded-full shadow-xs">
                       Plano Atual
                     </span>
                   )}
                   <div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-extrabold uppercase tracking-wide text-emerald-800">
-                        🌱 Plano Plus
+                      <span className="text-[11px] font-extrabold uppercase tracking-wide text-emerald-800">
+                        🌱 Plus
                       </span>
                       <input 
                         type="radio" 
@@ -209,30 +236,35 @@ export default function UpgradeModal({
                         className="accent-emerald-600"
                       />
                     </div>
-                    <div className="mt-2">
+                    <div className="mt-1.5">
                       <span className="text-2xl font-black text-stone-800">1,99€</span>
-                      <span className="text-xs text-stone-500 font-medium"> / mês</span>
+                      <span className="text-[10px] text-stone-500 font-medium"> / mês</span>
                     </div>
-                    <p className="text-[11px] text-stone-500 mt-1 leading-tight">
-                      Ideal para hortas médias e quintas caseiras.
-                    </p>
 
-                    <div className="mt-3 space-y-1.5 text-xs text-stone-700">
+                    <div className="mt-2.5 space-y-1 text-[11px] text-stone-700">
                       <div className="flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 stroke-[3]" />
-                        <span><strong>Até 6 plantações</strong> na quinta</span>
+                        <Check className="w-3 h-3 text-emerald-600 shrink-0 stroke-[3]" />
+                        <span><strong>20 chats IA</strong> / mês</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 stroke-[3]" />
-                        <span><strong>Até 5 animais</strong> com tarefas</span>
+                        <Check className="w-3 h-3 text-emerald-600 shrink-0 stroke-[3]" />
+                        <span><strong>5 plantações</strong></span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 stroke-[3]" />
-                        <span><strong>3 fotos com IA</strong> / mês</span>
+                        <Check className="w-3 h-3 text-emerald-600 shrink-0 stroke-[3]" />
+                        <span><strong>4 animais</strong></span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 stroke-[3]" />
-                        <span><strong>4 usos da IA</strong> / mês</span>
+                        <Check className="w-3 h-3 text-emerald-600 shrink-0 stroke-[3]" />
+                        <span><strong>10 fotos IA</strong> / mês</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3 h-3 text-emerald-600 shrink-0 stroke-[3]" />
+                        <span>Resumo encurtado</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3 h-3 text-emerald-600 shrink-0 stroke-[3]" />
+                        <span>Esquema 2D podas</span>
                       </div>
                     </div>
                   </div>
@@ -241,19 +273,19 @@ export default function UpgradeModal({
                 {/* Opção 2: Plano Pro 2,99€ */}
                 <div 
                   onClick={() => setSelectedPlan("pro")}
-                  className={`cursor-pointer rounded-2xl p-3.5 sm:p-4 border-2 transition-all relative flex flex-col justify-between ${
+                  className={`cursor-pointer rounded-2xl p-3 sm:p-3.5 border-2 transition-all relative flex flex-col justify-between ${
                     selectedPlan === "pro" 
                       ? "border-amber-500 bg-gradient-to-b from-amber-50/70 to-yellow-50/40 shadow-md ring-2 ring-amber-400/40" 
                       : "border-stone-200 hover:border-amber-200 bg-white"
                   }`}
                 >
-                  <span className="absolute -top-2.5 right-3 text-[10px] font-black bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-900 px-2 py-0.5 rounded-full shadow-xs">
-                    ⭐ Mais Popular
+                  <span className="absolute -top-2.5 right-2 text-[9px] font-black bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-900 px-2 py-0.5 rounded-full shadow-xs">
+                    ⭐ Popular
                   </span>
                   <div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-black uppercase tracking-wide text-amber-900">
-                        ⭐ Horta Viva Pro
+                      <span className="text-[11px] font-black uppercase tracking-wide text-amber-900">
+                        ⭐ Pro
                       </span>
                       <input 
                         type="radio" 
@@ -263,34 +295,94 @@ export default function UpgradeModal({
                         className="accent-amber-600"
                       />
                     </div>
-                    <div className="mt-2">
+                    <div className="mt-1.5">
                       <span className="text-2xl font-black text-stone-900">2,99€</span>
-                      <span className="text-xs text-stone-500 font-medium"> / mês</span>
+                      <span className="text-[10px] text-stone-500 font-medium"> / mês</span>
                     </div>
-                    <p className="text-[11px] text-amber-950 font-medium mt-1 leading-tight">
-                      Acesso total sem quaisquer limites.
-                    </p>
 
-                    <div className="mt-3 space-y-1.5 text-xs text-stone-800">
+                    <div className="mt-2.5 space-y-1 text-[11px] text-stone-800">
                       <div className="flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5 text-amber-600 shrink-0 stroke-[3]" />
-                        <span><strong>Plantações Ilimitadas</strong></span>
+                        <Check className="w-3 h-3 text-amber-600 shrink-0 stroke-[3]" />
+                        <span><strong>IA Ilimitada</strong></span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5 text-amber-600 shrink-0 stroke-[3]" />
-                        <span><strong>Animais Ilimitados</strong></span>
+                        <Check className="w-3 h-3 text-amber-600 shrink-0 stroke-[3]" />
+                        <span><strong>8 plantações</strong></span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5 text-amber-600 shrink-0 stroke-[3]" />
-                        <span><strong>Fotos com IA Ilimitadas</strong></span>
+                        <Check className="w-3 h-3 text-amber-600 shrink-0 stroke-[3]" />
+                        <span><strong>7 animais</strong></span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5 text-amber-600 shrink-0 stroke-[3]" />
-                        <span><strong>Assistente IA Ilimitado</strong></span>
+                        <Check className="w-3 h-3 text-amber-600 shrink-0 stroke-[3]" />
+                        <span><strong>15 fotos IA</strong> / mês</span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-[11px] text-stone-600">
-                        <Check className="w-3.5 h-3.5 text-amber-600 shrink-0 stroke-[3]" />
-                        <span>Diagnóstico de pragas & doenças</span>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3 h-3 text-amber-600 shrink-0 stroke-[3]" />
+                        <span>Resumo detalhado</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3 h-3 text-amber-600 shrink-0 stroke-[3]" />
+                        <span>Esquemas 3D e 2D</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Opção 3: Plano Ultra 3,99€ */}
+                <div 
+                  onClick={() => setSelectedPlan("ultra")}
+                  className={`cursor-pointer rounded-2xl p-3 sm:p-3.5 border-2 transition-all relative flex flex-col justify-between ${
+                    selectedPlan === "ultra" 
+                      ? "border-purple-500 bg-gradient-to-b from-purple-50/70 to-indigo-50/40 shadow-md ring-2 ring-purple-400/40" 
+                      : "border-stone-200 hover:border-purple-200 bg-white"
+                  }`}
+                >
+                  <span className="absolute -top-2.5 right-2 text-[9px] font-black bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-2 py-0.5 rounded-full shadow-xs">
+                    🚀 Total
+                  </span>
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black uppercase tracking-wide text-purple-900">
+                        🚀 Ultra
+                      </span>
+                      <input 
+                        type="radio" 
+                        name="plan_choice" 
+                        checked={selectedPlan === "ultra"} 
+                        onChange={() => setSelectedPlan("ultra")}
+                        className="accent-purple-600"
+                      />
+                    </div>
+                    <div className="mt-1.5">
+                      <span className="text-2xl font-black text-purple-950">3,99€</span>
+                      <span className="text-[10px] text-stone-500 font-medium"> / mês</span>
+                    </div>
+
+                    <div className="mt-2.5 space-y-1 text-[11px] text-stone-800">
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3 h-3 text-purple-600 shrink-0 stroke-[3]" />
+                        <span><strong>IA Ilimitada</strong></span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3 h-3 text-purple-600 shrink-0 stroke-[3]" />
+                        <span><strong>Plantações Infinitas</strong></span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3 h-3 text-purple-600 shrink-0 stroke-[3]" />
+                        <span><strong>Animais Infinitos</strong></span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3 h-3 text-purple-600 shrink-0 stroke-[3]" />
+                        <span><strong>Fotos Infinitas</strong></span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3 h-3 text-purple-600 shrink-0 stroke-[3]" />
+                        <span>Resumo detalhado</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3 h-3 text-purple-600 shrink-0 stroke-[3]" />
+                        <span>Esquemas 3D e 2D</span>
                       </div>
                     </div>
                   </div>
@@ -300,15 +392,15 @@ export default function UpgradeModal({
           )}
 
           {/* Botão de pagamento Stripe ou Estado Ativo */}
-          {isPro ? (
+          {isUltra ? (
             <div className="space-y-2">
-              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 text-center">
-                <p className="text-xs font-bold text-emerald-800">✅ A tua subscrição Pro está ativa</p>
-                <p className="text-[11px] text-emerald-600 mt-0.5">Tens acesso ilimitado à IA, fotos, plantações e animais.</p>
+              <div className="bg-purple-50 border border-purple-200 rounded-2xl p-3.5 text-center">
+                <p className="text-xs font-bold text-purple-900">✅ A tua subscrição Ultra está ativa</p>
+                <p className="text-[11px] text-purple-700 mt-0.5">Tens acesso ilimitado e infinito a todas as funcionalidades!</p>
               </div>
               <button
                 onClick={onClose}
-                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-sm py-3.5 px-4 rounded-2xl shadow-md transition-all active:scale-[0.99]"
+                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-sm py-3.5 px-4 rounded-2xl shadow-md transition-all active:scale-[0.99]"
               >
                 Continuar a Usar a Horta
               </button>
@@ -317,13 +409,17 @@ export default function UpgradeModal({
             <button
               onClick={handleSubscribe}
               className={`w-full flex items-center justify-center gap-2 font-bold text-sm sm:text-base py-3.5 px-4 rounded-2xl shadow-lg active:scale-[0.99] transition-all ${
-                selectedPlan === "plus"
+                selectedPlan === "ultra"
+                  ? "bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-700 text-white shadow-purple-600/30 font-black"
+                  : selectedPlan === "plus"
                   ? "bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-emerald-600/30"
                   : "bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:to-yellow-600 text-stone-900 shadow-amber-500/30 font-black"
               }`}
             >
               <span>
-                {selectedPlan === "plus"
+                {selectedPlan === "ultra"
+                  ? "Subscrever Plano Ultra por 3,99€ / mês"
+                  : selectedPlan === "plus"
                   ? "Subscrever Plano Plus por 1,99€ / mês"
                   : "Subscrever Horta Viva Pro por 2,99€ / mês"}
               </span>
@@ -343,7 +439,7 @@ export default function UpgradeModal({
               onClick={onClose}
               className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 hover:text-teal-900 transition-colors"
             >
-              <span>📊 Ver comparação completa entre Base, Plus e Pro</span>
+              <span>📊 Ver comparação completa entre Base, Plus, Pro e Ultra</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>

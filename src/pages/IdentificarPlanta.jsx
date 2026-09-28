@@ -18,6 +18,8 @@ import {
   incrementAIUsage,
   incrementPhotoUsage,
   PLUS_PHOTO_LIMIT,
+  PRO_PHOTO_LIMIT,
+  FREE_PHOTO_LIMIT,
   FREE_IDENTIFICATION_LIMIT,
 } from "@/lib/subscription";
 import UpgradeModal from "@/components/subscription/UpgradeModal";
@@ -171,7 +173,7 @@ export default function IdentificarPlanta() {
   const [catalogQuery, setCatalogQuery] = useState("");
   const [farmAnimals, setFarmAnimals] = useState([]);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const { isPro, isPlus, remainingPhotos, canIdentify } = useSubscription();
+  const { isUltra, isPro, isPlus, remainingPhotos, canIdentify } = useSubscription();
   const fileRef = useRef(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -208,23 +210,35 @@ export default function IdentificarPlanta() {
         SCHEMA
       );
       setResult(combineWithCatalog(aiResult, farmAnimals));
-      if (!isPro) {
+      if (!isUltra) {
         const updatedCount = incrementPhotoUsage();
-        if (isPlus) {
+        if (isPro) {
+          toast({
+            title: `Identificação por IA concluída (${updatedCount} de ${PRO_PHOTO_LIMIT} fotos este mês)`,
+            description: updatedCount >= PRO_PHOTO_LIMIT
+              ? "Atingiste o teu limite de 15 fotos deste mês no Plano Pro. Para fotos infinitas, podes atualizar para o Horta Viva Ultra!"
+              : `Ficha gerada com sucesso! Ainda tens ${Math.max(0, PRO_PHOTO_LIMIT - updatedCount)} foto(s) com IA este mês.`,
+          });
+        } else if (isPlus) {
           toast({
             title: `Identificação por IA concluída (${updatedCount} de ${PLUS_PHOTO_LIMIT} fotos este mês)`,
             description: updatedCount >= PLUS_PHOTO_LIMIT
-              ? "Atingiste o teu limite de fotos deste mês no Plano Plus. Para fotos ilimitadas, podes atualizar para o Horta Viva Pro!"
+              ? "Atingiste o teu limite de 10 fotos deste mês no Plano Plus. Para mais fotos, podes atualizar para o Horta Viva Pro ou Ultra!"
               : `Ficha gerada com sucesso! Ainda tens ${Math.max(0, PLUS_PHOTO_LIMIT - updatedCount)} foto(s) com IA este mês.`,
           });
         } else {
           toast({
-            title: `Identificação por IA concluída (${updatedCount} de ${FREE_IDENTIFICATION_LIMIT} fotos gratuitas)`,
-            description: updatedCount >= FREE_IDENTIFICATION_LIMIT
-              ? "Aproveitaste os teus 2 usos gratuitos de IA! Escolhe o Plano Plus (1,99€) ou Pro (2,99€) para continuares a identificar."
-              : `Ficha gerada com sucesso! Ainda tens ${Math.max(0, FREE_IDENTIFICATION_LIMIT - updatedCount)} uso gratuito de IA restante.`,
+            title: `Identificação por IA concluída (${updatedCount} de ${FREE_PHOTO_LIMIT} fotos gratuitas este mês)`,
+            description: updatedCount >= FREE_PHOTO_LIMIT
+              ? "Atingiste as tuas 3 fotos gratuitas deste mês! Escolhe o Plano Plus (1,99€), Pro (2,99€) ou Ultra (3,99€) para continuares."
+              : `Ficha gerada com sucesso! Ainda tens ${Math.max(0, FREE_PHOTO_LIMIT - updatedCount)} foto(s) gratuita(s) este mês.`,
           });
         }
+      } else {
+        toast({
+          title: "Identificação por IA concluída ⭐",
+          description: "Ficha gerada com sucesso com o Plano Ultra (fotos infinitas).",
+        });
       }
     } catch (err) {
       toast({
@@ -322,14 +336,23 @@ export default function IdentificarPlanta() {
               <h1 className="text-lg sm:text-xl font-bold text-stone-800 leading-none truncate">Identificar com IA</h1>
               <p className="text-xs text-stone-500 truncate">Plantas, culturas e animais da quinta</p>
             </div>
-            {isPro ? (
+            {isUltra ? (
               <span
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border bg-gradient-to-r from-amber-50 to-emerald-50 text-emerald-800 border-emerald-300 shadow-sm"
-                title="Subscrição Pro Ativa"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border bg-gradient-to-r from-purple-50 to-pink-50 text-purple-900 border-purple-300 shadow-sm"
+                title="Plano Ultra Ativo"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>Pro Ilimitado</span>
+                <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                <span>Ultra Ilimitado</span>
               </span>
+            ) : isPro ? (
+              <button
+                onClick={() => setShowUpgradeModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all active:scale-95 shadow-sm bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-900 border-amber-300 hover:shadow"
+                title="Plano Pro Ativo"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <span>{remainingPhotos} de {PRO_PHOTO_LIMIT} fotos este mês</span>
+              </button>
             ) : isPlus ? (
               <button
                 onClick={() => setShowUpgradeModal(true)}
@@ -347,7 +370,7 @@ export default function IdentificarPlanta() {
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                 {remainingPhotos > 0 ? (
-                  <span>{remainingPhotos} {remainingPhotos === 1 ? "foto grátis" : "fotos grátis"}</span>
+                  <span>{remainingPhotos} de {FREE_PHOTO_LIMIT} {remainingPhotos === 1 ? "foto grátis" : "fotos grátis"}</span>
                 ) : (
                   <span className="font-bold text-amber-700">Planos (1,99€)</span>
                 )}
@@ -360,7 +383,7 @@ export default function IdentificarPlanta() {
 
       <main className="max-w-3xl mx-auto px-4 py-5 space-y-5">
         {/* Banner de Limite Atingido */}
-        {!isPro && remainingPhotos === 0 && (
+        {!isUltra && remainingPhotos === 0 && (
           <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-teal-50 border border-amber-200 rounded-3xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-200 flex items-center justify-center shrink-0 text-amber-600 text-lg">
@@ -369,19 +392,23 @@ export default function IdentificarPlanta() {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-bold text-stone-800">
-                    {isPlus
+                    {isPro
+                      ? `Limite mensal de fotos atingido (${PRO_PHOTO_LIMIT}/${PRO_PHOTO_LIMIT})`
+                      : isPlus
                       ? `Limite mensal de fotos atingido (${PLUS_PHOTO_LIMIT}/${PLUS_PHOTO_LIMIT})`
-                      : `Usos gratuitos de IA esgotados (${FREE_IDENTIFICATION_LIMIT}/${FREE_IDENTIFICATION_LIMIT})`
+                      : `Limite mensal de fotos gratuitas atingido (${FREE_PHOTO_LIMIT}/${FREE_PHOTO_LIMIT})`
                     }
                   </h3>
                   <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                    {isPlus ? "Upgrade Pro" : "A partir de 1,99€"}
+                    {isPro ? "Upgrade Ultra" : isPlus ? "Upgrade Pro" : "A partir de 1,99€"}
                   </span>
                 </div>
                 <p className="text-xs text-stone-600 mt-0.5 max-w-md">
-                  {isPlus
-                    ? `Atingiste o teu limite de fotos deste mês no Plano Plus. Atualiza para o Horta Viva Pro (2,99€/mês) para identificares plantas e animais sem quaisquer limites!`
-                    : `Já utilizaste os teus usos gratuitos de IA. Escolhe o Plano Plus (1,99€/mês) ou Pro (2,99€/mês) para fotos sem limites!`
+                  {isPro
+                    ? `Atingiste o teu limite de 15 fotos deste mês no Plano Pro. Atualiza para o Horta Viva Ultra (3,99€/mês) para identificares sem restrições!`
+                    : isPlus
+                    ? `Atingiste o teu limite de 10 fotos deste mês no Plano Plus. Atualiza para o Pro (2,99€ com 15 fotos) ou Ultra (3,99€ com fotos infinitas)!`
+                    : `Atingiste as 3 fotos gratuitas deste mês. Desbloqueia mais fotos no Plano Plus (1,99€), Pro (2,99€) ou Ultra (3,99€)!`
                   }
                 </p>
               </div>
@@ -400,7 +427,7 @@ export default function IdentificarPlanta() {
                 className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-500 to-emerald-600 hover:from-amber-600 hover:to-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md shadow-emerald-200/50 transition-all active:scale-95 whitespace-nowrap"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                {isPlus ? "Upgrade Pro (2,99€)" : "Ver Planos (1,99€)"}
+                {isPro ? "Upgrade Ultra (3,99€)" : isPlus ? "Upgrade Pro (2,99€)" : "Ver Planos (1,99€)"}
               </button>
             </div>
           </div>
@@ -1157,7 +1184,7 @@ function PhotoQuestionPanel({ image, result }) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const { isPro, canUseAI } = useSubscription();
+  const { isUltra, isPro, canUseAI } = useSubscription();
 
   if (!image) return null;
 
@@ -1213,7 +1240,7 @@ Usa sempre a fotografia como contexto. Distingue o que é visível do que exige 
 
       const answer = await askGeminiAboutPhoto(image, systemPrompt);
       setMessages((current) => [...current, { role: "assistant", text: answer }]);
-      if (!isPro) incrementAIUsage();
+      if (!isPro && !isUltra) incrementAIUsage();
     } catch (error) {
       setMessages((current) => [
         ...current,
