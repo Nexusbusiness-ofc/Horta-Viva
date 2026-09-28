@@ -92,7 +92,7 @@ export default function ProSubscriptionView({ onSubscribed }) {
     const validation = validateAndActivateSubscription(emailInput.trim());
     if (validation.success) {
       toast({
-        title: "⭐ Subscrição Desbloqueada!",
+        title: validation.isExit ? "🔒 Modo Administrador Desativado" : "⭐ Modo Administrador Ativado!",
         description: validation.message,
       });
       setEmailInput("");
@@ -686,12 +686,12 @@ export default function ProSubscriptionView({ onSubscribed }) {
 
         <form onSubmit={handleRestore} className="pt-2 border-t border-stone-200/60">
           <p className="text-[11px] text-stone-500 mb-1.5 font-medium">
-            Tens um código master de ativação de administrador?
+            Tens um código de administrador? (Entrar: <strong>H_Viva</strong> · Sair: <strong>H_VivaSem</strong>)
           </p>
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="Código de ativação"
+              placeholder="Código (ex: H_Viva ou H_VivaSem)"
               value={emailInput}
               onChange={(e) => setEmailInput(e.target.value)}
               className="flex-1 bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-stone-800 outline-none focus:border-emerald-500 transition-colors"

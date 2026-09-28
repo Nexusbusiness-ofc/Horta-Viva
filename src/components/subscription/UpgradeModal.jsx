@@ -81,9 +81,10 @@ export default function UpgradeModal({
     if (validation.success) {
       setRestoreSuccess(true);
       setRestoreMessage({ type: "success", text: validation.message });
+      setEmailInput("");
       setTimeout(() => {
         onClose();
-      }, 900);
+      }, 1200);
     } else {
       setRestoreMessage({ type: "error", text: validation.error });
     }
@@ -521,11 +522,13 @@ export default function UpgradeModal({
                 )}
 
                 <form onSubmit={handleManualRestore} className="pt-2 border-t border-stone-200/60">
-                  <p className="text-[10px] text-stone-500 mb-1">Tens um código master de ativação?</p>
+                  <p className="text-[10px] text-stone-500 mb-1">
+                    Tens um código de administrador? (Entrar: <strong>H_Viva</strong> · Sair: <strong>H_VivaSem</strong>)
+                  </p>
                   <div className="flex gap-1.5">
                     <input
                       type="text"
-                      placeholder="Código de ativação"
+                      placeholder="Código (ex: H_Viva ou H_VivaSem)"
                       value={emailInput}
                       onChange={(e) => setEmailInput(e.target.value)}
                       className="flex-1 bg-white border border-stone-200 rounded-xl px-2.5 py-1 text-xs text-stone-800 outline-none focus:border-emerald-500"

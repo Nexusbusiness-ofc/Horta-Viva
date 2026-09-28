@@ -43,6 +43,13 @@ export const VALID_ADMIN_CODES = new Set([
   "h_viva",
 ]);
 
+// Código para sair do modo Administrador / Master: H_VivaSem
+export const EXIT_ADMIN_CODES = new Set([
+  "h_vivasem",
+  "h_viva_sem",
+  "hvivasem",
+]);
+
 
 
 
@@ -632,6 +639,20 @@ export function validateAndActivateSubscription(codeOrEmail) {
     return { success: false, error: "Introduz um código de ativação válido." };
   }
 
+  // Código para sair do modo Administrador / Master: H_VivaSem
+  if (EXIT_ADMIN_CODES.has(trimmed)) {
+    resetSubscriptionToFree();
+    return {
+      success: true,
+      isExit: true,
+      action: "exit_admin",
+      tier: "free",
+      isMaster: false,
+      message: "🔒 Modo Administrador desativado com sucesso! A conta voltou ao Plano Base Gratuito.",
+    };
+  }
+
+  // Código para ativar o modo Administrador / Master: H_Viva
   if (VALID_ADMIN_CODES.has(trimmed)) {
     const currentEmail = getActiveUserEmail() || "master@hortaviva.local";
     const googleId = getActiveGoogleId();
@@ -645,9 +666,11 @@ export function validateAndActivateSubscription(codeOrEmail) {
     if (ok) {
       return {
         success: true,
+        isExit: false,
+        action: "activate_admin",
         tier: "ultra",
         isMaster: true,
-        message: "⭐ Plano Ultra Desbloqueado com Sucesso! Acesso ilimitado de Administrador ativado.",
+        message: "⭐ Modo Administrador Ativado! Acesso ilimitado de Administrador desbloqueado com sucesso.",
       };
     }
   }
@@ -655,7 +678,7 @@ export function validateAndActivateSubscription(codeOrEmail) {
   return {
     success: false,
     needsGoogle: true,
-    error: "Código de ativação inválido. Para administradores, o código correto é H_Viva. Se subscreveste através da Stripe, usa o botão 'Sincronizar com a Conta Google'.",
+    error: "Código inválido. Para administradores, o código de ativação é H_Viva e para sair é H_VivaSem. Se subscreveste através da Stripe, usa o botão 'Sincronizar com a Conta Google'.",
   };
 }
 
