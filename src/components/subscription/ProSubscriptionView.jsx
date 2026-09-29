@@ -29,7 +29,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 
 export default function ProSubscriptionView({ onSubscribed }) {
-  const { isPro, isPlus, isUltra, tier, usageCount } = useSubscription();
+  const { isPro, isPlus, isUltra, isPaid, tier, usageCount } = useSubscription();
   const [emailInput, setEmailInput] = useState("");
   const [restoring, setRestoring] = useState(false);
   const [showFaq, setShowFaq] = useState(null);
@@ -686,12 +686,12 @@ export default function ProSubscriptionView({ onSubscribed }) {
 
         <form onSubmit={handleRestore} className="pt-2 border-t border-stone-200/60">
           <p className="text-[11px] text-stone-500 mb-1.5 font-medium">
-            Tens um código de administrador? (Entrar: <strong>H_Viva</strong> · Sair: <strong>H_VivaSem</strong>)
+            Tens um código de ativação?
           </p>
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="Código (ex: H_Viva ou H_VivaSem)"
+              placeholder="Código de ativação"
               value={emailInput}
               onChange={(e) => setEmailInput(e.target.value)}
               className="flex-1 bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-stone-800 outline-none focus:border-emerald-500 transition-colors"

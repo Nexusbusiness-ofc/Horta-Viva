@@ -678,7 +678,7 @@ export function validateAndActivateSubscription(codeOrEmail) {
   return {
     success: false,
     needsGoogle: true,
-    error: "Código inválido. Para administradores, o código de ativação é H_Viva e para sair é H_VivaSem. Se subscreveste através da Stripe, usa o botão 'Sincronizar com a Conta Google'.",
+    error: "Código de ativação inválido. Se subscreveste através da Stripe, utiliza o botão 'Sincronizar com a Conta Google'.",
   };
 }
 
