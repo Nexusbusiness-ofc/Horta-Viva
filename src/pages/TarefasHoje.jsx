@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
-import { Loader2, ArrowLeft, Bell, BellOff, Droplets, PawPrint, Scissors, Sprout, Plus, Box, Check, X } from "lucide-react";
+import { Loader2, ArrowLeft, Bell, BellOff, Droplets, PawPrint, Scissors, Sprout, Plus, Box, Check, X, Lock } from "lucide-react";
 import { computeDailyTasks, countTasks } from "@/lib/dailyTasks";
 import { notifyPermission, requestNotifyPermission, sendNotify, shouldNotifyToday, notifySupported } from "@/lib/notify";
 import { markPlantingWatered, getLastWateredMap } from "@/lib/smartAlerts";
@@ -11,6 +11,8 @@ import Monda3DViewer from "@/components/mondas/Monda3DViewer";
 import { useToast } from "@/components/ui/use-toast";
 import { cachedList } from "@/lib/offlineCatalog";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
+import { useSubscription } from "@/lib/subscription";
+import UpgradeModal from "@/components/subscription/UpgradeModal";
 
 const SECTIONS = [
   { key: "rega", icon: Droplets, label: "Rega", color: "#0ea5e9", emoji: "💧" },
@@ -19,7 +21,7 @@ const SECTIONS = [
   { key: "mondas", icon: Sprout, label: "Mondas", color: "#84cc16", emoji: "🌱" },
 ];
 
-function TaskItem({ task, onWater, onOpen3D }) {
+function TaskItem({ task, onWater, onOpen3D, canAccessPruning3D }) {
   return (
     <div className="bg-white rounded-2xl border border-stone-200/80 overflow-hidden shadow-sm w-full min-w-0">
       <div className="flex items-stretch w-full min-w-0">
@@ -159,6 +161,7 @@ function TaskItem({ task, onWater, onOpen3D }) {
               >
                 <Box className="w-3.5 h-3.5" />
                 <span>Ver Esquema 3D</span>
+                {!canAccessPruning3D && <Lock className="w-3 h-3 text-amber-300 shrink-0" />}
               </button>
             )}
           </div>
@@ -179,10 +182,20 @@ export default function TarefasHoje() {
     podas: [],
     mondas: []
   });
+  const { canAccessPruning3D } = useSubscription();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [active3DModal, setActive3DModal] = useState(null);
   const [perm, setPerm] = useState(notifyPermission());
   const [hasData, setHasData] = useState(true);
   const { toast } = useToast();
+
+  const handleOpen3D = (modalData) => {
+    if (!canAccessPruning3D) {
+      setShowUpgradeModal(true);
+      return;
+    }
+    setActive3DModal(modalData);
+  };
 
   const loadAll = useCallback(async () => {
     try {
@@ -311,7 +324,7 @@ export default function TarefasHoje() {
               farmAnimals={data.farmAnimals}
               podas={data.podas}
               mondas={data.mondas}
-              onOpen3D={(modalData) => setActive3DModal(modalData)}
+              onOpen3D={handleOpen3D}
             />
 
             {/* Resumo das secções */}
@@ -344,7 +357,8 @@ export default function TarefasHoje() {
                         key={t.id}
                         task={t}
                         onWater={handleWater}
-                        onOpen3D={(modalData) => setActive3DModal(modalData)}
+                        onOpen3D={handleOpen3D}
+                        canAccessPruning3D={canAccessPruning3D}
                       />
                     ))}
                   </div>
@@ -392,7 +406,26 @@ export default function TarefasHoje() {
               </button>
             </div>
             <div className="p-3 sm:p-4 overflow-y-auto">
-              {active3DModal.type === "poda" ? (
+              {!canAccessPruning3D ? (
+                <div className="p-6 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-200 flex items-center justify-center mx-auto text-amber-600">
+                    <Lock className="w-6 h-6" />
+                  </div>
+                  <h4 className="font-bold text-stone-800 text-sm">Esquema 3D Bloqueado</h4>
+                  <p className="text-xs text-stone-500 max-w-sm mx-auto">
+                    Os modelos 3D interativos de podas e mondas estão disponíveis no Plano Pro (2,99€) e Ultra (3,99€).
+                  </p>
+                  <button
+                    onClick={() => {
+                      setActive3DModal(null);
+                      setShowUpgradeModal(true);
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 px-4 rounded-xl shadow-xs transition-all"
+                  >
+                    Ver Planos de Subscrição
+                  </button>
+                </div>
+              ) : active3DModal.type === "poda" ? (
                 <Poda3DViewer
                   diagramType={active3DModal.diagramType}
                   name={active3DModal.name}
@@ -408,6 +441,15 @@ export default function TarefasHoje() {
           </div>
         </div>
       )}
+
+      {/* Modal de Upgrade */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        reason="esquemas"
+        customTitle="Desbloquear Esquemas 3D"
+        customDescription="Acede aos modelos 3D interativos e simulações avançadas de podas e mondas no Plano Pro (2,99€) ou Ultra (3,99€)."
+      />
     </div>
   );
 }

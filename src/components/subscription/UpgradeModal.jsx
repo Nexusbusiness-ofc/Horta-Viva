@@ -265,7 +265,7 @@ export default function UpgradeModal({
                       </div>
                       <div className="flex items-center gap-1.5">
                         <Check className="w-3 h-3 text-emerald-600 shrink-0 stroke-[3]" />
-                        <span>Esquema 2D podas</span>
+                        <span>Esquemas 2D (podas e mondas)</span>
                       </div>
                     </div>
                   </div>

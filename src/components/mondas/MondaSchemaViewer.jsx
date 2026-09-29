@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import { Scissors, Sprout, CheckCircle2, XCircle, Lightbulb, Ruler, Utensils, Sparkles, Box, Layers } from "lucide-react";
+import { Scissors, Sprout, CheckCircle2, XCircle, Lightbulb, Ruler, Utensils, Sparkles, Box, Layers, Lock } from "lucide-react";
 import { MONDA_SCHEMAS } from "@/lib/pruningThinningSchemas";
 import Monda3DViewer from "./Monda3DViewer";
+import { useSubscription } from "@/lib/subscription";
+import UpgradeModal from "@/components/subscription/UpgradeModal";
 
 // --- SVG DIAGRAMS PARA MONDAS ---
 
@@ -292,15 +294,26 @@ export default function MondaSchemaViewer({ monda }) {
     ]
   };
 
-  const [viewDimension, setViewDimension] = useState("3d"); // '3d' | '2d'
+  const { isPro, isPlus, isUltra, canAccessPruning2D, canAccessPruning3D, tier } = useSubscription();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [viewDimension, setViewDimension] = useState(canAccessPruning3D ? "3d" : "2d");
 
   return (
     <div className="space-y-5">
+      {/* Modal de Upgrade */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        reason="esquemas"
+        customTitle="Desbloquear Esquemas de Mondas"
+        customDescription="Acede aos esquemas anatómicos 2D e simulações 3D interativas de mondas e desbaste."
+      />
+
       {/* Comutador 3D / 2D */}
       <div className="flex items-center justify-between gap-1.5 bg-stone-100 p-1 rounded-2xl border border-stone-200/80">
         <button
           onClick={() => setViewDimension("3d")}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
             viewDimension === "3d"
               ? "bg-lime-600 text-white shadow-sm"
               : "text-stone-600 hover:text-stone-900"
@@ -308,10 +321,11 @@ export default function MondaSchemaViewer({ monda }) {
         >
           <Box className="w-3.5 h-3.5" />
           <span>🎮 Modelo 3D Interativo (360°)</span>
+          {!canAccessPruning3D && <Lock className="w-3 h-3 text-amber-400 shrink-0" />}
         </button>
         <button
           onClick={() => setViewDimension("2d")}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
             viewDimension === "2d"
               ? "bg-lime-600 text-white shadow-sm"
               : "text-stone-600 hover:text-stone-900"
@@ -319,21 +333,95 @@ export default function MondaSchemaViewer({ monda }) {
         >
           <Layers className="w-3.5 h-3.5" />
           <span>📐 Esquema 2D Vetorial</span>
+          {!canAccessPruning2D && <Lock className="w-3 h-3 text-amber-400 shrink-0" />}
         </button>
       </div>
 
       {viewDimension === "3d" ? (
-        <Monda3DViewer diagramType={schema.diagramType} name={monda?.name} spacingCm={schema.spacingCm} />
-      ) : (
-        <>
-          {/* 1. Diagrama Vetorial Específico */}
-          {schema.diagramType === "solanaceae_sucker" && <SolanaceaeSuckerDiagram />}
-          {schema.diagramType === "cucurbit_trail" && <CucurbitDiagram name={monda?.name} />}
-          {schema.diagramType === "herb_pinch" && <ApicalPinchDiagram />}
-          {schema.diagramType !== "solanaceae_sucker" && schema.diagramType !== "cucurbit_trail" && schema.diagramType !== "herb_pinch" && (
-            <RootThinningDiagram name={monda?.name} spacingCm={schema.spacingCm} />
+        <div className="relative rounded-3xl overflow-hidden">
+          <div className={!canAccessPruning3D ? "filter blur-md pointer-events-none select-none opacity-30" : ""}>
+            <Monda3DViewer diagramType={schema.diagramType} name={monda?.name} spacingCm={schema.spacingCm} />
+          </div>
+          {!canAccessPruning3D && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs">
+              <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-6 max-w-sm w-full border border-stone-200 shadow-xl text-center space-y-3 animate-in fade-in zoom-in-95">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-200 flex items-center justify-center mx-auto text-amber-600">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-black text-stone-800 text-base">Esquema 3D Bloqueado</h4>
+                  <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                    {isPlus
+                      ? "O modelo 3D interativo está disponível no Plano Pro (2,99€) e Ultra (3,99€). Podes consultar o Esquema 2D incluído no teu Plano Plus!"
+                      : "Os esquemas 2D e 3D de podas e mondas estão disponíveis a partir do Plano Plus (1,99€/mês)."}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 pt-1">
+                  {isPlus ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setViewDimension("2d")}
+                        className="w-full bg-lime-600 hover:bg-lime-700 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-xs transition-all"
+                      >
+                        Ver Esquema 2D (Incluído no Plus)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowUpgradeModal(true)}
+                        className="w-full bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-xs py-2 px-3 rounded-xl transition-all"
+                      >
+                        Upgrade Pro (2,99€) para 3D
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowUpgradeModal(true)}
+                      className="w-full bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-md transition-all active:scale-95"
+                    >
+                      Desbloquear Esquemas (1,99€)
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
           )}
-        </>
+        </div>
+      ) : (
+        <div className="relative rounded-3xl overflow-hidden">
+          <div className={!canAccessPruning2D ? "filter blur-md pointer-events-none select-none opacity-30 space-y-4" : "space-y-4"}>
+            {/* 1. Diagrama Vetorial Específico */}
+            {schema.diagramType === "solanaceae_sucker" && <SolanaceaeSuckerDiagram />}
+            {schema.diagramType === "cucurbit_trail" && <CucurbitDiagram name={monda?.name} />}
+            {schema.diagramType === "herb_pinch" && <ApicalPinchDiagram />}
+            {schema.diagramType !== "solanaceae_sucker" && schema.diagramType !== "cucurbit_trail" && schema.diagramType !== "herb_pinch" && (
+              <RootThinningDiagram name={monda?.name} spacingCm={schema.spacingCm} />
+            )}
+          </div>
+          {!canAccessPruning2D && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs">
+              <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-6 max-w-sm w-full border border-stone-200 shadow-xl text-center space-y-3 animate-in fade-in zoom-in-95">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-200 flex items-center justify-center mx-auto text-amber-600">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-black text-stone-800 text-base">Esquemas 2D Bloqueados</h4>
+                  <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                    Os diagramas vetoriais de monda e desbaste estão disponíveis a partir do <strong>Plano Plus (1,99€/mês)</strong>.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowUpgradeModal(true)}
+                  className="w-full bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-md transition-all active:scale-95"
+                >
+                  Desbloquear Esquemas (1,99€)
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {/* 2. Destaque do Espaçamento Final em Régua */}

@@ -582,7 +582,7 @@ export default function ProSubscriptionView({ onSubscribed }) {
             </div>
 
             <div className="grid grid-cols-5 p-3 sm:p-4 items-center">
-              <span className="font-semibold text-stone-800">Esquema 2D Podas</span>
+              <span className="font-semibold text-stone-800">Esquemas 2D (Podas e Mondas)</span>
               <span className="text-center text-rose-500 font-semibold">🔒 Bloqueado</span>
               <span className="text-center text-emerald-600 font-bold">✓ Incluído</span>
               <span className="text-center text-emerald-600 font-bold">✓ Incluído</span>
@@ -590,7 +590,7 @@ export default function ProSubscriptionView({ onSubscribed }) {
             </div>
 
             <div className="grid grid-cols-5 p-3 sm:p-4 items-center">
-              <span className="font-semibold text-stone-800">Esquema 3D Podas</span>
+              <span className="font-semibold text-stone-800">Esquemas 3D (Podas e Mondas)</span>
               <span className="text-center text-rose-500 font-semibold">🔒 Bloqueado</span>
               <span className="text-center text-rose-500 font-semibold">🔒 Bloqueado</span>
               <span className="text-center text-amber-700 font-bold">✓ Incluído</span>

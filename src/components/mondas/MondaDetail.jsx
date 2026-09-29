@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Image } from "@/components/ui/image";
-import { Calendar, Hand, Ruler, Lightbulb, Sprout, BookOpen, Layers } from "lucide-react";
+import { Calendar, Hand, Ruler, Lightbulb, Sprout, BookOpen, Layers, Lock } from "lucide-react";
 import MondaSchemaViewer from "./MondaSchemaViewer";
+import { useSubscription } from "@/lib/subscription";
 
 const MONTH_NAMES = ["", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
@@ -22,6 +23,7 @@ function Section({ icon: Icon, title, children, color }) {
 }
 
 export default function MondaDetail({ monda, onClose }) {
+  const { canAccessPruning2D } = useSubscription();
   const [activeView, setActiveView] = useState("schema"); // 'schema' | 'details'
 
   if (!monda) return null;
@@ -54,7 +56,7 @@ export default function MondaDetail({ monda, onClose }) {
           <div className="flex gap-2 mt-4 bg-white/70 p-1 rounded-2xl border border-stone-200/70">
             <button
               onClick={() => setActiveView("schema")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
                 activeView === "schema"
                   ? "bg-gradient-to-r from-lime-600 to-emerald-600 text-white shadow-sm"
                   : "text-stone-600 hover:text-stone-900 hover:bg-white/60"
@@ -62,6 +64,7 @@ export default function MondaDetail({ monda, onClose }) {
             >
               <Layers className="w-4 h-4" />
               <span>📐 Esquema Prático</span>
+              {!canAccessPruning2D && <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
             </button>
             <button
               onClick={() => setActiveView("details")}

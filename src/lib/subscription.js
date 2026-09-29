@@ -795,11 +795,13 @@ export function useSubscription() {
     canAddPlantation: (count = 0) => canAddPlantation(count),
     canAddAnimal: (count = 0) => canAddAnimal(count),
 
-    // Permissões específicas de Resumo Mensal e Podas
+    // Permissões específicas de Resumo Mensal, Podas e Mondas
     monthlySummaryAccess,
     canAccessMonthlySummary,
     canAccessPruning2D,
     canAccessPruning3D,
+    canAccessMonda2D: canAccessPruning2D,
+    canAccessMonda3D: canAccessPruning3D,
 
     // Abertura de checkout Stripe
     openPlusCheckout: () => {
