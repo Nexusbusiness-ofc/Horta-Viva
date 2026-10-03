@@ -269,7 +269,7 @@ export default function TarefasHoje() {
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-teal-50 via-emerald-50/40 to-lime-50/50">
       <header className="sticky top-0 z-30 bg-gradient-to-r from-white/90 via-teal-50/60 to-white/90 backdrop-blur-lg border-b border-teal-100/60">
-        <div className="max-w-5xl mx-auto px-4 py-3">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <Link to="/" className="w-9 h-9 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-stone-500 hover:text-teal-600 hover:border-teal-300 transition-colors shadow-sm shrink-0">
               <ArrowLeft className="w-5 h-5" />
@@ -297,7 +297,7 @@ export default function TarefasHoje() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-5 space-y-5 w-full min-w-0">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-6 w-full min-w-0">
         {loading ? (
           <div className="flex justify-center py-20">
             <Loader2 className="w-8 h-8 text-teal-500 animate-spin" />
@@ -351,7 +351,7 @@ export default function TarefasHoje() {
                     <h2 className="text-sm font-bold text-stone-700 truncate">{s.label}</h2>
                     <span className="text-xs text-stone-400 shrink-0">({list.length})</span>
                   </div>
-                  <div className="space-y-2.5 w-full min-w-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full min-w-0">
                     {list.map(t => (
                       <TaskItem
                         key={t.id}

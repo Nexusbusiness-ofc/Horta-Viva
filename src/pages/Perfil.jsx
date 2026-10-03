@@ -29,7 +29,7 @@ export default function Perfil() {
     return (
       <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-emerald-50 via-green-50/40 to-lime-50/50">
         <header className="sticky top-0 z-30 bg-gradient-to-r from-white/90 via-emerald-50/60 to-white/90 backdrop-blur-lg border-b border-emerald-100/60">
-          <div className="max-w-3xl mx-auto px-4 py-3">
+          <div className="max-w-4xl lg:max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
             <div className="flex items-center gap-3">
               <Link to="/" className="w-9 h-9 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-stone-500 hover:text-emerald-600 hover:border-emerald-300 transition-colors shadow-sm">
                 <ArrowLeft className="w-5 h-5" />
@@ -42,7 +42,7 @@ export default function Perfil() {
             </div>
           </div>
         </header>
-        <main className="max-w-3xl mx-auto px-4 py-5 pb-28">
+        <main className="max-w-4xl lg:max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-5 pb-28">
           <div className="text-center py-20">
             <div className="text-6xl mb-4">🔐</div>
             <h2 className="text-lg font-semibold text-stone-700 mb-1">Inicia sessão para veres o teu perfil</h2>
@@ -64,7 +64,7 @@ export default function Perfil() {
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-emerald-50 via-green-50/40 to-lime-50/50">
       <header className="sticky top-0 z-30 bg-gradient-to-r from-white/90 via-emerald-50/60 to-white/90 backdrop-blur-lg border-b border-emerald-100/60">
-        <div className="max-w-3xl mx-auto px-4 py-3">
+        <div className="max-w-4xl lg:max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center gap-3">
             <Link to="/" className="w-9 h-9 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-stone-500 hover:text-emerald-600 hover:border-emerald-300 transition-colors shadow-sm">
               <ArrowLeft className="w-5 h-5" />
@@ -78,7 +78,7 @@ export default function Perfil() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-5 space-y-5">
+      <main className="max-w-4xl lg:max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-6">
         {/* Cartão de identidade */}
         <div className="bg-white rounded-3xl border border-stone-200/80 shadow-sm overflow-hidden">
           <div className="bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 px-6 py-8 flex flex-col items-center text-white">

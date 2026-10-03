@@ -71,13 +71,13 @@ export default function DailyCuriositiesCarousel() {
       </div>
 
       {/* Carrossel Horizontal de Cartões de Curiosidades */}
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+      <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 scrollbar-hide">
         {visibleCuriosities.map((item) => {
           return (
             <div
               key={item.id}
               onClick={() => setSelectedCuriosity(item)}
-              className={`group min-w-[200px] max-w-[220px] rounded-2xl p-3.5 border transition-all duration-200 active:scale-[0.98] cursor-pointer flex flex-col justify-between shrink-0 shadow-xs hover:shadow-md ${
+              className={`group min-w-[200px] max-w-[220px] sm:min-w-[240px] sm:max-w-[260px] rounded-2xl p-3.5 sm:p-4 border transition-all duration-200 active:scale-[0.98] cursor-pointer flex flex-col justify-between shrink-0 shadow-xs hover:shadow-md ${
                 item.isToday
                   ? "bg-gradient-to-br from-amber-50/90 via-white to-amber-50/40 border-amber-300 ring-2 ring-amber-400/20"
                   : "bg-white border-stone-200/80 hover:border-emerald-300"

@@ -172,7 +172,7 @@ export default function UpgradeModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-stone-100 overflow-hidden relative flex flex-col my-auto max-h-[94vh]">
+      <div className="bg-white rounded-3xl max-w-xl sm:max-w-2xl lg:max-w-3xl w-full shadow-2xl border border-stone-100 overflow-hidden relative flex flex-col my-auto max-h-[94vh]">
         {/* Botão fechar */}
         <button
           onClick={onClose}

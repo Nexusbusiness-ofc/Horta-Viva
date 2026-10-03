@@ -12,7 +12,7 @@ export default function HortaVivaPro() {
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-emerald-50 via-green-50/40 to-lime-50/50">
       {/* Cabeçalho */}
       <header className="sticky top-0 z-30 bg-gradient-to-r from-white/90 via-emerald-50/60 to-white/90 backdrop-blur-lg border-b border-emerald-100/60">
-        <div className="max-w-3xl mx-auto px-4 py-3">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center gap-3">
             <Link 
               to="/" 
@@ -48,7 +48,7 @@ export default function HortaVivaPro() {
       </header>
 
       {/* Conteúdo Principal */}
-      <main className="max-w-3xl mx-auto px-4 py-6">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <ProSubscriptionView />
       </main>
 

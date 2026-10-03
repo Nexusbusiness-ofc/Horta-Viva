@@ -185,7 +185,7 @@ export default function MinhaQuinta() {
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-emerald-50 via-green-50/40 to-lime-50/50">
       <header className="sticky top-0 z-30 bg-gradient-to-r from-white/90 via-emerald-50/60 to-white/90 backdrop-blur-lg border-b border-emerald-100/60">
-        <div className="max-w-5xl mx-auto px-4 py-3">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center gap-3">
             <Link to="/" className="w-9 h-9 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-stone-500 hover:text-emerald-600 hover:border-emerald-300 transition-colors shadow-sm">
               <ArrowLeft className="w-5 h-5" />
@@ -327,7 +327,7 @@ export default function MinhaQuinta() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-5 space-y-5">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-6">
         {/* Banner de Sincronização Pendente / Reconexão Google */}
         {syncStatus === "needs_reconnect" && (
           <div className="bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border border-amber-300/80 rounded-3xl p-4 sm:p-4.5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in">
@@ -482,7 +482,7 @@ export default function MinhaQuinta() {
                       <p className="text-sm text-stone-400">Nenhuma plantação neste estado.</p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {filtered.map(p => (
                         <PlantingCard key={p.id} planting={p} plants={plants} onUpdate={handleUpdate} onDelete={handleDelete} />
                       ))}
@@ -505,7 +505,7 @@ export default function MinhaQuinta() {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {myAnimals.map(a => (
                     <MyAnimalCard
                       key={a.id}

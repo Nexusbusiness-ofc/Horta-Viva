@@ -74,10 +74,10 @@ export default function BottomNav() {
   };
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 select-none">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 select-none px-0 sm:px-4 md:pb-3">
       <nav
         aria-label="Navegação rápida"
-        className="pointer-events-auto h-[74px] w-full border-t border-emerald-950/10 bg-white/85 shadow-[0_-6px_20px_rgba(20,83,45,0.10)] backdrop-blur-xl"
+        className="pointer-events-auto h-[74px] w-full md:max-w-xl md:mx-auto md:rounded-3xl md:border md:border-emerald-950/15 md:shadow-[0_10px_35px_rgba(20,83,45,0.18)] border-t border-emerald-950/10 bg-white/90 shadow-[0_-6px_20px_rgba(20,83,45,0.10)] backdrop-blur-xl transition-all"
       >
         <div className="grid h-full grid-cols-[1fr_1fr_76px_1fr_1fr]">
           {NAV_ITEMS.slice(0, 2).map(renderNavItem)}

@@ -14,11 +14,11 @@ export default function HomeMockupHeader({
   const logoUrl = `${import.meta.env.BASE_URL}logo.jpg`;
 
   return (
-    <header className="w-full bg-gradient-to-b from-[#185e3a] via-[#14532d] to-[#0f4423] text-white pt-3 sm:pt-4 pb-5 px-4 sm:px-6 rounded-b-[28px] sm:rounded-b-[36px] shadow-xl shadow-emerald-950/15">
-      <div className="max-w-xl mx-auto">
-        {/* Linha Superior: Logo + Título à esquerda / Notificações + Menu à direita */}
-        <div className="flex items-center justify-between mb-3.5">
-          <div className="flex items-center gap-2.5">
+    <header className="w-full bg-gradient-to-b from-[#185e3a] via-[#14532d] to-[#0f4423] text-white pt-3 sm:pt-4 pb-5 px-4 sm:px-6 lg:px-8 rounded-b-[28px] sm:rounded-b-[36px] shadow-xl shadow-emerald-950/15">
+      <div className="max-w-6xl mx-auto">
+        {/* Linha Superior: Logo + Título à esquerda / Links no Desktop / Notificações + Menu à direita */}
+        <div className="flex items-center justify-between gap-4 mb-3.5">
+          <div className="flex items-center gap-2.5 shrink-0">
             <img
               src={logoUrl}
               alt="Horta Viva"
@@ -37,7 +37,32 @@ export default function HomeMockupHeader({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Links Rápidos de Navegação para Desktop (PC) */}
+          <nav className="hidden lg:flex items-center gap-1 bg-black/20 backdrop-blur-md rounded-full px-3 py-1 border border-white/15">
+            <Link to="/minha-quinta" className="text-xs font-semibold px-2.5 py-1 rounded-full text-white/90 hover:text-white hover:bg-white/20 transition-colors">
+              Minha Quinta
+            </Link>
+            <Link to="/tarefas-hoje" className="text-xs font-semibold px-2.5 py-1 rounded-full text-white/90 hover:text-white hover:bg-white/20 transition-colors">
+              Tarefas
+            </Link>
+            <Link to="/podas-mondas" className="text-xs font-semibold px-2.5 py-1 rounded-full text-white/90 hover:text-white hover:bg-white/20 transition-colors">
+              Podas &amp; Mondas
+            </Link>
+            <Link to="/animais" className="text-xs font-semibold px-2.5 py-1 rounded-full text-white/90 hover:text-white hover:bg-white/20 transition-colors">
+              Animais
+            </Link>
+            <Link to="/calendario-curas" className="text-xs font-semibold px-2.5 py-1 rounded-full text-white/90 hover:text-white hover:bg-white/20 transition-colors">
+              Curas
+            </Link>
+            <Link to="/cogumelos" className="text-xs font-semibold px-2.5 py-1 rounded-full text-white/90 hover:text-white hover:bg-white/20 transition-colors">
+              Cogumelos
+            </Link>
+            <Link to="/pro" className="text-xs font-bold px-2.5 py-1 rounded-full text-amber-200 hover:text-amber-100 hover:bg-white/20 transition-colors flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-amber-300" /> Planos
+            </Link>
+          </nav>
+
+          <div className="flex items-center gap-2 shrink-0">
             {/* Sino de Notificações com Badge vermelho (idêntico ao mockup) */}
             <Link
               to="/tarefas-hoje"
@@ -70,7 +95,7 @@ export default function HomeMockupHeader({
 
         {/* Barra de Pesquisa Branca em Pílula (idêntica ao mockup) */}
         <div
-          className={`w-full bg-white rounded-full px-4 py-2.5 sm:py-3 shadow-lg flex items-center gap-2.5 transition-all duration-200 ${
+          className={`w-full max-w-3xl mx-auto bg-white rounded-full px-4 py-2.5 sm:py-3 shadow-lg flex items-center gap-2.5 transition-all duration-200 ${
             isFocused ? "ring-2 ring-emerald-300 shadow-emerald-950/20" : ""
           }`}
         >

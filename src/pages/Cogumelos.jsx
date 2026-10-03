@@ -49,7 +49,7 @@ export default function Cogumelos() {
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-amber-50 via-orange-50/30 to-stone-50">
       {/* Header */}
       <header className="sticky top-0 z-30 bg-gradient-to-r from-white/90 via-amber-50/60 to-white/90 backdrop-blur-lg border-b border-amber-100/60">
-        <div className="max-w-5xl mx-auto px-4 py-3">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center gap-3">
             <Link to="/" className="w-9 h-9 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-stone-500 hover:text-amber-600 hover:border-amber-300 transition-colors shadow-sm">
               <ArrowLeft className="w-5 h-5" />
@@ -66,7 +66,7 @@ export default function Cogumelos() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-5 space-y-5">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-6">
         {/* Aviso de segurança */}
         <div className="rounded-2xl bg-red-50 border border-red-200 p-4">
           <div className="flex items-start gap-2.5">

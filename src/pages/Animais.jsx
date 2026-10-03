@@ -52,7 +52,7 @@ export default function Animais() {
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-orange-50 via-amber-50/40 to-stone-50">
       {/* Header */}
       <header className="sticky top-0 z-30 bg-gradient-to-r from-white/90 via-orange-50/60 to-white/90 backdrop-blur-lg border-b border-orange-100/60">
-        <div className="max-w-5xl mx-auto px-4 py-3">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center gap-3">
             <Link to="/" className="w-9 h-9 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-stone-500 hover:text-orange-600 hover:border-orange-300 transition-colors shadow-sm">
               <ArrowLeft className="w-5 h-5" />
@@ -69,7 +69,7 @@ export default function Animais() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-5 space-y-5">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-6">
         {/* Banner intro */}
         <div className="rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 p-5 text-white shadow-lg shadow-orange-200/40">
           <p className="text-sm font-medium opacity-90">🐓 Descobre todos os animais que podes ter na tua quinta</p>

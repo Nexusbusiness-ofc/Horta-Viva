@@ -324,7 +324,7 @@ export default function IdentificarPlanta() {
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-cyan-50 via-teal-50/40 to-emerald-50/50">
       {/* Header */}
       <header className="sticky top-0 z-30 bg-gradient-to-r from-white/90 via-cyan-50/60 to-white/90 backdrop-blur-lg border-b border-cyan-100/60">
-        <div className="max-w-3xl mx-auto px-4 py-3">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center gap-3">
             <Link to="/" className="w-9 h-9 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-stone-500 hover:text-cyan-600 hover:border-cyan-300 transition-colors shadow-sm">
               <ArrowLeft className="w-5 h-5" />
@@ -381,7 +381,7 @@ export default function IdentificarPlanta() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-5 space-y-5">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-6">
         {/* Banner de Limite Atingido */}
         {!isUltra && remainingPhotos === 0 && (
           <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-teal-50 border border-amber-200 rounded-3xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in">

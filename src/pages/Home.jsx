@@ -173,8 +173,8 @@ export default function Home() {
         pendingTasksCount={pendingTasksCount}
       />
 
-      {/* Conteúdo Principal com medidas e espaçamentos idênticos ao layout mobile do mockup */}
-      <main className="max-w-xl mx-auto px-4 pt-3.5 pb-28 space-y-4">
+      {/* Conteúdo Principal adaptado para mobile e ecrãs largos (desktop/PC) */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-28 space-y-6">
         {/* Quando o utilizador NÃO está a pesquisar, exibe todos os blocos do mockup */}
         {!isSearching && (
           <>
@@ -284,8 +284,8 @@ export default function Home() {
             <div
               className={
                 viewMode === "grid"
-                  ? "grid grid-cols-2 sm:grid-cols-3 gap-2.5"
-                  : "grid grid-cols-1 sm:grid-cols-2 gap-3"
+                  ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3.5"
+                  : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
               }
             >
               {visiblePlants.map((p) => (
@@ -301,7 +301,7 @@ export default function Home() {
         </section>
 
         {/* 8. Assistente IA Integrado */}
-        <section id="assistente-ia" className="bg-white rounded-3xl p-4 border border-stone-200/80 shadow-xs scroll-mt-20">
+        <section id="assistente-ia" className="bg-white rounded-3xl p-4 sm:p-6 border border-stone-200/80 shadow-xs scroll-mt-20">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-lg">🤖</span>
             <h2 className="text-sm font-black text-stone-800">Assistente Agrónomo IA</h2>

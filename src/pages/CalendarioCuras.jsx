@@ -67,7 +67,7 @@ export default function CalendarioCuras() {
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-emerald-50 via-green-50/40 to-lime-50/50">
       <header className="sticky top-0 z-30 bg-gradient-to-r from-white/90 via-emerald-50/60 to-white/90 backdrop-blur-lg border-b border-emerald-100/60">
-        <div className="max-w-5xl mx-auto px-4 py-3">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center gap-3">
             <Link to="/minha-quinta" className="w-9 h-9 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-stone-500 hover:text-emerald-600 hover:border-emerald-300 transition-colors shadow-sm">
               <ArrowLeft className="w-5 h-5" />
@@ -84,7 +84,7 @@ export default function CalendarioCuras() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-5 space-y-5">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-6">
         {loading ? (
           <div className="flex justify-center py-20">
             <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
@@ -160,7 +160,7 @@ export default function CalendarioCuras() {
                     <h2 className="text-sm font-bold text-stone-700">{group.label}</h2>
                     <span className="text-xs text-stone-400">({group.tasks.length})</span>
                   </div>
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {group.tasks.map((t, i) => (
                       <CuraCard key={`${t.planting.id}-${t.treatment.key}-${t.date}-${i}`} cura={t} isToday={isToday(t.date)} />
                     ))}
@@ -187,7 +187,7 @@ export default function CalendarioCuras() {
             <h2 className="text-sm font-bold text-stone-700">Herbicidas — controlo de ervas</h2>
           </div>
           <p className="text-xs text-stone-500 mb-3">Como preparar, como usar, em que plantações e quando aplicar. Cuidado — a maioria é não seletiva!</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {Object.values(HERBICIDES).map(h => (
               <HerbicideCard key={h.key} herb={h} />
             ))}

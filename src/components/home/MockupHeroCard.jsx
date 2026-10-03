@@ -50,34 +50,34 @@ export default function MockupHeroCard() {
   return (
     <div className="w-full">
       {/* Cartão de Destaque com visual idêntico ao mockup */}
-      <div className="relative overflow-hidden rounded-[26px] bg-[#eaf4ec] border border-emerald-200/70 p-4 sm:p-5 shadow-xs transition-all duration-500">
+      <div className="relative overflow-hidden rounded-[26px] bg-[#eaf4ec] border border-emerald-200/70 p-4 sm:p-6 md:p-7 shadow-xs transition-all duration-500">
         {/* Fundo com gradiente suave */}
         <div className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-emerald-100/40 pointer-events-none" />
 
-        <div className="relative z-10 grid grid-cols-[1fr_auto] items-center gap-3">
+        <div className="relative z-10 grid grid-cols-[1fr_auto] items-center gap-3 sm:gap-6">
           {/* Lado Esquerdo: Tag, Título, Subtítulo e Botão Verde Escuro */}
           <div className="min-w-0 pr-1">
-            <span className="inline-block text-[11px] sm:text-xs font-black uppercase tracking-wider text-emerald-800 mb-1">
+            <span className="inline-block text-[11px] sm:text-xs md:text-sm font-black uppercase tracking-wider text-emerald-800 mb-1">
               {slide.category}
             </span>
-            <h2 className="text-base sm:text-lg font-black text-stone-800 leading-snug line-clamp-2">
+            <h2 className="text-base sm:text-xl md:text-2xl font-black text-stone-800 leading-snug line-clamp-2">
               {slide.title}
             </h2>
-            <p className="text-[11px] sm:text-xs text-stone-600 mt-1 line-clamp-2 font-medium">
+            <p className="text-[11px] sm:text-xs md:text-sm text-stone-600 mt-1 md:mt-1.5 line-clamp-2 font-medium">
               {slide.subtitle}
             </p>
 
             <Link
               to={slide.buttonTo}
-              className="inline-flex items-center gap-1.5 bg-[#155e37] hover:bg-[#0f4427] active:scale-95 text-white font-bold text-xs px-4 py-2 rounded-full shadow-md shadow-emerald-900/15 transition-all mt-3"
+              className="inline-flex items-center gap-1.5 bg-[#155e37] hover:bg-[#0f4427] active:scale-95 text-white font-bold text-xs sm:text-sm px-4 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-md shadow-emerald-900/15 transition-all mt-3"
             >
               <span>{slide.buttonText}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </Link>
           </div>
 
           {/* Lado Direito: Ilustração de Planta / Broto com Folhas Verdes em Solo Fértil */}
-          <div className="shrink-0 w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center relative">
+          <div className="shrink-0 w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 flex items-center justify-center relative">
             <div className="absolute inset-0 bg-emerald-300/20 rounded-full blur-lg" />
             <svg
               viewBox="0 0 100 100"
