@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,10 @@ import { isGoogleConfigured, connectGoogleDrive, downloadFromGoogleDrive } from 
 
 export default function Login() {
   const [searchParams] = useSearchParams();
-  const fromUrl = searchParams.get("from_url") || searchParams.get("returnTo") || "/";
+  const navigate = useNavigate();
+  const rawFromUrl = searchParams.get("from_url") || searchParams.get("returnTo") || "/";
+  const fromUrl = rawFromUrl.startsWith("#") ? rawFromUrl.slice(1) : rawFromUrl;
+  const targetRoute = fromUrl.startsWith("/") ? fromUrl : `/${fromUrl}`;
   const { isAuthenticated, user, checkUserAuth } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -23,9 +26,9 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated && user && !loading) {
-      window.location.hash = `#${fromUrl.startsWith("/") ? fromUrl : "/" + fromUrl}`;
+      navigate(targetRoute, { replace: true });
     }
-  }, [isAuthenticated, user, fromUrl, loading]);
+  }, [isAuthenticated, user, targetRoute, loading, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,7 +37,7 @@ export default function Login() {
     try {
       await base44.auth.loginViaEmailPassword(email, password);
       await checkUserAuth();
-      window.location.hash = `#${fromUrl.startsWith("/") ? fromUrl : "/" + fromUrl}`;
+      navigate(targetRoute, { replace: true });
     } catch (err) {
       setError(err.message || "Email ou palavra-passe inválidos");
     } finally {
@@ -55,7 +58,7 @@ export default function Login() {
           console.warn("Download inicial do Google Drive:", syncErr);
         }
         await checkUserAuth();
-        window.location.hash = `#${fromUrl.startsWith("/") ? fromUrl : "/" + fromUrl}`;
+        navigate(targetRoute, { replace: true });
         return;
       } catch (err) {
         console.warn("Google Drive OAuth falhou ou cancelado:", err);
@@ -69,8 +72,9 @@ export default function Login() {
   };
 
   const handleGuest = async () => {
-    base44.auth.loginAsGuest(fromUrl);
+    base44.auth.loginAsGuest(targetRoute);
     await checkUserAuth();
+    navigate(targetRoute, { replace: true });
   };
 
   return (

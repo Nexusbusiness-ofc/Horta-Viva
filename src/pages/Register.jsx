@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,10 @@ import { isGoogleConfigured, connectGoogleDrive, downloadFromGoogleDrive } from 
 
 export default function Register() {
   const [searchParams] = useSearchParams();
-  const fromUrl = searchParams.get("from_url") || searchParams.get("returnTo") || "/";
+  const navigate = useNavigate();
+  const rawFromUrl = searchParams.get("from_url") || searchParams.get("returnTo") || "/";
+  const fromUrl = rawFromUrl.startsWith("#") ? rawFromUrl.slice(1) : rawFromUrl;
+  const targetRoute = fromUrl.startsWith("/") ? fromUrl : `/${fromUrl}`;
   const { checkUserAuth } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -32,7 +35,7 @@ export default function Register() {
     try {
       await base44.auth.register({ email, password });
       await checkUserAuth();
-      window.location.hash = `#${fromUrl.startsWith("/") ? fromUrl : "/" + fromUrl}`;
+      navigate(targetRoute, { replace: true });
     } catch (err) {
       setError(err.message || "Falha ao criar conta");
     } finally {
@@ -53,7 +56,7 @@ export default function Register() {
           console.warn("Download inicial do Google Drive:", syncErr);
         }
         await checkUserAuth();
-        window.location.hash = `#${fromUrl.startsWith("/") ? fromUrl : "/" + fromUrl}`;
+        navigate(targetRoute, { replace: true });
         return;
       } catch (err) {
         console.warn("Google OAuth / Drive falhou:", err);
@@ -67,8 +70,9 @@ export default function Register() {
   };
 
   const handleGuest = async () => {
-    base44.auth.loginAsGuest(fromUrl);
+    base44.auth.loginAsGuest(targetRoute);
     await checkUserAuth();
+    navigate(targetRoute, { replace: true });
   };
 
   return (

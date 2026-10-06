@@ -69,6 +69,26 @@ const ROUTES = [
     path: 'perfil',
     title: 'Perfil do Agricultor — Horta Viva',
     description: 'Dados da quinta, preferências de cultivo e configurações da aplicação Horta Viva.'
+  },
+  {
+    path: 'login',
+    title: 'Iniciar Sessão — Horta Viva',
+    description: 'Inicia sessão na Horta Viva para acederes às tuas plantações, animais e dados sincronizados.'
+  },
+  {
+    path: 'register',
+    title: 'Criar Conta — Horta Viva',
+    description: 'Cria uma conta gratuita na Horta Viva para gerir a tua horta biológica e animais.'
+  },
+  {
+    path: 'forgot-password',
+    title: 'Recuperar Palavra-passe — Horta Viva',
+    description: 'Recupera o acesso à tua conta Horta Viva.'
+  },
+  {
+    path: 'reset-password',
+    title: 'Redefinir Palavra-passe — Horta Viva',
+    description: 'Redefine a palavra-passe da tua conta Horta Viva.'
   }
 ];
 

@@ -47,12 +47,12 @@ export default function Perfil() {
             <div className="text-6xl mb-4">🔐</div>
             <h2 className="text-lg font-semibold text-stone-700 mb-1">Inicia sessão para veres o teu perfil</h2>
             <p className="text-sm text-stone-500 mb-6">Entra ou cria uma conta para guardares os dados da tua quinta e personalizares a experiência.</p>
-            <button
-              onClick={navigateToLogin}
+            <Link
+              to="/login?from_url=/perfil"
               className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white font-medium px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-200/50 hover:shadow-xl transition-all active:scale-95"
             >
               Entrar / Inscrever-se
-            </button>
+            </Link>
           </div>
         </main>
       </div>

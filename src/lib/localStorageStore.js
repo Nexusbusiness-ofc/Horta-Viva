@@ -171,6 +171,18 @@ export const localEntities = {
   Mondas: new ReadOnlyCatalogStore(DEFAULT_MONDAS),
 };
 
+function safeRedirect(targetUrl = "/") {
+  if (typeof window === "undefined") return;
+  const clean = targetUrl.startsWith("#") ? targetUrl.slice(1) : targetUrl;
+  const target = clean.startsWith("/") ? clean : `/${clean}`;
+  try {
+    const base = (import.meta.env?.BASE_URL || '/').replace(/\/$/, "");
+    window.location.assign(`${base}${target}`);
+  } catch {
+    window.location.href = target;
+  }
+}
+
 export const localAuth = {
   me: async () => {
     try {
@@ -326,7 +338,7 @@ export const localAuth = {
     } catch {}
 
     const target = fromUrl && fromUrl.startsWith("/") ? fromUrl : "/";
-    window.location.hash = `#${target}`;
+    safeRedirect(target);
   },
 
   loginAsGuest: (fromUrl = "/") => {
@@ -343,7 +355,7 @@ export const localAuth = {
     }
 
     const target = fromUrl && fromUrl.startsWith("/") ? fromUrl : "/";
-    window.location.hash = `#${target}`;
+    safeRedirect(target);
   },
 
   loginViaEmailPassword: async (email, password) => {
@@ -436,13 +448,13 @@ export const localAuth = {
     }
 
     if (redirectUrl) {
-      window.location.hash = redirectUrl.startsWith("#") ? redirectUrl : `#${redirectUrl}`;
+      safeRedirect(redirectUrl);
     }
   },
 
   redirectToLogin: (nextUrl) => {
     const target = nextUrl ? `/login?from_url=${encodeURIComponent(nextUrl)}` : "/login";
-    window.location.hash = `#${target}`;
+    safeRedirect(target);
   },
 
   isAuthenticated: async () => {

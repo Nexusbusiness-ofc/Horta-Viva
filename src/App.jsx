@@ -167,18 +167,18 @@ function App() {
   const basename = (import.meta.env.BASE_URL || '/').replace(/\/$/, "") || "";
 
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router basename={basename}>
+    <QueryClientProvider client={queryClientInstance}>
+      <Router basename={basename}>
+        <AuthProvider>
           <ScrollToTop />
           <AuthenticatedApp />
           <BottomNav />
           <BackToTopButton />
           <InstallPrompt />
-        </Router>
-        <Toaster />
-      </QueryClientProvider>
-    </AuthProvider>
+          <Toaster />
+        </AuthProvider>
+      </Router>
+    </QueryClientProvider>
   )
 }
 

@@ -1,10 +1,13 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
@@ -68,17 +71,33 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = (shouldRedirect = true) => {
+  const logout = (shouldRedirect = true, redirectUrl) => {
     setUser(null);
     setIsAuthenticated(false);
     base44.auth.logout();
     if (shouldRedirect) {
-      window.location.hash = '#/login';
+      const cleanUrl = redirectUrl ? (redirectUrl.startsWith("#") ? redirectUrl.slice(1) : redirectUrl) : "/login";
+      const target = cleanUrl.startsWith("/") ? cleanUrl : `/${cleanUrl}`;
+      try {
+        navigate(target);
+      } catch {
+        const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, "");
+        window.location.href = `${base}${target}`;
+      }
     }
   };
 
-  const navigateToLogin = () => {
-    window.location.hash = '#/login';
+  const navigateToLogin = (returnUrl) => {
+    const rawFrom = returnUrl || (location.pathname !== '/login' ? (location.pathname + location.search) : '/');
+    const cleanFrom = rawFrom.startsWith("#") ? rawFrom.slice(1) : rawFrom;
+    const from = cleanFrom.startsWith("/") ? cleanFrom : `/${cleanFrom}`;
+    const target = `/login?from_url=${encodeURIComponent(from)}`;
+    try {
+      navigate(target);
+    } catch {
+      const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, "");
+      window.location.href = `${base}${target}`;
+    }
   };
 
   return (
