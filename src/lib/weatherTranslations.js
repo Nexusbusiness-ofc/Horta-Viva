@@ -1,4 +1,7 @@
 const pt = {
+  'weather.expand': 'Expandir', 'weather.collapse': 'Recolher',
+  'weather.disabledShort': 'Meteorologia desativada', 'weather.locationRequiredShort': 'Escolhe a tua localidade',
+  'weather.unavailableShort': 'Previsão indisponível', 'weather.details': 'Previsão e cuidados',
   'weather.title': 'O tempo na tua horta', 'weather.subtitle': 'Previsão local para planear os próximos cuidados',
   'weather.configure': 'Configurar localização', 'weather.changeLocation': 'Alterar localização', 'weather.refresh': 'Atualizar previsão',
   'weather.disabled': 'Ativa a meteorologia nas definições para adaptar os cuidados ao tempo local.',
@@ -60,6 +63,9 @@ const pt = {
 };
 
 const en = {
+  'weather.expand': 'Expand', 'weather.collapse': 'Collapse',
+  'weather.disabledShort': 'Weather disabled', 'weather.locationRequiredShort': 'Choose your locality',
+  'weather.unavailableShort': 'Forecast unavailable', 'weather.details': 'Forecast and care',
   'weather.title': 'Weather in your garden', 'weather.subtitle': 'Local forecasts to plan your next care tasks',
   'weather.configure': 'Set your location', 'weather.changeLocation': 'Change location', 'weather.refresh': 'Refresh forecast',
   'weather.disabled': 'Enable weather in settings to adapt care to local conditions.',
@@ -121,6 +127,9 @@ const en = {
 };
 
 const es = {
+  'weather.expand': 'Expandir', 'weather.collapse': 'Contraer',
+  'weather.disabledShort': 'Meteorología desactivada', 'weather.locationRequiredShort': 'Elige tu localidad',
+  'weather.unavailableShort': 'Previsión no disponible', 'weather.details': 'Previsión y cuidados',
   'weather.title': 'El tiempo en tu huerto', 'weather.subtitle': 'Previsión local para planificar los próximos cuidados',
   'weather.configure': 'Configurar ubicación', 'weather.changeLocation': 'Cambiar ubicación', 'weather.refresh': 'Actualizar previsión',
   'weather.disabled': 'Activa el tiempo en ajustes para adaptar los cuidados a las condiciones locales.',
@@ -181,4 +190,10 @@ const es = {
   'tasks.animalAdvice': 'Comprobar agua fresca, alimentación y bienestar de {name}.', 'tasks.activePruning': 'Comprobar poda', 'tasks.activeThinning': 'Aclareo',
 };
 
-export const WEATHER_TRANSLATIONS = { 'pt-PT': pt, 'pt-BR': { ...pt, 'weather.title': 'O tempo na sua horta', 'weather.configure': 'Configurar localização', 'tasks.recordWater': 'Registrar rega' }, en, es };
+export const WEATHER_TRANSLATIONS = { 'pt-PT': pt, 'pt-BR': {
+  ...pt,
+  'weather.expand': 'Expandir', 'weather.collapse': 'Recolher',
+  'weather.disabledShort': 'Meteorologia desativada', 'weather.locationRequiredShort': 'Escolha sua localidade',
+  'weather.unavailableShort': 'Previsão indisponível', 'weather.details': 'Previsão e cuidados',
+  'weather.title': 'O tempo na sua horta', 'weather.configure': 'Configurar localização', 'tasks.recordWater': 'Registrar rega',
+}, en, es };
