@@ -1,5 +1,7 @@
 // Calendário de curas = tratamentos com produtos fitofarmacêuticos contra pragas e doenças
-import { findPlant } from "./plantingCare";
+import { findPlant } from "./plantingCare.js";
+import { readRegionalPreferences } from "./regionalPreferences.js";
+import { getClimateProfile, getLocalDateString, getReferenceMonth } from "./regionalClimate.js";
 
 // Estação de cada mês
 const SEASONS = {
@@ -10,6 +12,7 @@ const SEASONS = {
 };
 
 const SEASON_LABEL = {
+  unknown: 'Clima local', tropical: 'Tropical', arid: 'Árido',
   inverno: "Inverno",
   primavera: "Primavera",
   verao: "Verão",
@@ -207,15 +210,18 @@ const SEASONAL_PREVENTIVE = {
   outono: ["calda_bordalesa"],
 };
 
-export function seasonOf(month) {
-  return SEASONS[month] || "primavera";
+export function seasonOf(month, preferences = readRegionalPreferences()) {
+  const profile = getClimateProfile(preferences);
+  if (!profile.calendarReady) return "unknown";
+  if (["tropical", "arid"].includes(profile.climate)) return profile.climate;
+  return SEASONS[getReferenceMonth(month, preferences)] || "unknown";
 }
 
 export { SEASON_LABEL };
 
 function addDays(dateStr, n) {
-  const d = new Date(dateStr + "T00:00");
-  d.setDate(d.getDate() + n);
+  const d = new Date(dateStr + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().split("T")[0];
 }
 
@@ -225,60 +231,48 @@ function firstOfMonth(year, month) {
 }
 
 // Gera curas (tratamentos) agendadas para uma plantação, respeitando o período de segurança
-export function generateCuras(planting, plants) {
+export function generateCuras(planting, plants, preferences = readRegionalPreferences()) {
+  const profile = getClimateProfile(preferences);
+  // The source contains Portuguese product examples, not international approvals.
+  // Do not schedule pesticide applications in countries with no validated registry.
+  if (!profile.calendarReady || String(preferences.countryCode).toUpperCase() !== "PT" || ["tropical", "arid"].includes(profile.climate)) return [];
   if (!planting.planted_date || planting.status === "Colhida") return [];
   const plant = findPlant(planting, plants);
-  const curas = [];
-  const planted = new Date(planting.planted_date + "T00:00");
+  const planted = new Date(planting.planted_date + "T00:00:00Z");
   const end = planting.expected_harvest_date
-    ? new Date(planting.expected_harvest_date + "T00:00")
+    ? new Date(planting.expected_harvest_date + "T00:00:00Z")
     : new Date(planted.getTime() + 120 * 86400000);
-
-  const startYear = planted.getFullYear();
-
-  for (let y = startYear; ; y++) {
-    let exceeded = true;
+  if (!Number.isFinite(planted.getTime()) || !Number.isFinite(end.getTime()) || end < planted) return [];
+  const curas = [];
+  // Bound malformed imported dates without an unbounded scheduling loop.
+  const endYear = Math.min(end.getUTCFullYear(), planted.getUTCFullYear() + 5);
+  for (let y = planted.getUTCFullYear(); y <= endYear; y++) {
     for (let m = 1; m <= 12; m++) {
-      const first = new Date(`${y}-${String(m).padStart(2, "0")}-01T00:00`);
-      if (first < planted) continue;
-      if (first > end) continue;
-      exceeded = false;
-
-      const season = SEASONS[m];
-      const treatments = SEASONAL_PREVENTIVE[season] || [];
-      for (const key of treatments) {
-        const t = TREATMENTS[key];
-        if (planting.expected_harvest_date) {
-          const daysToHarvest = Math.round((new Date(planting.expected_harvest_date + "T00:00") - first) / 86400000);
-          if (daysToHarvest < t.safetyDays) continue;
-        }
-        curas.push({
-          date: firstOfMonth(y, m),
-          treatment: t,
-          planting,
-          plant,
-          season,
-          preventive: true,
-        });
+      const first = new Date(Date.UTC(y, m - 1, 1));
+      if (first < planted || first > end) continue;
+      const season = seasonOf(m, preferences);
+      if (profile.cold && season === "inverno") continue;
+      for (const key of SEASONAL_PREVENTIVE[season] || []) {
+        const treatment = TREATMENTS[key];
+        const daysToHarvest = Math.round((end - first) / 86400000);
+        if (planting.expected_harvest_date && daysToHarvest < treatment.safetyDays) continue;
+        curas.push({ date: firstOfMonth(y, m), treatment, planting, plant, season, preventive: true,
+                     regional_adaptation: { isEstimate: true, requiresLocalProductAuthorization: true, notes: profile.notes } });
       }
     }
-    if (exceeded) break;
   }
-
   return curas;
 }
 
-export function generateAllCuras(plantings, plants) {
+export function generateAllCuras(plantings, plants, preferences = readRegionalPreferences()) {
   const all = [];
-  for (const p of plantings) {
-    all.push(...generateCuras(p, plants));
-  }
+  for (const p of plantings) all.push(...generateCuras(p, plants, preferences));
   all.sort((a, b) => a.date.localeCompare(b.date));
   return all;
 }
 
-export function groupCuras(curas) {
-  const today = new Date().toISOString().split("T")[0];
+export function groupCuras(curas, preferences = readRegionalPreferences(), now = new Date()) {
+  const today = getLocalDateString(now, preferences);
   const weekEnd = addDays(today, 7);
 
   const groups = {
@@ -299,15 +293,16 @@ export function groupCuras(curas) {
 }
 
 // Guia de curas para uma planta do catálogo — por estação
-export function getPlantCurasGuide(plant) {
-  if (!plant) return [];
+export function getPlantCurasGuide(plant, preferences = readRegionalPreferences()) {
+  const profile = getClimateProfile(preferences);
+  if (!plant || !profile.calendarReady) return [];
   const guide = [];
   const seasons = ["inverno", "primavera", "verao", "outono"];
   for (const s of seasons) {
     const keys = SEASONAL_PREVENTIVE[s] || [];
     for (const key of keys) {
       const t = TREATMENTS[key];
-      guide.push({ ...t, season: s, seasonLabel: SEASON_LABEL[s] });
+      guide.push({ ...t, season: s, seasonLabel: SEASON_LABEL[s], regional_adaptation: { isEstimate: true, referenceOnly: preferences.countryCode !== "PT" || ["tropical", "arid"].includes(profile.climate), requiresLocalProductAuthorization: true, notes: profile.notes } });
     }
   }
   return guide;

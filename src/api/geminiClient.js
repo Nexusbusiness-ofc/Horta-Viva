@@ -1,5 +1,7 @@
+import { getRegionalAIContext } from "../lib/regionalClimate.js";
+
 const GEMINI_API_KEY =
-  import.meta.env.VITE_GEMINI_API_KEY ||
+  import.meta.env?.VITE_GEMINI_API_KEY ||
   (typeof window !== "undefined" ? localStorage.getItem("hortaviva_gemini_api_key") || "" : "");
 
 const GEMINI_MODELS = ["gemini-3.6-flash", "gemini-2.5-flash"];
@@ -11,6 +13,9 @@ function getApiUrl(model) {
 }
 
 async function generateContent(payload) {
+  const regionalPayload = { ...payload, systemInstruction: { parts: [
+    ...(payload.systemInstruction?.parts || []), { text: getRegionalAIContext() },
+  ] } };
   let lastError = null;
 
   for (const model of GEMINI_MODELS) {
@@ -19,7 +24,7 @@ async function generateContent(payload) {
         const response = await fetch(getApiUrl(model), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(regionalPayload),
         });
 
         if (response.ok) {
@@ -255,20 +260,20 @@ export async function analyzePodaMondaWithGemini(file, userPreference = "auto") 
       ? "Pretendo fazer MONDA (desbaste de frutos em excesso, flores, botões ou desbaste de sementeiras/ervas)"
       : "Não tenho a certeza, pretendo que a IA analise a foto e determine se a planta precisa de Poda ou de Monda";
 
-  const prompt = `És um Engenheiro Agrónomo e Mestre Podador com vasta experiência em pomares, vinhas e hortas em Portugal.
+  const prompt = `És um assistente agronómico com experiência em pomares, vinhas e hortas, atento às limitações da análise por fotografia.
 Analisa atentamente esta fotografia enviada por um agricultor/jardineiro.
 
 INTENÇÃO DO UTILIZADOR:
 ${preferenceText}.
 
-A TUA MISSÃO É FORNECER UM DIAGNÓSTICO CIRÚRGICO E PRÁTICO:
+A TUA MISSÃO É FORNECER UMA AVALIAÇÃO VISUAL PRÁTICA, DISTINGUINDO OBSERVAÇÕES DE HIPÓTESES:
 1. IDENTIFICAR a planta/árvore visível (ex.: Laranjeira, Macieira, Oliveira, Tomateiro, Videira, Pereira, Couve, etc.).
 2. CONFIRMAR a operação adequada:
    - Se for 'poda' (ou a foto mostrar ramos, ladrões, copas densas ou ramos secos) -> define operation_type="poda".
    - Se for 'monda' (ou a foto mostrar muitos frutos juntos no ramo, flores aglomeradas ou sementeiras densas) -> define operation_type="monda".
    - No campo user_preference_match, valida a escolha do utilizador de forma cordial e explica a tua concordância ou reorientação agronómica.
 3. VISUAL_ASSESSMENT: Diagnóstico minucioso do que está na foto (ramos em cruzamento, ramos ladrões verticais sem gomos de flor, frutos aglomerados a tocar-se, folhagem a tapar a luz solar direta).
-4. URGÊNCIA & ÉPOCA: Avalia se o momento atual é propício para podar/mondar esta espécie em Portugal (ex.: poda de inverno em repouso vegetativo vs. poda verde de verão). Define urgency ("ideal_agora", "pode_esperar", ou "atencao_epoca_errada") e explica detalhadamente em season_timing_advice.
+4. URGÊNCIA & ÉPOCA: Usa o contexto regional do sistema e a fase observada. Não assumes Portugal nem transportes os meses portugueses para os trópicos. Se faltarem variedade, condições ou fase vegetativa, evita urgência categórica e pede os dados em falta. Define urgency ("ideal_agora", "pode_esperar", ou "atencao_epoca_errada") e explica a incerteza em season_timing_advice.
 5. WHAT_TO_DO: Lista ordenada de 2 a 5 ações concretas e imediatas para o utilizador fazer (ex.: "1. Retirar os 2 chupões que nascem no interior da bifurcação").
 6. HOW_TO_DO: Passo a passo técnico de execução adaptado àquela foto específica (onde posicionar a tesoura, que ramo cortar primeiro, como desbastar os frutos mais pequenos para deixar espaço para os maiores vingarem).
 7. TOOLS_NEEDED: Ferramentas exatas recomendadas (tesoura de corte deslizante bypass, tesourão de duas mãos, serrote de poda, luvas).
@@ -276,7 +281,7 @@ A TUA MISSÃO É FORNECER UM DIAGNÓSTICO CIRÚRGICO E PRÁTICO:
 9. CAUTIONS_AND_HEALING: Higiene e cicatrização (desinfeção da lâmina com álcool 70°, aplicação de pasta cicatrizante em cortes > 2cm).
 10. PRO_TIP: Dica de ouro profissional para o agricultor.
 
-Responde estritamente em conformidade com o esquema JSON solicitado em português de Portugal.`;
+Responde segundo o esquema JSON solicitado, usando a língua escolhida no contexto regional e mantendo os valores enum do esquema.`;
 
   return identifyPlantWithGemini(file, prompt, PODA_MONDA_SCHEMA);
 }

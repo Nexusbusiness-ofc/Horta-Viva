@@ -1,111 +1,116 @@
+import { useI18n, CatalogLanguageNote } from "@/lib/I18nContext";
+import { translatedMonth } from "@/lib/i18n";
+import RegionalCalendarNotice from "@/components/regional/RegionalCalendarNotice";
 import React, { useState } from "react";
 import { Image } from "@/components/ui/image";
 import { Calendar, Hand, Ruler, Lightbulb, Sprout, BookOpen, Layers, Lock } from "lucide-react";
 import MondaSchemaViewer from "./MondaSchemaViewer";
 import { useSubscription } from "@/lib/subscription";
-
-const MONTH_NAMES = ["", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-
-function monthList(months) { return (months || []).map(m => MONTH_NAMES[m]).join(", "); }
-
-function Section({ icon: Icon, title, children, color }) {
-  return (
-    <div className="space-y-1.5 min-w-0">
-      <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: color + "22" }}>
-          <Icon className="w-4 h-4" style={{ color }} />
-        </div>
-        <h3 className="font-semibold text-stone-800 text-sm uppercase tracking-wide truncate">{title}</h3>
-      </div>
-      <p className="text-stone-600 text-sm leading-relaxed pl-9 whitespace-pre-line break-words">{children}</p>
-    </div>
-  );
+function monthList(months, language) {
+  return (months || []).map(m => translatedMonth(m - 1, language)).join(", ");
 }
-
-export default function MondaDetail({ monda, onClose }) {
-  const { canAccessPruning2D } = useSubscription();
+function Section({
+  icon: Icon,
+  title,
+  children,
+  color
+}) {
+  const {
+    t: i18nT
+  } = useI18n();
+  return <div className="space-y-1.5 min-w-0">
+      <div className="flex items-center gap-2">
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{
+        backgroundColor: color + "22"
+      }}>
+          <Icon className="w-4 h-4" style={{
+          color
+        }} />
+        </div>
+        <h3 className="font-semibold text-stone-800 text-sm uppercase tracking-wide truncate">{i18nT(title)}</h3>
+      </div>
+      <p className="text-stone-600 text-sm leading-relaxed pl-9 whitespace-pre-line break-words">{i18nT(children)}</p>
+    </div>;
+}
+export default function MondaDetail({
+  monda,
+  onClose
+}) {
+  const {
+    t: i18nT,
+    language
+  } = useI18n();
+  const {
+    canAccessPruning2D
+  } = useSubscription();
   const [activeView, setActiveView] = useState("schema"); // 'schema' | 'details'
 
   if (!monda) return null;
   const color = monda.color || "#84cc16";
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div
-        className="bg-gradient-to-br from-white to-lime-50/20 w-full sm:max-w-xl sm:rounded-3xl rounded-t-3xl max-h-[92dvh] overflow-y-auto overscroll-contain shadow-2xl flex flex-col"
-        style={{ WebkitOverflowScrolling: "touch" }}
-        onClick={e => e.stopPropagation()}
-      >
-        {monda.image_url && (
-          <div className="relative w-full h-44 sm:h-52 shrink-0 overflow-hidden">
-            <Image src={monda.image_url} fittingType="fill" alt={`Monda de ${monda.name}`} className="w-full h-full block" focalPointY={0.4} />
+  return <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-gradient-to-br from-white to-lime-50/20 w-full sm:max-w-xl sm:rounded-3xl rounded-t-3xl max-h-[92dvh] overflow-y-auto overscroll-contain shadow-2xl flex flex-col" style={{
+      WebkitOverflowScrolling: "touch"
+    }} onClick={e => e.stopPropagation()}>
+        {monda.image_url && <div className="relative w-full h-44 sm:h-52 shrink-0 overflow-hidden">
+            <Image src={monda.image_url} fittingType="fill" alt={i18nT("Monda de {v0}", {
+          v0: monda.name
+        })} className="w-full h-full block" focalPointY={0.4} />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
-            <span className="absolute bottom-3 left-4 text-4xl drop-shadow-lg">{monda.emoji}</span>
-          </div>
-        )}
+            <span className="absolute bottom-3 left-4 text-4xl drop-shadow-lg">{i18nT(monda.emoji)}</span>
+          </div>}
 
-        <div className="relative px-6 pt-6 pb-4 shrink-0" style={{ background: `linear-gradient(135deg, ${color}22, ${color}08)` }}>
+        <div className="relative px-6 pt-6 pb-4 shrink-0" style={{
+        background: `linear-gradient(135deg, ${color}22, ${color}08)`
+      }}>
           <button onClick={onClose} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/80 hover:bg-white flex items-center justify-center text-stone-500 shadow-sm transition-colors">✕</button>
-          {!monda.image_url && <div className="text-6xl mb-2">{monda.emoji}</div>}
-          <h2 className="text-2xl font-bold text-stone-800">{monda.name}</h2>
-          <span className="inline-block mt-1 text-xs font-medium px-3 py-1 rounded-full" style={{ backgroundColor: color + "22", color }}>
-            {monda.category}
+          {!monda.image_url && <div className="text-6xl mb-2">{i18nT(monda.emoji)}</div>}
+          <h2 className="text-2xl font-bold text-stone-800">{i18nT(monda.name)}</h2>
+          <span className="inline-block mt-1 text-xs font-medium px-3 py-1 rounded-full" style={{
+          backgroundColor: color + "22",
+          color
+        }}>
+            {i18nT(monda.category)}
           </span>
 
           {/* Abas Alternadoras de Vista */}
           <div className="flex gap-2 mt-4 bg-white/70 p-1 rounded-2xl border border-stone-200/70">
-            <button
-              onClick={() => setActiveView("schema")}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
-                activeView === "schema"
-                  ? "bg-gradient-to-r from-lime-600 to-emerald-600 text-white shadow-sm"
-                  : "text-stone-600 hover:text-stone-900 hover:bg-white/60"
-              }`}
-            >
+            <button onClick={() => setActiveView("schema")} className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all ${activeView === "schema" ? "bg-gradient-to-r from-lime-600 to-emerald-600 text-white shadow-sm" : "text-stone-600 hover:text-stone-900 hover:bg-white/60"}`}>
               <Layers className="w-4 h-4" />
-              <span>📐 Esquema Prático</span>
+              <span>{i18nT("📐 Esquema Prático")}</span>
               {!canAccessPruning2D && <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
             </button>
-            <button
-              onClick={() => setActiveView("details")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
-                activeView === "details"
-                  ? "bg-gradient-to-r from-lime-600 to-emerald-600 text-white shadow-sm"
-                  : "text-stone-600 hover:text-stone-900 hover:bg-white/60"
-              }`}
-            >
+            <button onClick={() => setActiveView("details")} className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all ${activeView === "details" ? "bg-gradient-to-r from-lime-600 to-emerald-600 text-white shadow-sm" : "text-stone-600 hover:text-stone-900 hover:bg-white/60"}`}>
               <BookOpen className="w-4 h-4" />
-              <span>📋 Ficha Detalhada</span>
+              <span>{i18nT("📋 Ficha Detalhada")}</span>
             </button>
           </div>
         </div>
 
         {/* Conteúdo Principal com Scroll */}
         <div className="px-5 sm:px-6 py-5 flex-1 space-y-5">
-          {activeView === "schema" ? (
-            <MondaSchemaViewer monda={monda} />
-          ) : (
-            <div className="space-y-5">
-              {monda.when_months?.length > 0 && (
-                <div className="bg-stone-50 rounded-xl p-3 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: color + "22" }}>
-                    <Calendar className="w-5 h-5" style={{ color }} />
+          <CatalogLanguageNote />
+          <RegionalCalendarNotice item={monda} />
+          {activeView === "schema" ? <MondaSchemaViewer monda={monda} /> : <div className="space-y-5">
+              {monda.when_months?.length > 0 && <div className="bg-stone-50 rounded-xl p-3 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{
+              backgroundColor: color + "22"
+            }}>
+                    <Calendar className="w-5 h-5" style={{
+                color
+              }} />
                   </div>
                   <div>
-                    <p className="text-xs text-stone-500 font-medium">Época típica</p>
-                    <p className="text-sm font-semibold text-stone-700">{monthList(monda.when_months)}</p>
+                    <p className="text-xs text-stone-500 font-medium">{i18nT("Época típica")}</p>
+                    <p className="text-sm font-semibold text-stone-700">{monthList(monda.when_months, language)}</p>
                   </div>
-                </div>
-              )}
-              {monda.when_stage && <Section icon={Sprout} title="Quando fazer (fase)" color="#16a34a">{monda.when_stage}</Section>}
-              {monda.when_info && <Section icon={Calendar} title="Quando fazer" color="#0891b2">{monda.when_info}</Section>}
-              {monda.how && <Section icon={Hand} title="Como fazer a monda" color={color}>{monda.how}</Section>}
-              {monda.spacing && <Section icon={Ruler} title="Espaçamento final" color="#7c3aed">{monda.spacing}</Section>}
-              {monda.tips && <Section icon={Lightbulb} title="Dicas" color="#d97706">{monda.tips}</Section>}
-            </div>
-          )}
+                </div>}
+              {monda.when_stage && <Section icon={Sprout} title={i18nT("Quando fazer (fase)")} color="#16a34a">{i18nT(monda.when_stage)}</Section>}
+              {monda.when_info && <Section icon={Calendar} title={i18nT("Quando fazer")} color="#0891b2">{i18nT(monda.when_info)}</Section>}
+              {monda.how && <Section icon={Hand} title={i18nT("Como fazer a monda")} color={color}>{i18nT(monda.how)}</Section>}
+              {monda.spacing && <Section icon={Ruler} title={i18nT("Espaçamento final")} color="#7c3aed">{i18nT(monda.spacing)}</Section>}
+              {monda.tips && <Section icon={Lightbulb} title={i18nT("Dicas")} color="#d97706">{i18nT(monda.tips)}</Section>}
+            </div>}
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }

@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { Loader2, ArrowLeft, Bell, BellOff, Droplets, PawPrint, Scissors, Sprout, Plus, Box, Check, X, Lock } from "lucide-react";
 import { computeDailyTasks, countTasks } from "@/lib/dailyTasks";
 import { notifyPermission, requestNotifyPermission, sendNotify, shouldNotifyToday, notifySupported } from "@/lib/notify";
-import { markPlantingWatered, getLastWateredMap } from "@/lib/smartAlerts";
+import { markPlantingWatered } from "@/lib/smartAlerts";
 import SmartAlertsBanner from "@/components/quinta/SmartAlertsBanner";
 import Poda3DViewer from "@/components/podas/Poda3DViewer";
 import Monda3DViewer from "@/components/mondas/Monda3DViewer";
@@ -13,6 +13,10 @@ import { cachedList } from "@/lib/offlineCatalog";
 import NavigationDrawer from "@/components/home/NavigationDrawer";
 import { useSubscription } from "@/lib/subscription";
 import UpgradeModal from "@/components/subscription/UpgradeModal";
+import { useRegionalPreferences } from '@/lib/RegionalPreferencesContext.jsx';
+import { useWeather } from '@/lib/WeatherContext.jsx';
+import { useI18n } from '@/lib/I18nContext';
+import WeatherCard from '@/components/weather/WeatherCard.jsx';
 
 const SECTIONS = [
   { key: "rega", icon: Droplets, label: "Rega", color: "#0ea5e9", emoji: "💧" },
@@ -22,6 +26,7 @@ const SECTIONS = [
 ];
 
 function TaskItem({ task, onWater, onOpen3D, canAccessPruning3D }) {
+  const { t } = useI18n();
   return (
     <div className="bg-white rounded-2xl border border-stone-200/80 overflow-hidden shadow-sm w-full min-w-0">
       <div className="flex items-stretch w-full min-w-0">
@@ -42,12 +47,12 @@ function TaskItem({ task, onWater, onOpen3D, canAccessPruning3D }) {
                 </p>
                 {task.wateredToday && (
                   <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <Check className="w-3 h-3" /> Regado Hoje
+                    <Check className="w-3 h-3" /> {t('tasks.wateredToday')}
                   </span>
                 )}
                 {task.isOverdue && (
                   <span className="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    Atrasada
+                    {t('tasks.overdue')}
                   </span>
                 )}
               </div>
@@ -59,11 +64,13 @@ function TaskItem({ task, onWater, onOpen3D, canAccessPruning3D }) {
             </div>
           </div>
 
+          {task.weatherAdvice?.map(advice => <p key={advice.kind} className="rounded-xl border border-sky-100 bg-sky-50 p-2.5 text-xs leading-relaxed text-sky-900">{advice.message}</p>)}
+
           {/* Como fazer */}
           {task.how && (
             <div className="bg-stone-50 rounded-xl p-2.5 min-w-0">
               <p className="text-xs font-semibold text-stone-700 mb-0.5 flex items-center gap-1">
-                <span>📋</span> Como fazer
+                <span>📋</span> {t('tasks.how')}
               </p>
               <p className="text-xs text-stone-600 leading-relaxed break-words">
                 {task.how}
@@ -75,7 +82,7 @@ function TaskItem({ task, onWater, onOpen3D, canAccessPruning3D }) {
           {task.goldenRule && (
             <div className="bg-emerald-50/70 border border-emerald-100 rounded-xl p-2.5 min-w-0">
               <p className="text-xs font-semibold text-emerald-900 mb-0.5 flex items-center gap-1">
-                <span>⭐</span> Regra de Ouro da Poda
+                <span>⭐</span> {t('tasks.goldenRule')}
               </p>
               <p className="text-xs text-emerald-800 leading-relaxed break-words">
                 {task.goldenRule}
@@ -87,7 +94,7 @@ function TaskItem({ task, onWater, onOpen3D, canAccessPruning3D }) {
           {task.spacing && (
             <div className="bg-lime-50/70 rounded-xl p-2.5 min-w-0">
               <p className="text-xs font-semibold text-lime-800 mb-0.5 flex items-center gap-1">
-                <span>📏</span> Espaçamento recomendado
+                <span>📏</span> {t('tasks.spacing')}
               </p>
               <p className="text-xs text-stone-600 leading-relaxed break-words">
                 {task.spacing}
@@ -99,7 +106,7 @@ function TaskItem({ task, onWater, onOpen3D, canAccessPruning3D }) {
           {task.tips && (
             <div className="bg-emerald-50/70 rounded-xl p-2.5 min-w-0">
               <p className="text-xs font-semibold text-emerald-800 mb-0.5 flex items-center gap-1">
-                <span>💡</span> Dica
+                <span>💡</span> {t('tasks.tip')}
               </p>
               <p className="text-xs text-stone-600 leading-relaxed break-words">
                 {task.tips}
@@ -111,7 +118,7 @@ function TaskItem({ task, onWater, onOpen3D, canAccessPruning3D }) {
           {task.care && (
             <div className="bg-amber-50/70 rounded-xl p-2.5 min-w-0">
               <p className="text-xs font-semibold text-amber-800 mb-0.5 flex items-center gap-1">
-                <span>🩺</span> Cuidados
+                <span>🩺</span> {t('tasks.care')}
               </p>
               <p className="text-xs text-stone-600 leading-relaxed break-words">
                 {task.care}
@@ -136,12 +143,12 @@ function TaskItem({ task, onWater, onOpen3D, canAccessPruning3D }) {
                 {task.wateredToday ? (
                   <>
                     <Check className="w-3.5 h-3.5" />
-                    <span>Regado Hoje ✓</span>
+                    <span>{t('tasks.wateredToday')} ✓</span>
                   </>
                 ) : (
                   <>
                     <Droplets className="w-3.5 h-3.5" />
-                    <span>Regar Agora ✓</span>
+                    <span>{t('tasks.recordWater')}</span>
                   </>
                 )}
               </button>
@@ -160,7 +167,7 @@ function TaskItem({ task, onWater, onOpen3D, canAccessPruning3D }) {
                 className="px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs active:scale-95"
               >
                 <Box className="w-3.5 h-3.5" />
-                <span>Ver Esquema 3D</span>
+                <span>{t('tasks.view3D')}</span>
                 {!canAccessPruning3D && <Lock className="w-3 h-3 text-amber-300 shrink-0" />}
               </button>
             )}
@@ -172,6 +179,9 @@ function TaskItem({ task, onWater, onOpen3D, canAccessPruning3D }) {
 }
 
 export default function TarefasHoje() {
+  const { preferences } = useRegionalPreferences();
+  const { weather } = useWeather();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState({ rega: [], animais: [], podas: [], mondas: [] });
   const [data, setData] = useState({
@@ -209,20 +219,7 @@ export default function TarefasHoje() {
       ]);
       const raw = { plantings, plants, myAnimals, farmAnimals, podas, mondas };
       setData(raw);
-      const t = computeDailyTasks(raw);
-      setTasks(t);
       setHasData(plantings.length > 0 || myAnimals.length > 0);
-      if (notifySupported() && Notification.permission === "granted" && shouldNotifyToday()) {
-        const n = countTasks(t);
-        if (n > 0) {
-          const parts = [];
-          if (t.rega?.length) parts.push(`${t.rega.length} rega(s)`);
-          if (t.animais?.length) parts.push(`${t.animais.length} animal(is)`);
-          if (t.podas?.length) parts.push(`${t.podas.length} poda(s)`);
-          if (t.mondas?.length) parts.push(`${t.mondas.length} monda(s)`);
-          sendNotify("Tarefas de hoje 🌱", `Tens ${n} tarefas: ${parts.join(", ")}.`);
-        }
-      }
     } finally {
       setLoading(false);
     }
@@ -232,39 +229,44 @@ export default function TarefasHoje() {
     loadAll();
   }, [loadAll]);
 
+  useEffect(() => { setTasks(computeDailyTasks({ ...data, preferences, weather })); }, [data, preferences, weather]);
+
   // Atualizar quando houver rega
   useEffect(() => {
     const handleUpdate = () => {
       if (data.plantings.length > 0) {
-        setTasks(computeDailyTasks(data));
+        setTasks(computeDailyTasks({ ...data, preferences, weather }));
       }
     };
     window.addEventListener("hortaviva_watered_update", handleUpdate);
     return () => window.removeEventListener("hortaviva_watered_update", handleUpdate);
-  }, [data]);
+  }, [data, preferences, weather]);
 
   const handleWater = (plantingId, plantName) => {
     markPlantingWatered(plantingId);
     toast({
-      title: "Rega Registada! 💧",
-      description: `${plantName} foi marcada como regada hoje com sucesso.`,
+      title: t('tasks.waterSaved'),
+      description: t('tasks.waterSavedDetail', { name: plantName }),
     });
-    setTasks(computeDailyTasks(data));
+    setTasks(computeDailyTasks({ ...data, preferences, weather }));
   };
 
   const enableNotifications = async () => {
     const p = await requestNotifyPermission();
     setPerm(p);
     if (p === "granted") {
-      toast({ title: "Lembretes ativados ✅", description: "Vais receber notificações das tuas tarefas diárias." });
+      toast({ title: t('tasks.notificationsOn'), description: t('tasks.notificationsDetail') });
       const n = countTasks(tasks);
-      if (n > 0) sendNotify("Tarefas de hoje 🌱", `Tens ${n} tarefas na tua quinta.`);
+      if (n > 0) sendNotify(t('tasks.title'), t('tasks.summary', { count: n }));
     } else if (p === "denied") {
-      toast({ variant: "destructive", title: "Notificações bloqueadas", description: "Ativa-as nas definições do navegador." });
+      toast({ variant: "destructive", title: t('tasks.notificationsBlocked'), description: t('tasks.notificationsSettings') });
     }
   };
 
   const total = countTasks(tasks);
+  useEffect(() => {
+    if (!loading && total > 0 && notifySupported() && perm === 'granted' && shouldNotifyToday()) sendNotify(t('tasks.title'), t('tasks.summary', { count: total }));
+  }, [loading, total, perm, t]);
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-teal-50 via-emerald-50/40 to-lime-50/50">
@@ -278,8 +280,8 @@ export default function TarefasHoje() {
               <Bell className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg sm:text-xl font-bold text-stone-800 leading-tight truncate">Tarefas de Hoje</h1>
-              <p className="text-xs text-stone-500 truncate">Rega, animais, podas e mondas</p>
+              <h1 className="text-lg sm:text-xl font-bold text-stone-800 leading-tight truncate">{t('tasks.title')}</h1>
+              <p className="text-xs text-stone-500 truncate">{t('tasks.subtitle')}</p>
             </div>
             <button
               onClick={enableNotifications}
@@ -290,7 +292,7 @@ export default function TarefasHoje() {
               }`}
             >
               {perm === "granted" ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
-              <span className="hidden sm:inline">{perm === "granted" ? "Ativadas" : "Ativar"}</span>
+              <span className="hidden sm:inline">{t(perm === 'granted' ? 'tasks.enabled' : 'tasks.enable')}</span>
             </button>
             <NavigationDrawer />
           </div>
@@ -298,6 +300,7 @@ export default function TarefasHoje() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-6 w-full min-w-0">
+        <WeatherCard />
         {loading ? (
           <div className="flex justify-center py-20">
             <Loader2 className="w-8 h-8 text-teal-500 animate-spin" />
@@ -305,13 +308,13 @@ export default function TarefasHoje() {
         ) : !hasData ? (
           <div className="text-center py-20">
             <div className="text-6xl mb-4">🌱</div>
-            <h2 className="text-lg font-semibold text-stone-700 mb-1">A tua quinta está vazia</h2>
-            <p className="text-sm text-stone-500 mb-6">Adiciona plantações e animais para receberes as tuas tarefas diárias.</p>
+            <h2 className="text-lg font-semibold text-stone-700 mb-1">{t('tasks.emptyTitle')}</h2>
+            <p className="text-sm text-stone-500 mb-6">{t('tasks.emptyDetail')}</p>
             <Link
               to="/minha-quinta"
               className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-500 via-emerald-600 to-green-600 text-white font-medium px-5 py-2.5 rounded-xl shadow-lg shadow-teal-200/50 hover:shadow-xl transition-all active:scale-95"
             >
-              <Plus className="w-4 h-4" /> Ir para a Minha Quinta
+              <Plus className="w-4 h-4" /> {t('tasks.goFarm')}
             </Link>
           </div>
         ) : (
@@ -332,7 +335,7 @@ export default function TarefasHoje() {
               {SECTIONS.map(s => (
                 <div key={s.key} className="bg-white rounded-2xl border border-stone-200/80 p-3 sm:p-4 text-center shadow-sm min-w-0">
                   <p className="text-xl sm:text-2xl font-bold" style={{ color: s.color }}>{tasks[s.key]?.length || 0}</p>
-                  <p className="text-xs text-stone-500 mt-0.5 truncate">{s.label}</p>
+                  <p className="text-xs text-stone-500 mt-0.5 truncate">{t(`tasks.${s.key}`)}</p>
                 </div>
               ))}
             </div>
@@ -348,7 +351,7 @@ export default function TarefasHoje() {
                     <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: s.color + "15" }}>
                       <Icon className="w-4 h-4" style={{ color: s.color }} />
                     </div>
-                    <h2 className="text-sm font-bold text-stone-700 truncate">{s.label}</h2>
+                    <h2 className="text-sm font-bold text-stone-700 truncate">{t(`tasks.${s.key}`)}</h2>
                     <span className="text-xs text-stone-400 shrink-0">({list.length})</span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full min-w-0">
@@ -371,7 +374,7 @@ export default function TarefasHoje() {
 
       <footer className="text-center pt-4 pb-28 text-xs px-4">
         <span className="bg-gradient-to-r from-teal-600 via-emerald-600 to-green-600 bg-clip-text text-transparent font-medium">
-          🌱 Minha Horta — Nunca te esqueças de nada
+          🌱 {t('tasks.footer')}
         </span>
       </footer>
 
@@ -390,17 +393,17 @@ export default function TarefasHoje() {
                 <span className="text-xl sm:text-2xl">{active3DModal.type === "poda" ? "✂️" : "🌱"}</span>
                 <div>
                   <h3 className="font-extrabold text-stone-800 text-sm sm:text-base leading-tight">
-                    Esquema 3D: {active3DModal.name}
+                    {t('tasks.diagram', { name: active3DModal.name })}
                   </h3>
                   <p className="text-xs text-stone-500">
-                    {active3DModal.type === "poda" ? "Técnica de corte e poda de pomar" : "Técnica de desbaste e monda de horta"}
+                    {t(active3DModal.type === 'poda' ? 'tasks.pruningTechnique' : 'tasks.thinningTechnique')}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setActive3DModal(null)}
                 className="w-9 h-9 rounded-full bg-stone-200/80 hover:bg-stone-300 text-stone-700 flex items-center justify-center transition-colors"
-                title="Fechar"
+                title={t('tasks.close')}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -411,9 +414,9 @@ export default function TarefasHoje() {
                   <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-200 flex items-center justify-center mx-auto text-amber-600">
                     <Lock className="w-6 h-6" />
                   </div>
-                  <h4 className="font-bold text-stone-800 text-sm">Esquema 3D Bloqueado</h4>
+                  <h4 className="font-bold text-stone-800 text-sm">{t('tasks.locked3D')}</h4>
                   <p className="text-xs text-stone-500 max-w-sm mx-auto">
-                    Os modelos 3D interativos de podas e mondas estão disponíveis no Plano Pro (2,99€) e Ultra (3,99€).
+                    {t('tasks.lockedDetail')}
                   </p>
                   <button
                     onClick={() => {
@@ -422,7 +425,7 @@ export default function TarefasHoje() {
                     }}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 px-4 rounded-xl shadow-xs transition-all"
                   >
-                    Ver Planos de Subscrição
+                    {t('tasks.plans')}
                   </button>
                 </div>
               ) : active3DModal.type === "poda" ? (
@@ -447,8 +450,8 @@ export default function TarefasHoje() {
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
         reason="esquemas"
-        customTitle="Desbloquear Esquemas 3D"
-        customDescription="Acede aos modelos 3D interativos e simulações avançadas de podas e mondas no Plano Pro (2,99€) ou Ultra (3,99€)."
+        customTitle={t('tasks.unlock3D')}
+        customDescription={t('tasks.lockedDetail')}
       />
     </div>
   );

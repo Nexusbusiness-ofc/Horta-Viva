@@ -1,22 +1,25 @@
 // Lógica partilhada: fase de crescimento, auto-avanço de estado e cuidados temporais
+import { readRegionalPreferences } from "./regionalPreferences.js";
+import { getClimateProfile, getLocalDateString } from "./regionalClimate.js";
 
 const STATUS_ORDER = ["Plantada", "Em crescimento", "Pronta a colher", "Colhida"];
 
-function todayStr() {
-  return new Date().toISOString().split("T")[0];
+function todayStr(preferences, now) {
+  return getLocalDateString(now, preferences);
 }
 
 function daysBetween(a, b) {
   if (!a || !b) return null;
-  const d1 = new Date(a + "T00:00");
-  const d2 = new Date(b + "T00:00");
+  const d1 = new Date(a + "T00:00:00Z");
+  const d2 = new Date(b + "T00:00:00Z");
+  if (!Number.isFinite(d1.getTime()) || !Number.isFinite(d2.getTime())) return null;
   return Math.round((d2 - d1) / 86400000);
 }
 
 // Progresso da plantação: dias desde a plantação, dias totais até colheita, progresso 0..1
-export function getPlantingProgress(planting) {
+export function getPlantingProgress(planting, preferences = readRegionalPreferences(), now = new Date()) {
   if (!planting.planted_date) return { daysSince: 0, totalDays: null, progress: 0 };
-  const daysSince = Math.max(0, daysBetween(planting.planted_date, todayStr()) ?? 0);
+  const daysSince = Math.max(0, daysBetween(planting.planted_date, todayStr(preferences, now)) ?? 0);
   let totalDays = null;
   if (planting.expected_harvest_date) {
     totalDays = daysBetween(planting.planted_date, planting.expected_harvest_date);
@@ -26,9 +29,9 @@ export function getPlantingProgress(planting) {
 }
 
 // Fase atual com base no progresso ou nos dias decorridos
-export function getPhase(planting) {
+export function getPhase(planting, preferences = readRegionalPreferences(), now = new Date()) {
   if (planting.status === "Colhida") return "colhida";
-  const { progress, daysSince } = getPlantingProgress(planting);
+  const { progress, daysSince } = getPlantingProgress(planting, preferences, now);
 
   if (!planting.expected_harvest_date) {
     if (daysSince < 14) return "estabelecimento";
@@ -41,9 +44,9 @@ export function getPhase(planting) {
 }
 
 // Estado que a plantação deveria ter, segundo o tempo. Só avança (nunca recua).
-export function getAutoStatus(planting) {
+export function getAutoStatus(planting, preferences = readRegionalPreferences(), now = new Date()) {
   if (planting.status === "Colhida") return null;
-  const phase = getPhase(planting);
+  const phase = getPhase(planting, preferences, now);
   const currentIdx = STATUS_ORDER.indexOf(planting.status);
 
   let target;
@@ -72,7 +75,7 @@ export const PHASE_INFO = {
     tips: [
       "Rega regular conforme as necessidades da planta.",
       "Remove infestantes que competem por nutrientes.",
-      "Aduba com fertilizante rico em azoto para a folhagem.",
+      "Ajusta a fertilização à cultura e às necessidades do solo.",
       "Vigia pragas e age precocemente.",
     ],
   },
@@ -80,8 +83,8 @@ export const PHASE_INFO = {
     label: "Maturação",
     emoji: "🌸",
     tips: [
-      "Reduz a rega para concentrar o sabor.",
-      "Aduba com potássio para favorecer os frutos.",
+      "Ajusta a rega ao solo, à cultura e ao tempo; evita stress hídrico.",
+      "Confirma a nutrição adequada à cultura antes de fertilizar.",
       "Apoia ramos pesados com tutores.",
       "Vigia a prontidão para a colheita.",
     ],
@@ -112,13 +115,17 @@ export function findPlant(planting, plants) {
 }
 
 // Constrói os cuidados atuais: fase + instruções da planta + dicas de rega/sol
-export function getCareGuide(planting, plants) {
-  const phase = getPhase(planting);
-  const info = PHASE_INFO[phase] || PHASE_INFO.estabelecimento;
+export function getCareGuide(planting, plants, preferences = readRegionalPreferences(), now = new Date()) {
+  const phase = getPhase(planting, preferences, now);
+  const baseInfo = PHASE_INFO[phase] || PHASE_INFO.estabelecimento;
+  const regional = getClimateProfile(preferences);
+  const info = { ...baseInfo, tips: [...baseInfo.tips, ...regional.notes] };
   const plant = findPlant(planting, plants);
   return {
     phase,
     info,
     plant,
+    regional,
+    harvestIsEstimate: true,
   };
 }

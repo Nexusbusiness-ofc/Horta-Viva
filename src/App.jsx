@@ -2,7 +2,13 @@ import React, { useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import { RegionalPreferencesProvider, useRegionalPreferences } from '@/lib/RegionalPreferencesContext';
+import { I18nProvider } from '@/lib/I18nContext';
+import { AppearanceProvider } from '@/lib/AppearanceContext';
+import { WeatherProvider } from '@/lib/WeatherContext';
+import RegionalSetupGate from '@/components/regional/RegionalSetupGate';
+import Definicoes from './pages/Definicoes';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -33,6 +39,7 @@ import { activateProSubscription, activatePlusSubscription, activateUltraSubscri
 import { useToast } from "@/components/ui/use-toast";
 
 const AuthenticatedApp = () => {
+  const location = useLocation();
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
   const { toast } = useToast();
 
@@ -122,6 +129,9 @@ const AuthenticatedApp = () => {
     };
   }, []);
 
+  // Device preferences are accessible without signing in.
+  if (location.pathname.replace(/\/+$/, '') === '/definicoes') return <Definicoes />;
+
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
     return <LoadingScreen />;
@@ -162,6 +172,13 @@ const AuthenticatedApp = () => {
   );
 };
 
+function RegionalAppShell() {
+  const { preferences } = useRegionalPreferences();
+  const location = useLocation();
+  useEffect(() => { document.documentElement.lang = preferences.language; }, [preferences.language]);
+  const catalogKey = location.pathname.replace(/\/+$/, '') === '/definicoes' ? 'settings' : JSON.stringify([preferences.countryCode, preferences.region, preferences.latitude, preferences.longitude, preferences.climate, preferences.language, preferences.growingEnvironment, preferences.wetSeasonMonths, preferences.timeZone]);
+  return <RegionalSetupGate><WeatherProvider><AuthenticatedApp key={catalogKey} /><BottomNav /><BackToTopButton /><InstallPrompt /><Toaster /></WeatherProvider></RegionalSetupGate>;
+}
 
 function App() {
   const basename = (import.meta.env.BASE_URL || '/').replace(/\/$/, "") || "";
@@ -169,14 +186,16 @@ function App() {
   return (
     <QueryClientProvider client={queryClientInstance}>
       <Router basename={basename}>
+        <RegionalPreferencesProvider>
+        <I18nProvider>
+        <AppearanceProvider>
         <AuthProvider>
           <ScrollToTop />
-          <AuthenticatedApp />
-          <BottomNav />
-          <BackToTopButton />
-          <InstallPrompt />
-          <Toaster />
+          <RegionalAppShell />
         </AuthProvider>
+        </AppearanceProvider>
+        </I18nProvider>
+        </RegionalPreferencesProvider>
       </Router>
     </QueryClientProvider>
   )

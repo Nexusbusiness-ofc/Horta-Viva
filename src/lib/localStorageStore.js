@@ -1,6 +1,8 @@
 import { DEFAULT_PLANTS } from "./plantsData.js";
 import { DEFAULT_ANIMALS, DEFAULT_MUSHROOMS, DEFAULT_PODAS, DEFAULT_MONDAS } from "./catalogData.js";
 import { callGemini } from "./aiService.js";
+import { REGIONAL_STORAGE_KEY, REGIONAL_CHANGE_EVENT, sanitizeRegionalPreferences, writeRegionalPreferences } from './regionalPreferences.js';
+import { APPEARANCE_STORAGE_KEY, APPEARANCE_CHANGE_EVENT, sanitizeAppearance, writeAppearance } from './appearance.js';
 
 const STORAGE_KEYS = {
   PLANTINGS: "hortaviva_plantings",
@@ -11,6 +13,80 @@ const STORAGE_KEYS = {
   LOGGED_OUT: "hortaviva_logged_out",
   PRO_SUBSCRIPTION: "hortaviva_pro_subscription",
 };
+
+export const GOOGLE_ACCOUNT_OWNER_KEY = 'hortaviva_account_owner_v1';
+export const GOOGLE_ACCOUNT_BACKUP_PREFIX = 'hortaviva_account_backup_v1:';
+// Deliberately excludes OAuth tokens, API keys and shared reference catalogues.
+const ACCOUNT_DATA_KEYS = [STORAGE_KEYS.USER, STORAGE_KEYS.PLANTINGS, STORAGE_KEYS.MY_ANIMALS,
+  STORAGE_KEYS.REMINDERS, STORAGE_KEYS.PRO_SUBSCRIPTION, REGIONAL_STORAGE_KEY, APPEARANCE_STORAGE_KEY,
+  'hortaviva_deleted_ids', 'hortaviva_monthly_usage_v2', 'hortaviva_photo_identifications_count', 'hortaviva_ai_usage_count'];
+const readJson = key => { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; } };
+const accountIdentity = profile => profile?.sub || profile?.id ? `id:${profile.sub || profile.id}`
+  : profile?.email ? `email:${String(profile.email).trim().toLowerCase()}` : null;
+const accountValues = () => Object.fromEntries(ACCOUNT_DATA_KEYS.map(key => [key, localStorage.getItem(key)]));
+const backupKey = identity => GOOGLE_ACCOUNT_BACKUP_PREFIX + encodeURIComponent(identity);
+
+function accountOwner() {
+  const stored = readJson(GOOGLE_ACCOUNT_OWNER_KEY);
+  if (stored?.identity) return stored;
+  const profile = readJson('hortaviva_google_user_info');
+  const user = readJson(STORAGE_KEYS.USER);
+  const previous = profile || (user?.auth_provider === 'google' ? user : null);
+  return previous ? { identity: accountIdentity(previous), email: previous.email || '' } : null;
+}
+
+export function preserveCurrentGoogleAccount() {
+  const owner = accountOwner();
+  // Logout may already have removed the profile. Do not overwrite its saved copy.
+  if (!owner?.identity || !localStorage.getItem(STORAGE_KEYS.USER)) return;
+  localStorage.setItem(backupKey(owner.identity), JSON.stringify({ version: 1, owner, savedAt: new Date().toISOString(), values: accountValues() }));
+  localStorage.setItem(GOOGLE_ACCOUNT_OWNER_KEY, JSON.stringify(owner));
+}
+
+export function prepareGoogleAccountState(profile) {
+  const identity = accountIdentity(profile);
+  if (!identity) throw new Error('Não foi possível confirmar a identidade da conta Google.');
+  const previous = accountOwner();
+  const owner = { identity, email: String(profile.email || '').trim().toLowerCase() };
+  const changed = Boolean(previous?.identity && previous.identity !== identity);
+  const restoringLoggedOut = previous?.identity === identity && !localStorage.getItem(STORAGE_KEYS.USER);
+  if (!changed && !restoringLoggedOut) {
+    // First Google connection adopts the guest's existing farm intentionally.
+    localStorage.setItem(GOOGLE_ACCOUNT_OWNER_KEY, JSON.stringify(owner));
+    return { changed: false, migratedGuest: !previous?.identity };
+  }
+  const destinationRaw = localStorage.getItem(backupKey(identity));
+  const destination = destinationRaw ? JSON.parse(destinationRaw) : null;
+  if (destination && (destination.version !== 1 || destination.owner?.identity !== identity || !destination.values || typeof destination.values !== 'object')) {
+    throw new Error('A cópia local desta conta não pôde ser validada. Os dados atuais foram mantidos.');
+  }
+  const original = accountValues();
+  const originalOwner = localStorage.getItem(GOOGLE_ACCOUNT_OWNER_KEY);
+  // Save first. Quota/storage errors abort before removing any active data.
+  preserveCurrentGoogleAccount();
+  try {
+    for (const key of ACCOUNT_DATA_KEYS) localStorage.removeItem(key);
+    for (const key of ACCOUNT_DATA_KEYS) {
+      const value = destination?.values[key];
+      if (typeof value === 'string') localStorage.setItem(key, value);
+    }
+    localStorage.setItem(GOOGLE_ACCOUNT_OWNER_KEY, JSON.stringify(owner));
+  } catch (error) {
+    for (const key of ACCOUNT_DATA_KEYS) localStorage.removeItem(key);
+    for (const key of ACCOUNT_DATA_KEYS) if (original[key] !== null) localStorage.setItem(key, original[key]);
+    if (originalOwner === null) localStorage.removeItem(GOOGLE_ACCOUNT_OWNER_KEY);
+    else localStorage.setItem(GOOGLE_ACCOUNT_OWNER_KEY, originalOwner);
+    throw error;
+  }
+  return { changed: true, restored: Boolean(destination), migratedGuest: false };
+}
+
+function notifyAccountDataRestored() {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(REGIONAL_CHANGE_EVENT));
+  window.dispatchEvent(new CustomEvent(APPEARANCE_CHANGE_EVENT));
+  window.dispatchEvent(new CustomEvent('hortaviva_remote_updated'));
+}
 
 export const DEFAULT_USER = {
   id: "user_local_quinta",
@@ -198,14 +274,14 @@ export const localAuth = {
           if (raw) existing = JSON.parse(raw);
         } catch {}
 
-        const name = g.name || existing?.full_name || "Agricultor Google";
+        const name = existing?.full_name || g.name || "Agricultor Google";
         const firstName = name.split(" ")[0] || "Cultivo";
         const googleUser = {
           ...(existing || {}),
           id: g.id || g.sub || existing?.id || "google_user",
           full_name: name,
           email: g.email || existing?.email || "agricultor@gmail.com",
-          avatar_url: g.picture || existing?.avatar_url || "",
+          avatar_url: typeof existing?.avatar_url === 'string' ? existing.avatar_url : g.picture || "",
           avatar_emoji: existing?.avatar_emoji || "🌾",
           farm_name: existing?.farm_name || `Quinta de ${firstName}`,
           farmer_type: existing?.farmer_type || "Agricultura biológica",
@@ -235,7 +311,8 @@ export const localAuth = {
     }
   },
 
-  loginWithGoogleUser: (googleProfile, accessToken) => {
+  loginWithGoogleUser: (googleProfile, accessToken, options = {}) => {
+    const account = options.accountPrepared ? { changed: options.accountChanged } : prepareGoogleAccountState(googleProfile);
     let existing = null;
     try {
       const raw = localStorage.getItem(STORAGE_KEYS.USER);
@@ -243,11 +320,11 @@ export const localAuth = {
     } catch {}
 
     // Se o utilizador anterior tinha outro email, não herdar dados do perfil antigo
-    if (existing?.email && googleProfile?.email && existing.email.toLowerCase() !== googleProfile.email.toLowerCase()) {
+    if (existing?.auth_provider === 'google' && existing?.email && googleProfile?.email && existing.email.toLowerCase() !== googleProfile.email.toLowerCase()) {
       existing = null;
     }
 
-    const name = googleProfile.name || googleProfile.full_name || existing?.full_name || "Agricultor Google";
+    const name = existing?.full_name || googleProfile.name || googleProfile.full_name || "Agricultor Google";
     const firstName = name.split(" ")[0] || "Cultivo";
 
     const user = {
@@ -255,7 +332,7 @@ export const localAuth = {
       id: googleProfile.sub || googleProfile.id || existing?.id || `google_${Date.now()}`,
       full_name: name,
       email: googleProfile.email || existing?.email || "agricultor@gmail.com",
-      avatar_url: googleProfile.picture || googleProfile.avatar_url || existing?.avatar_url || "",
+      avatar_url: typeof existing?.avatar_url === 'string' ? existing.avatar_url : googleProfile.picture || googleProfile.avatar_url || "",
       avatar_emoji: existing?.avatar_emoji || "🌾",
       farm_name: existing?.farm_name || `Quinta de ${firstName}`,
       farmer_type: existing?.farmer_type || "Agricultura biológica",
@@ -287,6 +364,7 @@ export const localAuth = {
     }
 
     if (typeof window !== "undefined") {
+      if (account.changed) notifyAccountDataRestored();
       window.dispatchEvent(new CustomEvent("hortaviva_auth_changed", { detail: { user } }));
       window.dispatchEvent(new CustomEvent("hortaviva_sync_change", { detail: { status: "synced", connected: true, user } }));
       window.dispatchEvent(new CustomEvent("hortaviva_subscription_changed"));
@@ -310,7 +388,7 @@ export const localAuth = {
       return updated;
     } catch (e) {
       console.error("Erro ao atualizar utilizador:", e);
-      return data;
+      throw e;
     }
   },
 
@@ -344,7 +422,8 @@ export const localAuth = {
   loginAsGuest: (fromUrl = "/") => {
     try {
       localStorage.removeItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(DEFAULT_USER));
+      const guestProfile = { ...DEFAULT_USER, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || "{}") };
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(guestProfile));
       localStorage.setItem(STORAGE_KEYS.TOKEN, `guest_token_${Date.now()}`);
       localStorage.removeItem(STORAGE_KEYS.LOGGED_OUT);
     } catch {}
@@ -425,6 +504,8 @@ export const localAuth = {
   },
 
   logout: (redirectUrl) => {
+    // Keep an account-scoped recovery copy before clearing authentication.
+    preserveCurrentGoogleAccount();
     try {
       localStorage.removeItem(STORAGE_KEYS.PRO_SUBSCRIPTION);
 
@@ -502,6 +583,7 @@ export const localIntegrations = {
 };
 
 export function exportFarmData(options = {}) {
+  const readSettings = (key, sanitize) => { try { const raw = localStorage.getItem(key); return raw ? sanitize(JSON.parse(raw)) : null; } catch { return null; } };
   const plantings = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLANTINGS) || "[]");
   const myAnimals = JSON.parse(localStorage.getItem(STORAGE_KEYS.MY_ANIMALS) || "[]");
   const reminders = JSON.parse(localStorage.getItem(STORAGE_KEYS.REMINDERS) || "[]");
@@ -525,10 +607,12 @@ export function exportFarmData(options = {}) {
   }
 
   return {
-    version: 3,
+    version: 4,
     appName: "Horta Viva",
     exportedAt: new Date().toISOString(),
     user,
+    regionalPreferences: readSettings(REGIONAL_STORAGE_KEY, sanitizeRegionalPreferences),
+    appearance: readSettings(APPEARANCE_STORAGE_KEY, sanitizeAppearance),
     subscription,
     deletedIds,
     plantings,
@@ -538,6 +622,12 @@ export function exportFarmData(options = {}) {
 }
 
 export function mergeFarmData(local, remote, options = {}) {
+  const latestSettings = key => {
+    const a = local?.[key], b = remote?.[key];
+    if (!a) return b || null;
+    if (!b) return a;
+    return (Date.parse(b.updatedAt || '') || 0) > (Date.parse(a.updatedAt || '') || 0) ? b : a;
+  };
   let deletedIds = {};
   try {
     const rawLocalDeleted = localStorage.getItem("hortaviva_deleted_ids");
@@ -682,10 +772,12 @@ export function mergeFarmData(local, remote, options = {}) {
   }
 
   return {
-    version: 3,
+    version: 4,
     appName: "Horta Viva",
     exportedAt: new Date().toISOString(),
-    user: remote?.user || local?.user,
+    user: !local?.user ? remote?.user : !remote?.user ? local.user : (Date.parse(remote.user.updated_at || '') || 0) > (Date.parse(local.user.updated_at || '') || 0) ? { ...local.user, ...remote.user } : { ...remote.user, ...local.user },
+    regionalPreferences: latestSettings('regionalPreferences'),
+    appearance: latestSettings('appearance'),
     subscription: mergedSubscription,
     deletedIds,
     plantings: Array.from(plantingsMap.values()),
@@ -700,6 +792,9 @@ export function importFarmData(data, shouldMerge = true) {
   }
 
   const finalData = shouldMerge ? mergeFarmData(exportFarmData(), data) : data;
+  // Older backups omit settings; never replace existing choices with defaults.
+  if (finalData.regionalPreferences && typeof finalData.regionalPreferences === 'object') writeRegionalPreferences(sanitizeRegionalPreferences(finalData.regionalPreferences), { restored: true });
+  if (finalData.appearance && typeof finalData.appearance === 'object') writeAppearance(sanitizeAppearance(finalData.appearance), { restored: true });
 
   if (Array.isArray(finalData.plantings)) {
     localStorage.setItem(STORAGE_KEYS.PLANTINGS, JSON.stringify(finalData.plantings));
@@ -718,9 +813,9 @@ export function importFarmData(data, shouldMerge = true) {
         const mergedUser = {
           ...finalData.user,
           id: g.id || g.sub || finalData.user.id || "google_user",
-          full_name: g.name || finalData.user.full_name || "Agricultor Google",
+          full_name: finalData.user.full_name || g.name || "Agricultor Google",
           email: g.email || finalData.user.email || "agricultor@gmail.com",
-          avatar_url: g.picture || finalData.user.avatar_url || "",
+          avatar_url: typeof finalData.user.avatar_url === 'string' ? finalData.user.avatar_url : g.picture || "",
           auth_provider: "google",
         };
         localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(mergedUser));

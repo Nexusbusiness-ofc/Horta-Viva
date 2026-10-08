@@ -1,5 +1,6 @@
+import { useI18n } from "@/lib/I18nContext";
 import React, { useState } from "react";
-import { Scissors, CheckCircle2, XCircle, AlertTriangle, Lightbulb, Wrench, ShieldCheck, ChevronRight, Box, Layers, Lock, Sparkles } from "lucide-react";
+import { Scissors, CheckCircle2, XCircle, Lightbulb, Wrench, Box, Layers, Lock } from "lucide-react";
 import { PODA_SCHEMAS } from "@/lib/pruningThinningSchemas";
 import Poda3DViewer from "./Poda3DViewer";
 import { useSubscription } from "@/lib/subscription";
@@ -8,9 +9,14 @@ import UpgradeModal from "@/components/subscription/UpgradeModal";
 // --- SVG DIAGRAMS ---
 
 // 1. Diagrama Comparativo do Ângulo de Corte a 45°
-export function CutAngleDiagram({ cutAngle, cutHeight }) {
+export function CutAngleDiagram({
+  cutAngle,
+  cutHeight
+}) {
+  const {
+    t: i18nT
+  } = useI18n();
   const [selectedCut, setSelectedCut] = useState("correct");
-
   const cuts = {
     correct: {
       title: "✅ Corte Correto em Bisel (45°)",
@@ -43,56 +49,27 @@ export function CutAngleDiagram({ cutAngle, cutHeight }) {
       desc: "Fere os tecidos vasculares que alimentam a gema. O nó desidrata e o gomo seca antes de abrir."
     }
   };
-
-  return (
-    <div className="bg-white rounded-2xl border border-stone-200 p-4 sm:p-5 shadow-sm space-y-4">
+  return <div className="bg-white rounded-2xl border border-stone-200 p-4 sm:p-5 shadow-sm space-y-4">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
             <Scissors className="w-4 h-4" />
           </div>
           <div>
-            <h4 className="font-bold text-stone-800 text-sm">Ângulo & Ponto de Corte</h4>
-            <p className="text-xs text-stone-500">Clica em cada exemplo para ver o esquema anatómico</p>
+            <h4 className="font-bold text-stone-800 text-sm">{i18nT("Ângulo & Ponto de Corte")}</h4>
+            <p className="text-xs text-stone-500">{i18nT("Clica em cada exemplo para ver o esquema anatómico")}</p>
           </div>
         </div>
-        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-          Regra dos 45°
-        </span>
+        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">{i18nT("Regra dos 45°")}</span>
       </div>
 
       {/* Selector de botões */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-xs">
-        <button
-          onClick={() => setSelectedCut("correct")}
-          className={`py-1.5 px-2 rounded-xl font-semibold border transition-all ${selectedCut === "correct" ? "bg-emerald-600 text-white border-emerald-600 shadow-sm" : "bg-stone-50 border-stone-200 text-stone-700 hover:bg-emerald-50"}`}
-        >
-          ✅ Correto 45°
-        </button>
-        <button
-          onClick={() => setSelectedCut("flat")}
-          className={`py-1.5 px-2 rounded-xl font-semibold border transition-all ${selectedCut === "flat" ? "bg-rose-600 text-white border-rose-600 shadow-sm" : "bg-stone-50 border-stone-200 text-stone-700 hover:bg-rose-50"}`}
-        >
-          ❌ Reto
-        </button>
-        <button
-          onClick={() => setSelectedCut("inverted")}
-          className={`py-1.5 px-2 rounded-xl font-semibold border transition-all ${selectedCut === "inverted" ? "bg-rose-600 text-white border-rose-600 shadow-sm" : "bg-stone-50 border-stone-200 text-stone-700 hover:bg-rose-50"}`}
-        >
-          ❌ Invertido
-        </button>
-        <button
-          onClick={() => setSelectedCut("long_stub")}
-          className={`py-1.5 px-2 rounded-xl font-semibold border transition-all ${selectedCut === "long_stub" ? "bg-amber-600 text-white border-amber-600 shadow-sm" : "bg-stone-50 border-stone-200 text-stone-700 hover:bg-amber-50"}`}
-        >
-          ❌ Toco Longo
-        </button>
-        <button
-          onClick={() => setSelectedCut("too_close")}
-          className={`py-1.5 px-2 rounded-xl font-semibold border transition-all ${selectedCut === "too_close" ? "bg-rose-600 text-white border-rose-600 shadow-sm" : "bg-stone-50 border-stone-200 text-stone-700 hover:bg-rose-50"}`}
-        >
-          ❌ Muito Rente
-        </button>
+        <button onClick={() => setSelectedCut("correct")} className={`py-1.5 px-2 rounded-xl font-semibold border transition-all ${selectedCut === "correct" ? "bg-emerald-600 text-white border-emerald-600 shadow-sm" : "bg-stone-50 border-stone-200 text-stone-700 hover:bg-emerald-50"}`}>{i18nT("✅ Correto 45°")}</button>
+        <button onClick={() => setSelectedCut("flat")} className={`py-1.5 px-2 rounded-xl font-semibold border transition-all ${selectedCut === "flat" ? "bg-rose-600 text-white border-rose-600 shadow-sm" : "bg-stone-50 border-stone-200 text-stone-700 hover:bg-rose-50"}`}>{i18nT("❌ Reto")}</button>
+        <button onClick={() => setSelectedCut("inverted")} className={`py-1.5 px-2 rounded-xl font-semibold border transition-all ${selectedCut === "inverted" ? "bg-rose-600 text-white border-rose-600 shadow-sm" : "bg-stone-50 border-stone-200 text-stone-700 hover:bg-rose-50"}`}>{i18nT("❌ Invertido")}</button>
+        <button onClick={() => setSelectedCut("long_stub")} className={`py-1.5 px-2 rounded-xl font-semibold border transition-all ${selectedCut === "long_stub" ? "bg-amber-600 text-white border-amber-600 shadow-sm" : "bg-stone-50 border-stone-200 text-stone-700 hover:bg-amber-50"}`}>{i18nT("❌ Toco Longo")}</button>
+        <button onClick={() => setSelectedCut("too_close")} className={`py-1.5 px-2 rounded-xl font-semibold border transition-all ${selectedCut === "too_close" ? "bg-rose-600 text-white border-rose-600 shadow-sm" : "bg-stone-50 border-stone-200 text-stone-700 hover:bg-rose-50"}`}>{i18nT("❌ Muito Rente")}</button>
       </div>
 
       {/* SVG Ilustrativo do Corte Escolhido */}
@@ -123,101 +100,95 @@ export function CutAngleDiagram({ cutAngle, cutHeight }) {
               <path d="M 0 10 Q 15 5 18 -5 Q 12 -12 0 -2 Z" fill="url(#budGrad)" stroke="#14532d" strokeWidth="1.5" />
               <circle cx="8" cy="1" r="2" fill="#86efac" />
               {/* Etiqueta da Gema */}
-              <text x="24" y="0" fontSize="10" fontWeight="bold" fill="#15803d">Gema Exterior</text>
+              <text x="24" y="0" fontSize="10" fontWeight="bold" fill="#15803d">{i18nT("Gema Exterior")}</text>
             </g>
 
             {/* Variações do Topo / Corte Conforme Seleção */}
-            {selectedCut === "correct" && (
-              <g>
+            {selectedCut === "correct" && <g>
                 {/* Corte 45° inclinado para a esquerda (longe da gema) */}
                 <polygon points="95,45 125,75 125,90 95,90" fill="url(#woodStem)" />
                 <line x1="93" y1="43" x2="127" y2="77" stroke="#16a34a" strokeWidth="3.5" strokeLinecap="round" />
                 {/* Linha tracejada do corte e cota de 5mm */}
                 <circle cx="125" cy="75" r="3" fill="#16a34a" />
                 <line x1="130" y1="75" x2="130" y2="88" stroke="#16a34a" strokeWidth="1.5" strokeDasharray="2 2" />
-                <text x="135" y="84" fontSize="9" fontWeight="bold" fill="#15803d">5 mm</text>
+                <text x="135" y="84" fontSize="9" fontWeight="bold" fill="#15803d">{i18nT("5 mm")}</text>
                 {/* Gotas de água escorrendo para a esquerda (fora da gema) */}
                 <path d="M 100 48 Q 98 55 95 62" stroke="#0284c7" strokeWidth="2" fill="none" strokeDasharray="2 2" />
                 <circle cx="94" cy="66" r="2.5" fill="#0284c7" />
-                <text x="40" y="55" fontSize="9" fill="#0284c7" fontWeight="bold">Água escorre ➔</text>
-                <text x="110" y="28" fontSize="11" fontWeight="bold" fill="#16a34a" textAnchor="middle">✅ 45° Bisel Perfeito</text>
-              </g>
-            )}
+                <text x="40" y="55" fontSize="9" fill="#0284c7" fontWeight="bold">{i18nT("Água escorre ➔")}</text>
+                <text x="110" y="28" fontSize="11" fontWeight="bold" fill="#16a34a" textAnchor="middle">{i18nT("✅ 45° Bisel Perfeito")}</text>
+              </g>}
 
-            {selectedCut === "flat" && (
-              <g>
+            {selectedCut === "flat" && <g>
                 <polygon points="95,65 125,65 125,90 95,90" fill="url(#woodStem)" />
                 <line x1="93" y1="65" x2="127" y2="65" stroke="#e11d48" strokeWidth="3.5" strokeLinecap="round" />
                 {/* Poça de água estagnada */}
                 <ellipse cx="110" cy="65" rx="12" ry="3" fill="#38bdf8" stroke="#0284c7" />
-                <text x="110" y="55" fontSize="10" fontWeight="bold" fill="#e11d48" textAnchor="middle">❌ Água Estagnada</text>
-              </g>
-            )}
+                <text x="110" y="55" fontSize="10" fontWeight="bold" fill="#e11d48" textAnchor="middle">{i18nT("❌ Água Estagnada")}</text>
+              </g>}
 
-            {selectedCut === "inverted" && (
-              <g>
+            {selectedCut === "inverted" && <g>
                 {/* Corte inclinado para a direita, escorrendo em cima da gema */}
                 <polygon points="95,75 125,45 125,90 95,90" fill="url(#woodStem)" />
                 <line x1="93" y1="77" x2="127" y2="43" stroke="#e11d48" strokeWidth="3.5" strokeLinecap="round" />
                 {/* Gotas caindo na gema */}
                 <path d="M 124 50 Q 126 68 126 85" stroke="#0284c7" strokeWidth="2" fill="none" strokeDasharray="2 2" />
                 <circle cx="126" cy="88" r="3" fill="#e11d48" />
-                <text x="135" y="60" fontSize="9" fontWeight="bold" fill="#e11d48">Gema afogada!</text>
-                <text x="110" y="28" fontSize="10" fontWeight="bold" fill="#e11d48" textAnchor="middle">❌ Invertido</text>
-              </g>
-            )}
+                <text x="135" y="60" fontSize="9" fontWeight="bold" fill="#e11d48">{i18nT("Gema afogada!")}</text>
+                <text x="110" y="28" fontSize="10" fontWeight="bold" fill="#e11d48" textAnchor="middle">{i18nT("❌ Invertido")}</text>
+              </g>}
 
-            {selectedCut === "long_stub" && (
-              <g>
+            {selectedCut === "long_stub" && <g>
                 {/* Ramo prolonga-se muito para cima */}
                 <rect x="95" y="20" width="30" height="40" fill="#78350f" opacity="0.6" stroke="#451a03" strokeDasharray="3 3" />
                 <line x1="93" y1="20" x2="127" y2="20" stroke="#d97706" strokeWidth="3.5" />
-                <text x="135" y="42" fontSize="9" fontWeight="bold" fill="#d97706">&gt; 25 mm (toco seco)</text>
-                <text x="110" y="14" fontSize="10" fontWeight="bold" fill="#d97706" textAnchor="middle">❌ Toco Morto</text>
-              </g>
-            )}
+                <text x="135" y="42" fontSize="9" fontWeight="bold" fill="#d97706">{i18nT("> 25 mm (toco seco)")}</text>
+                <text x="110" y="14" fontSize="10" fontWeight="bold" fill="#d97706" textAnchor="middle">{i18nT("❌ Toco Morto")}</text>
+              </g>}
 
-            {selectedCut === "too_close" && (
-              <g>
+            {selectedCut === "too_close" && <g>
                 {/* Corte colado ao nó da gema */}
                 <line x1="95" y1="88" x2="125" y2="88" stroke="#e11d48" strokeWidth="3.5" />
                 <circle cx="125" cy="88" r="4" fill="#e11d48" opacity="0.6" />
-                <text x="135" y="92" fontSize="9" fontWeight="bold" fill="#e11d48">Gema ferida!</text>
-                <text x="110" y="40" fontSize="10" fontWeight="bold" fill="#e11d48" textAnchor="middle">❌ Muito Rente</text>
-              </g>
-            )}
+                <text x="135" y="92" fontSize="9" fontWeight="bold" fill="#e11d48">{i18nT("Gema ferida!")}</text>
+                <text x="110" y="40" fontSize="10" fontWeight="bold" fill="#e11d48" textAnchor="middle">{i18nT("❌ Muito Rente")}</text>
+              </g>}
           </svg>
         </div>
 
         <div className="flex-1 space-y-1.5 text-left">
           <div className="flex items-center gap-2">
             <span className={`text-xs font-bold px-2 py-0.5 rounded-md border ${cuts[selectedCut].badgeColor}`}>
-              {cuts[selectedCut].badge}
+              {i18nT(cuts[selectedCut].badge)}
             </span>
-            <h5 className="text-sm font-bold text-stone-800">{cuts[selectedCut].title}</h5>
+            <h5 className="text-sm font-bold text-stone-800">{i18nT(cuts[selectedCut].title)}</h5>
           </div>
-          <p className="text-xs text-stone-600 leading-relaxed">{cuts[selectedCut].desc}</p>
+          <p className="text-xs text-stone-600 leading-relaxed">{i18nT(cuts[selectedCut].desc)}</p>
           <div className="pt-1 text-[11px] text-emerald-700 bg-emerald-50/60 p-2 rounded-lg border border-emerald-100 flex items-center gap-1.5">
             <Lightbulb className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
-            <span><b>Regra prática:</b> {cutAngle || "Bisel a 45° virado para o lado oposto à gema"} ({cutHeight || "5 mm acima do gomo"}).</span>
+            <span><b>{i18nT("Regra prática:")}</b> {cutAngle || i18nT("Bisel a 45° virado para o lado oposto à gema")} ({cutHeight || i18nT("5 mm acima do gomo")}).</span>
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }
 
 // 2. Diagrama Específico de Arquitetura da Árvore
-export function TreeArchitectureDiagram({ type, name }) {
+export function TreeArchitectureDiagram({
+  type,
+  name
+}) {
+  const {
+    t: i18nT
+  } = useI18n();
   if (type === "grapevine_winter") {
-    return (
-      <div className="bg-white rounded-2xl border border-stone-200 p-4 shadow-sm space-y-2 text-center">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700">Esquema de Cordão da Vinha (Royat / Guyot)</h4>
+    return <div className="bg-white rounded-2xl border border-stone-200 p-4 shadow-sm space-y-2 text-center">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700">{i18nT("Esquema de Cordão da Vinha (Royat / Guyot)")}</h4>
         <div className="w-full h-44 bg-gradient-to-b from-stone-50 to-purple-50/20 rounded-xl flex items-center justify-center p-2 border border-stone-100">
           <svg viewBox="0 0 320 160" className="w-full h-full max-h-40">
             {/* Arame horizontal */}
             <line x1="10" y1="90" x2="310" y2="90" stroke="#94a3b8" strokeWidth="2" strokeDasharray="5 3" />
-            <text x="280" y="85" fontSize="8" fill="#64748b">Arame</text>
+            <text x="280" y="85" fontSize="8" fill="#64748b">{i18nT("Arame")}</text>
             
             {/* Tronco da videira */}
             <path d="M 60 150 Q 65 110 80 90 L 260 90" stroke="#78350f" strokeWidth="10" fill="none" strokeLinecap="round" />
@@ -231,14 +202,14 @@ export function TreeArchitectureDiagram({ type, name }) {
               <circle cx="4" cy="-24" r="3" fill="#16a34a" />
               {/* Corte a 45° */}
               <line x1="-3" y1="-32" x2="12" y2="-28" stroke="#dc2626" strokeWidth="2.5" strokeDasharray="2 2" />
-              <text x="-25" y="-35" fontSize="8" fontWeight="bold" fill="#dc2626">✂️ Talão (2 gomos)</text>
+              <text x="-25" y="-35" fontSize="8" fontWeight="bold" fill="#dc2626">{i18nT("✂️ Talão (2 gomos)")}</text>
             </g>
 
             {/* Vara velha eliminada */}
             <g transform="translate(180, 90)">
               <line x1="0" y1="0" x2="15" y2="-50" stroke="#9ca3af" strokeWidth="4" strokeDasharray="3 3" opacity="0.6" />
               <line x1="-5" y1="-5" x2="15" y2="-1" stroke="#dc2626" strokeWidth="2.5" />
-              <text x="20" y="-35" fontSize="8" fill="#ef4444">✂️ Vara velha (eliminar)</text>
+              <text x="20" y="-35" fontSize="8" fill="#ef4444">{i18nT("✂️ Vara velha (eliminar)")}</text>
             </g>
 
             {/* Talão 2 - 2 gomos */}
@@ -247,26 +218,23 @@ export function TreeArchitectureDiagram({ type, name }) {
               <circle cx="-2" cy="-12" r="3" fill="#16a34a" />
               <circle cx="-4" cy="-24" r="3" fill="#16a34a" />
               <line x1="-12" y1="-28" x2="3" y2="-32" stroke="#dc2626" strokeWidth="2.5" strokeDasharray="2 2" />
-              <text x="-5" y="-36" fontSize="8" fontWeight="bold" fill="#16a34a">🌿 2 Gomos</text>
+              <text x="-5" y="-36" fontSize="8" fontWeight="bold" fill="#16a34a">{i18nT("🌿 2 Gomos")}</text>
             </g>
 
             {/* Rebentos ladrões da base a eliminar */}
             <g transform="translate(60, 130)">
               <line x1="0" y1="0" x2="-20" y2="-15" stroke="#ef4444" strokeWidth="2.5" strokeDasharray="2 2" />
               <circle cx="-20" cy="-15" r="2" fill="#ef4444" />
-              <text x="-55" y="-5" fontSize="8" fill="#ef4444">✂️ Ladrão basal</text>
+              <text x="-55" y="-5" fontSize="8" fill="#ef4444">{i18nT("✂️ Ladrão basal")}</text>
             </g>
           </svg>
         </div>
-        <p className="text-[11px] text-stone-500">Talões de 2 gomos férteis no braço horizontal; eliminação total de sarmentos velhos e ladrões basais.</p>
-      </div>
-    );
+        <p className="text-[11px] text-stone-500">{i18nT("Talões de 2 gomos férteis no braço horizontal; eliminação total de sarmentos velhos e ladrões basais.")}</p>
+      </div>;
   }
-
   if (type === "citrus") {
-    return (
-      <div className="bg-white rounded-2xl border border-stone-200 p-4 shadow-sm space-y-2 text-center">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700">Esquema da Laranjeira / Citrinos (Guarda-Chuva Iluminado)</h4>
+    return <div className="bg-white rounded-2xl border border-stone-200 p-4 shadow-sm space-y-2 text-center">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700">{i18nT("Esquema da Laranjeira / Citrinos (Guarda-Chuva Iluminado)")}</h4>
         <div className="w-full h-44 bg-gradient-to-b from-stone-50 to-orange-50/20 rounded-xl flex items-center justify-center p-2 border border-stone-100">
           <svg viewBox="0 0 320 160" className="w-full h-full max-h-40">
             {/* Solo */}
@@ -274,7 +242,7 @@ export function TreeArchitectureDiagram({ type, name }) {
             
             {/* Saia a 35cm */}
             <line x1="60" y1="115" x2="260" y2="115" stroke="#0284c7" strokeWidth="1" strokeDasharray="3 3" />
-            <text x="270" y="118" fontSize="8" fill="#0284c7">Saia &gt; 35cm</text>
+            <text x="270" y="118" fontSize="8" fill="#0284c7">{i18nT("Saia > 35cm")}</text>
 
             {/* Tronco */}
             <rect x="150" y="90" width="20" height="55" fill="#78350f" rx="3" />
@@ -290,36 +258,33 @@ export function TreeArchitectureDiagram({ type, name }) {
 
             {/* Miolo desbastado (luz no interior) */}
             <path d="M 130 90 L 145 50 L 175 50 L 190 90" stroke="#a16207" strokeWidth="4" fill="none" />
-            <text x="160" y="65" fontSize="8" fontWeight="bold" fill="#047857" textAnchor="middle">☀️ Luz interior</text>
+            <text x="160" y="65" fontSize="8" fontWeight="bold" fill="#047857" textAnchor="middle">{i18nT("☀️ Luz interior")}</text>
 
             {/* Chupão / Ladrão vertical central cortado */}
             <line x1="160" y1="70" x2="160" y2="25" stroke="#ef4444" strokeWidth="3" strokeDasharray="3 2" />
             <line x1="150" y1="50" x2="170" y2="45" stroke="#ef4444" strokeWidth="2.5" />
-            <text x="160" y="22" fontSize="8" fontWeight="bold" fill="#ef4444" textAnchor="middle">✂️ Cortar Ladrão</text>
+            <text x="160" y="22" fontSize="8" fontWeight="bold" fill="#ef4444" textAnchor="middle">{i18nT("✂️ Cortar Ladrão")}</text>
 
             {/* Ramo baixo que arrasta no chão cortado */}
             <path d="M 150 115 Q 120 125 90 145" stroke="#ef4444" strokeWidth="2.5" strokeDasharray="2 2" fill="none" />
-            <text x="40" y="140" fontSize="8" fill="#ef4444">✂️ Ramo rasteiro</text>
+            <text x="40" y="140" fontSize="8" fill="#ef4444">{i18nT("✂️ Ramo rasteiro")}</text>
           </svg>
         </div>
-        <p className="text-[11px] text-stone-500">Centro iluminado sem ladrões verticais; frutos mantidos na periferia e saia desimpedida a 35 cm do solo.</p>
-      </div>
-    );
+        <p className="text-[11px] text-stone-500">{i18nT("Centro iluminado sem ladrões verticais; frutos mantidos na periferia e saia desimpedida a 35 cm do solo.")}</p>
+      </div>;
   }
-
   if (type === "heavy_branch_3cut") {
-    return (
-      <div className="bg-white rounded-2xl border border-stone-200 p-4 shadow-sm space-y-2 text-center">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700">Técnica dos 3 Cortes para Ramos Pesados</h4>
+    return <div className="bg-white rounded-2xl border border-stone-200 p-4 shadow-sm space-y-2 text-center">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700">{i18nT("Técnica dos 3 Cortes para Ramos Pesados")}</h4>
         <div className="w-full h-44 bg-gradient-to-b from-stone-50 to-emerald-50/20 rounded-xl flex items-center justify-center p-2 border border-stone-100">
           <svg viewBox="0 0 320 160" className="w-full h-full max-h-40">
             {/* Tronco da árvore */}
             <rect x="20" y="10" width="45" height="140" fill="#78350f" rx="4" />
-            <text x="42" y="85" fontSize="9" fontWeight="bold" fill="#fef3c7" textAnchor="middle">Tronco</text>
+            <text x="42" y="85" fontSize="9" fontWeight="bold" fill="#fef3c7" textAnchor="middle">{i18nT("Tronco")}</text>
 
             {/* Colar de cicatrização */}
             <path d="M 65 50 Q 75 80 65 110 L 80 100 L 80 60 Z" fill="#92400e" opacity="0.7" />
-            <text x="75" y="45" fontSize="8" fill="#92400e">Colar</text>
+            <text x="75" y="45" fontSize="8" fill="#92400e">{i18nT("Colar")}</text>
 
             {/* Ramo grosso que se projeta */}
             <rect x="65" y="60" width="220" height="40" fill="#a16207" rx="3" />
@@ -328,32 +293,29 @@ export function TreeArchitectureDiagram({ type, name }) {
             <g transform="translate(170, 100)">
               <line x1="0" y1="0" x2="0" y2="-18" stroke="#16a34a" strokeWidth="3" />
               <polygon points="-3,-18 3,-18 0,-24" fill="#16a34a" />
-              <text x="0" y="15" fontSize="8" fontWeight="bold" fill="#16a34a" textAnchor="middle">1. Alívio inferior</text>
+              <text x="0" y="15" fontSize="8" fontWeight="bold" fill="#16a34a" textAnchor="middle">{i18nT("1. Alívio inferior")}</text>
             </g>
 
             {/* Corte 2: Por cima a 25 cm */}
             <g transform="translate(200, 60)">
               <line x1="0" y1="0" x2="0" y2="28" stroke="#0284c7" strokeWidth="3" />
               <polygon points="-3,28 3,28 0,34" fill="#0284c7" />
-              <text x="0" y="-8" fontSize="8" fontWeight="bold" fill="#0284c7" textAnchor="middle">2. Queda limpa</text>
+              <text x="0" y="-8" fontSize="8" fontWeight="bold" fill="#0284c7" textAnchor="middle">{i18nT("2. Queda limpa")}</text>
             </g>
 
             {/* Corte 3: Final junto ao colar */}
             <g transform="translate(85, 60)">
               <line x1="0" y1="-5" x2="0" y2="45" stroke="#dc2626" strokeWidth="3.5" strokeDasharray="3 2" />
-              <text x="5" y="-10" fontSize="8" fontWeight="bold" fill="#dc2626">3. Corte final no colar</text>
+              <text x="5" y="-10" fontSize="8" fontWeight="bold" fill="#dc2626">{i18nT("3. Corte final no colar")}</text>
             </g>
           </svg>
         </div>
-        <p className="text-[11px] text-stone-500">Passo 1 (alívio inferior) impede que o peso do ramo rasgue a casca do tronco; Passo 3 sela junto ao colar cicatrizante.</p>
-      </div>
-    );
+        <p className="text-[11px] text-stone-500">{i18nT("Passo 1 (alívio inferior) impede que o peso do ramo rasgue a casca do tronco; Passo 3 sela junto ao colar cicatrizante.")}</p>
+      </div>;
   }
-
   if (type === "bush_berries") {
-    return (
-      <div className="bg-white rounded-2xl border border-stone-200 p-4 shadow-sm space-y-2 text-center">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700">Esquema de Renovação de Canas (Framboesa / Mirtilo)</h4>
+    return <div className="bg-white rounded-2xl border border-stone-200 p-4 shadow-sm space-y-2 text-center">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700">{i18nT("Esquema de Renovação de Canas (Framboesa / Mirtilo)")}</h4>
         <div className="w-full h-44 bg-gradient-to-b from-stone-50 to-pink-50/20 rounded-xl flex items-center justify-center p-2 border border-stone-100">
           <svg viewBox="0 0 320 160" className="w-full h-full max-h-40">
             {/* Solo */}
@@ -362,11 +324,11 @@ export function TreeArchitectureDiagram({ type, name }) {
             {/* Canas Velhas Secas de 2º ano (Castanhas - Cortar a 0 cm) */}
             <path d="M 120 145 Q 110 80 85 40" stroke="#78350f" strokeWidth="5" strokeDasharray="3 2" fill="none" opacity="0.6" />
             <line x1="110" y1="140" x2="130" y2="140" stroke="#dc2626" strokeWidth="3" />
-            <text x="60" y="35" fontSize="8" fill="#dc2626">✂️ Cana velha seca (0 cm)</text>
+            <text x="60" y="35" fontSize="8" fill="#dc2626">{i18nT("✂️ Cana velha seca (0 cm)")}</text>
 
             <path d="M 180 145 Q 200 80 230 45" stroke="#78350f" strokeWidth="5" strokeDasharray="3 2" fill="none" opacity="0.6" />
             <line x1="170" y1="140" x2="190" y2="140" stroke="#dc2626" strokeWidth="3" />
-            <text x="210" y="40" fontSize="8" fill="#dc2626">✂️ Cortar rente ao solo</text>
+            <text x="210" y="40" fontSize="8" fill="#dc2626">{i18nT("✂️ Cortar rente ao solo")}</text>
 
             {/* Canas Novas Verdes do Ano (Manter e amarrar) */}
             <path d="M 140 145 Q 135 70 135 25" stroke="#16a34a" strokeWidth="5" fill="none" />
@@ -379,19 +341,17 @@ export function TreeArchitectureDiagram({ type, name }) {
 
             {/* Desponte de canas a 1,20m */}
             <line x1="125" y1="25" x2="180" y2="25" stroke="#0284c7" strokeWidth="2" strokeDasharray="2 2" />
-            <text x="155" y="18" fontSize="8" fontWeight="bold" fill="#0284c7" textAnchor="middle">Desponte a 1,20 m</text>
-            <text x="155" y="110" fontSize="8" fontWeight="bold" fill="#16a34a" textAnchor="middle">🌿 Canas novas (Manter)</text>
+            <text x="155" y="18" fontSize="8" fontWeight="bold" fill="#0284c7" textAnchor="middle">{i18nT("Desponte a 1,20 m")}</text>
+            <text x="155" y="110" fontSize="8" fontWeight="bold" fill="#16a34a" textAnchor="middle">{i18nT("🌿 Canas novas (Manter)")}</text>
           </svg>
         </div>
-        <p className="text-[11px] text-stone-500">Canas secas que já deram fruto são ceifadas ao nível do chão (0 cm); canas verdes novas são preservadas e despontadas.</p>
-      </div>
-    );
+        <p className="text-[11px] text-stone-500">{i18nT("Canas secas que já deram fruto são ceifadas ao nível do chão (0 cm); canas verdes novas são preservadas e despontadas.")}</p>
+      </div>;
   }
 
   // Padrão Geral: Copa em Taça Aberta (Macieira, Pereira, Pessegueiro, etc.)
-  return (
-    <div className="bg-white rounded-2xl border border-stone-200 p-4 shadow-sm space-y-2 text-center">
-      <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700">Esquema de Copa em Taça Aberta ({name})</h4>
+  return <div className="bg-white rounded-2xl border border-stone-200 p-4 shadow-sm space-y-2 text-center">
+      <h4 className="text-xs font-bold uppercase tracking-wider text-stone-700">{i18nT("Esquema de Copa em Taça Aberta (")}{i18nT(name)})</h4>
       <div className="w-full h-44 bg-gradient-to-b from-stone-50 to-emerald-50/20 rounded-xl flex items-center justify-center p-2 border border-stone-100">
         <svg viewBox="0 0 320 160" className="w-full h-full max-h-40">
           {/* Solo */}
@@ -399,7 +359,7 @@ export function TreeArchitectureDiagram({ type, name }) {
 
           {/* Tronco */}
           <rect x="150" y="85" width="20" height="60" fill="#78350f" rx="3" />
-          <text x="160" y="125" fontSize="8" fill="#fef3c7" textAnchor="middle">Tronco</text>
+          <text x="160" y="125" fontSize="8" fill="#fef3c7" textAnchor="middle">{i18nT("Tronco")}</text>
 
           {/* Pernadas mestras abertas a 45° (Taça Verde - Manter) */}
           <path d="M 152 88 Q 110 70 70 40" stroke="#15803d" strokeWidth="7" fill="none" strokeLinecap="round" />
@@ -413,29 +373,33 @@ export function TreeArchitectureDiagram({ type, name }) {
 
           {/* Centro Aberto: Sol a entrar */}
           <circle cx="160" cy="20" r="10" fill="#f59e0b" opacity="0.8" />
-          <text x="160" y="45" fontSize="8" fontWeight="bold" fill="#b45309" textAnchor="middle">Centro Livre (Sol)</text>
+          <text x="160" y="45" fontSize="8" fontWeight="bold" fill="#b45309" textAnchor="middle">{i18nT("Centro Livre (Sol)")}</text>
 
           {/* Ramos Ladrões Verticais (Vermelhos - Cortar) */}
           <line x1="130" y1="78" x2="130" y2="30" stroke="#ef4444" strokeWidth="3" strokeDasharray="3 2" />
           <line x1="123" y1="55" x2="137" y2="55" stroke="#ef4444" strokeWidth="2" />
-          <text x="110" y="25" fontSize="8" fontWeight="bold" fill="#ef4444">✂️ Ladrão</text>
+          <text x="110" y="25" fontSize="8" fontWeight="bold" fill="#ef4444">{i18nT("✂️ Ladrão")}</text>
 
           {/* Ramo cruzado ao centro (Vermelho - Cortar) */}
           <path d="M 90 60 Q 140 70 175 65" stroke="#ef4444" strokeWidth="2.5" strokeDasharray="2 2" fill="none" />
-          <text x="185" y="70" fontSize="8" fill="#ef4444">✂️ Cruzado</text>
+          <text x="185" y="70" fontSize="8" fill="#ef4444">{i18nT("✂️ Cruzado")}</text>
 
           {/* Rebentos ladrões de raiz (Vermelhos - Cortar) */}
           <line x1="145" y1="135" x2="125" y2="120" stroke="#ef4444" strokeWidth="2.5" strokeDasharray="2 2" />
-          <text x="85" y="130" fontSize="8" fill="#ef4444">✂️ Ladrão basal</text>
+          <text x="85" y="130" fontSize="8" fill="#ef4444">{i18nT("✂️ Ladrão basal")}</text>
         </svg>
       </div>
-      <p className="text-[11px] text-stone-500">Copa em cálice com centro desimpedido para entrar o sol; corte de ladrões verticais e ramos cruzados.</p>
-    </div>
-  );
+      <p className="text-[11px] text-stone-500">{i18nT("Copa em cálice com centro desimpedido para entrar o sol; corte de ladrões verticais e ramos cruzados.")}</p>
+    </div>;
 }
 
 // --- COMPONENTE PRINCIPAL PodaSchemaViewer ---
-export default function PodaSchemaViewer({ poda }) {
+export default function PodaSchemaViewer({
+  poda
+}) {
+  const {
+    t: i18nT
+  } = useI18n();
   const schema = PODA_SCHEMAS[poda?.id] || {
     title: poda?.name,
     diagramType: "cup_shape",
@@ -443,133 +407,84 @@ export default function PodaSchemaViewer({ poda }) {
     cutHeight: "5 mm acima do gomo exterior",
     goldenRule: "Corta em bisel a 45° virado para o lado oposto da gema e mantém o centro da copa aberto à luz solar.",
     tools: ["Tesoura de poda afiada", "Serrote", "Desinfetante de lâminas"],
-    steps: [
-      {
-        step: 1,
-        title: "Limpeza Sanitária",
-        badge: "Sanidade",
-        cut: "Ramos secos, doentes, lascados ou atacados por pragas.",
-        keep: "Madeira sã e ramos vigorosos.",
-        description: "Começa sempre por eliminar o material vegetal morto ou com necroses.",
-        proTip: "Desinfeta a tesoura com álcool entre árvores diferentes."
-      },
-      {
-        step: 2,
-        title: "Desbaste e Arejamento",
-        badge: "Arejamento",
-        cut: "Ramos cruzados que atritem uns nos outros e ladrões verticais.",
-        keep: "Ramos bem orientados com ângulo de 45° a 60°.",
-        description: "Abre o miolo da árvore para permitir a circulação de ar e passagem do sol.",
-        proTip: "O sol é o melhor fungicida natural."
-      },
-      {
-        step: 3,
-        title: "Corte Produtivo em Bisel",
-        badge: "Execução",
-        cut: "Desponte de pontas a 45° sobre gema exterior.",
-        keep: "Esporões florais e ramos de produção.",
-        description: "Faz o corte a 45°, 5 mm acima de uma gema orientada para fora.",
-        proTip: "A lâmina de corte deve ficar virada para o ramo que fica na árvore."
-      }
-    ]
+    steps: [{
+      step: 1,
+      title: "Limpeza Sanitária",
+      badge: "Sanidade",
+      cut: "Ramos secos, doentes, lascados ou atacados por pragas.",
+      keep: "Madeira sã e ramos vigorosos.",
+      description: "Começa sempre por eliminar o material vegetal morto ou com necroses.",
+      proTip: "Desinfeta a tesoura com álcool entre árvores diferentes."
+    }, {
+      step: 2,
+      title: "Desbaste e Arejamento",
+      badge: "Arejamento",
+      cut: "Ramos cruzados que atritem uns nos outros e ladrões verticais.",
+      keep: "Ramos bem orientados com ângulo de 45° a 60°.",
+      description: "Abre o miolo da árvore para permitir a circulação de ar e passagem do sol.",
+      proTip: "O sol é o melhor fungicida natural."
+    }, {
+      step: 3,
+      title: "Corte Produtivo em Bisel",
+      badge: "Execução",
+      cut: "Desponte de pontas a 45° sobre gema exterior.",
+      keep: "Esporões florais e ramos de produção.",
+      description: "Faz o corte a 45°, 5 mm acima de uma gema orientada para fora.",
+      proTip: "A lâmina de corte deve ficar virada para o ramo que fica na árvore."
+    }]
   };
-
-  const { isPro, isPlus, isUltra, canAccessPruning2D, canAccessPruning3D, tier } = useSubscription();
+  const {
+    isPro,
+    isPlus,
+    isUltra,
+    canAccessPruning2D,
+    canAccessPruning3D,
+    tier
+  } = useSubscription();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [viewDimension, setViewDimension] = useState(canAccessPruning3D ? "3d" : "2d");
-
-  return (
-    <div className="space-y-5">
+  return <div className="space-y-5">
       {/* Modal de Upgrade */}
-      <UpgradeModal
-        isOpen={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        reason="esquemas"
-        customTitle="Desbloquear Esquemas de Podas"
-        customDescription="Acede aos esquemas vetoriais 2D e simulações 3D interativas de podas e mondas."
-      />
+      <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} reason="esquemas" customTitle="Desbloquear Esquemas de Podas" customDescription="Acede aos esquemas vetoriais 2D e simulações 3D interativas de podas e mondas." />
 
       {/* Comutador 3D / 2D */}
       <div className="flex items-center justify-between gap-1.5 bg-stone-100 p-1 rounded-2xl border border-stone-200/80">
-        <button
-          onClick={() => setViewDimension("3d")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
-            viewDimension === "3d"
-              ? "bg-emerald-600 text-white shadow-sm"
-              : "text-stone-600 hover:text-stone-900"
-          }`}
-        >
+        <button onClick={() => setViewDimension("3d")} className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all ${viewDimension === "3d" ? "bg-emerald-600 text-white shadow-sm" : "text-stone-600 hover:text-stone-900"}`}>
           <Box className="w-3.5 h-3.5" />
-          <span>🎮 Modelo 3D Interativo (360°)</span>
+          <span>{i18nT("🎮 Modelo 3D Interativo (360°)")}</span>
           {!canAccessPruning3D && <Lock className="w-3 h-3 text-amber-400 shrink-0" />}
         </button>
-        <button
-          onClick={() => setViewDimension("2d")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
-            viewDimension === "2d"
-              ? "bg-emerald-600 text-white shadow-sm"
-              : "text-stone-600 hover:text-stone-900"
-          }`}
-        >
+        <button onClick={() => setViewDimension("2d")} className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all ${viewDimension === "2d" ? "bg-emerald-600 text-white shadow-sm" : "text-stone-600 hover:text-stone-900"}`}>
           <Layers className="w-3.5 h-3.5" />
-          <span>📐 Esquema 2D Vetorial</span>
+          <span>{i18nT("📐 Esquema 2D Vetorial")}</span>
           {!canAccessPruning2D && <Lock className="w-3 h-3 text-amber-400 shrink-0" />}
         </button>
       </div>
 
-      {viewDimension === "3d" ? (
-        <div className="relative rounded-3xl overflow-hidden">
+      {viewDimension === "3d" ? <div className="relative rounded-3xl overflow-hidden">
           <div className={!canAccessPruning3D ? "filter blur-md pointer-events-none select-none opacity-30" : ""}>
             <Poda3DViewer diagramType={schema.diagramType} name={poda?.name} />
           </div>
-          {!canAccessPruning3D && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs">
+          {!canAccessPruning3D && <div className="absolute inset-0 z-10 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs">
               <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-6 max-w-sm w-full border border-stone-200 shadow-xl text-center space-y-3 animate-in fade-in zoom-in-95">
                 <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-200 flex items-center justify-center mx-auto text-amber-600">
                   <Lock className="w-6 h-6" />
                 </div>
                 <div>
-                  <h4 className="font-black text-stone-800 text-base">Esquema 3D Bloqueado</h4>
+                  <h4 className="font-black text-stone-800 text-base">{i18nT("Esquema 3D Bloqueado")}</h4>
                   <p className="text-xs text-stone-600 mt-1 leading-relaxed">
-                    {isPlus
-                      ? "O modelo 3D interativo está disponível no Plano Pro (2,99€) e Ultra (3,99€). Podes usar o Esquema 2D incluído no teu Plano Plus!"
-                      : "Os esquemas 2D e 3D de podas e mondas estão disponíveis a partir do Plano Plus (1,99€/mês)."}
+                    {isPlus ? i18nT("O modelo 3D interativo está disponível no Plano Pro (2,99€) e Ultra (3,99€). Podes usar o Esquema 2D incluído no teu Plano Plus!") : i18nT("Os esquemas 2D e 3D de podas e mondas estão disponíveis a partir do Plano Plus (1,99€/mês).")}
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 pt-1">
-                  {isPlus ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setViewDimension("2d")}
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-xs transition-all"
-                      >
-                        Ver Esquema 2D (Incluído no Plus)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowUpgradeModal(true)}
-                        className="w-full bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-xs py-2 px-3 rounded-xl transition-all"
-                      >
-                        Upgrade Pro (2,99€) para 3D
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setShowUpgradeModal(true)}
-                      className="w-full bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-md transition-all active:scale-95"
-                    >
-                      Desbloquear Esquemas (1,99€)
-                    </button>
-                  )}
+                  {isPlus ? <>
+                      <button type="button" onClick={() => setViewDimension("2d")} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-xs transition-all">{i18nT("Ver Esquema 2D (Incluído no Plus)")}</button>
+                      <button type="button" onClick={() => setShowUpgradeModal(true)} className="w-full bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-xs py-2 px-3 rounded-xl transition-all">{i18nT("Upgrade Pro (2,99€) para 3D")}</button>
+                    </> : <button type="button" onClick={() => setShowUpgradeModal(true)} className="w-full bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-md transition-all active:scale-95">{i18nT("Desbloquear Esquemas (1,99€)")}</button>}
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="relative rounded-3xl overflow-hidden">
+            </div>}
+        </div> : <div className="relative rounded-3xl overflow-hidden">
           <div className={!canAccessPruning2D ? "filter blur-md pointer-events-none select-none opacity-30 space-y-4" : "space-y-4"}>
             {/* 1. Ângulo de Corte Anatómico */}
             <CutAngleDiagram cutAngle={schema.cutAngle} cutHeight={schema.cutHeight} />
@@ -577,72 +492,56 @@ export default function PodaSchemaViewer({ poda }) {
             {/* 2. Diagrama de Arquitetura da Árvore */}
             <TreeArchitectureDiagram type={schema.diagramType} name={poda?.name} />
           </div>
-          {!canAccessPruning2D && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs">
+          {!canAccessPruning2D && <div className="absolute inset-0 z-10 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs">
               <div className="bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-6 max-w-sm w-full border border-stone-200 shadow-xl text-center space-y-3 animate-in fade-in zoom-in-95">
                 <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-200 flex items-center justify-center mx-auto text-amber-600">
                   <Lock className="w-6 h-6" />
                 </div>
                 <div>
-                  <h4 className="font-black text-stone-800 text-base">Esquemas 2D Bloqueados</h4>
-                  <p className="text-xs text-stone-600 mt-1 leading-relaxed">
-                    Os diagramas anatómicos vetoriais e cortes em bisel estão disponíveis a partir do <strong>Plano Plus (1,99€/mês)</strong>.
+                  <h4 className="font-black text-stone-800 text-base">{i18nT("Esquemas 2D Bloqueados")}</h4>
+                  <p className="text-xs text-stone-600 mt-1 leading-relaxed">{i18nT("Os diagramas anatómicos vetoriais e cortes em bisel estão disponíveis a partir do ")}<strong>{i18nT("Plano Plus (1,99€/mês)")}</strong>.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowUpgradeModal(true)}
-                  className="w-full bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-md transition-all active:scale-95"
-                >
-                  Desbloquear Esquemas (1,99€)
-                </button>
+                <button type="button" onClick={() => setShowUpgradeModal(true)} className="w-full bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-md transition-all active:scale-95">{i18nT("Desbloquear Esquemas (1,99€)")}</button>
               </div>
-            </div>
-          )}
-        </div>
-      )}
+            </div>}
+        </div>}
 
       {/* 3. Caixa de Regra de Ouro do Podador */}
-      {schema.goldenRule && (
-        <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border-l-4 border-amber-500 rounded-r-2xl p-4">
+      {schema.goldenRule && <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border-l-4 border-amber-500 rounded-r-2xl p-4">
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0 text-amber-700 font-bold">
               👑
             </div>
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-amber-900">Regra de Ouro do Podador</h4>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-amber-900">{i18nT("Regra de Ouro do Podador")}</h4>
               <p className="text-xs sm:text-sm text-stone-700 mt-0.5 leading-relaxed font-medium">
-                {schema.goldenRule}
+                {i18nT(schema.goldenRule)}
               </p>
             </div>
           </div>
-        </div>
-      )}
+        </div>}
 
       {/* 4. Passo a Passo Esquematizado */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h4 className="font-bold text-stone-800 text-sm flex items-center gap-2">
-            <span>📋</span> Passo a Passo de Execução Técnica
-          </h4>
-          <span className="text-xs text-stone-400 font-medium">({schema.steps?.length || 0} fases)</span>
+            <span>📋</span>{i18nT(" Passo a Passo de Execução Técnica")}</h4>
+          <span className="text-xs text-stone-400 font-medium">({schema.steps?.length || 0}{i18nT(" fases)")}</span>
         </div>
 
         <div className="space-y-3">
-          {(schema.steps || []).map((s) => (
-            <div key={s.step} className="bg-white rounded-2xl border border-stone-200/90 p-4 shadow-sm hover:border-emerald-300 transition-colors space-y-3">
+          {i18nT((schema.steps || []).map(s => <div key={s.step} className="bg-white rounded-2xl border border-stone-200/90 p-4 shadow-sm hover:border-emerald-300 transition-colors space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5">
                   <div className="w-7 h-7 rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center shadow-sm">
-                    {s.step}
+                    {i18nT(s.step)}
                   </div>
-                  <h5 className="font-bold text-stone-800 text-sm">{s.title}</h5>
+                  <h5 className="font-bold text-stone-800 text-sm">{i18nT(s.title)}</h5>
                 </div>
-                {s.badge && (
-                  <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
-                    {s.badge}
-                  </span>
-                )}
+                {s.badge && <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
+                    {i18nT(s.badge)}
+                  </span>}
               </div>
 
               {/* Bloco O que Cortar vs O que Manter */}
@@ -650,49 +549,41 @@ export default function PodaSchemaViewer({ poda }) {
                 <div className="bg-rose-50/70 border border-rose-200/80 rounded-xl p-2.5 space-y-1">
                   <div className="flex items-center gap-1.5 font-bold text-rose-800">
                     <XCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                    <span>✂️ O QUE CORTAR:</span>
+                    <span>{i18nT("✂️ O QUE CORTAR:")}</span>
                   </div>
-                  <p className="text-rose-950 pl-5 leading-relaxed">{s.cut}</p>
+                  <p className="text-rose-950 pl-5 leading-relaxed">{i18nT(s.cut)}</p>
                 </div>
 
                 <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-2.5 space-y-1">
                   <div className="flex items-center gap-1.5 font-bold text-emerald-800">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>🌿 O QUE MANTER:</span>
+                    <span>{i18nT("🌿 O QUE MANTER:")}</span>
                   </div>
-                  <p className="text-emerald-950 pl-5 leading-relaxed">{s.keep}</p>
+                  <p className="text-emerald-950 pl-5 leading-relaxed">{i18nT(s.keep)}</p>
                 </div>
               </div>
 
-              <p className="text-xs text-stone-600 leading-relaxed">{s.description}</p>
+              <p className="text-xs text-stone-600 leading-relaxed">{i18nT(s.description)}</p>
 
-              {s.proTip && (
-                <div className="text-[11px] bg-amber-50/60 border border-amber-200/60 rounded-xl p-2.5 text-amber-900 flex items-start gap-2">
+              {s.proTip && <div className="text-[11px] bg-amber-50/60 border border-amber-200/60 rounded-xl p-2.5 text-amber-900 flex items-start gap-2">
                   <Lightbulb className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
-                  <span><b>Dica de Mestre:</b> {s.proTip}</span>
-                </div>
-              )}
-            </div>
-          ))}
+                  <span><b>{i18nT("Dica de Mestre:")}</b> {i18nT(s.proTip)}</span>
+                </div>}
+            </div>))}
         </div>
       </div>
 
       {/* 5. Ferramentas Recomendadas */}
-      {schema.tools && (
-        <div className="bg-stone-50 rounded-2xl p-4 border border-stone-200/70 space-y-2">
+      {schema.tools && <div className="bg-stone-50 rounded-2xl p-4 border border-stone-200/70 space-y-2">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-stone-700">
             <Wrench className="w-4 h-4 text-stone-500" />
-            <span>Ferramentas & Proteção Sanitária</span>
+            <span>{i18nT("Ferramentas & Proteção Sanitária")}</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {schema.tools.map((t, idx) => (
-              <span key={idx} className="text-xs font-medium px-2.5 py-1 rounded-lg bg-white border border-stone-200 text-stone-700 shadow-2xs">
-                🔧 {t}
-              </span>
-            ))}
+            {i18nT(schema.tools.map((t, idx) => <span key={idx} className="text-xs font-medium px-2.5 py-1 rounded-lg bg-white border border-stone-200 text-stone-700 shadow-2xs">
+                🔧 {i18nT(t)}
+              </span>))}
           </div>
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 }

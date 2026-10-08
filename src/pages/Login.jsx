@@ -1,3 +1,4 @@
+import { useI18n } from "@/lib/I18nContext";
 import React, { useState, useEffect } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -8,49 +9,56 @@ import { Label } from "@/components/ui/label";
 import { LogIn, Mail, Lock, Loader2, Sprout } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
-
 import { isGoogleConfigured, connectGoogleDrive, downloadFromGoogleDrive } from "@/lib/googleSync";
-
 export default function Login() {
+  const {
+    t: i18nT
+  } = useI18n();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const rawFromUrl = searchParams.get("from_url") || searchParams.get("returnTo") || "/";
   const fromUrl = rawFromUrl.startsWith("#") ? rawFromUrl.slice(1) : rawFromUrl;
   const targetRoute = fromUrl.startsWith("/") ? fromUrl : `/${fromUrl}`;
-  const { isAuthenticated, user, checkUserAuth } = useAuth();
-
+  const {
+    isAuthenticated,
+    user,
+    checkUserAuth
+  } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
   useEffect(() => {
     if (isAuthenticated && user && !loading) {
-      navigate(targetRoute, { replace: true });
+      navigate(targetRoute, {
+        replace: true
+      });
     }
   }, [isAuthenticated, user, targetRoute, loading, navigate]);
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    setError("");
+    setError(i18nT(""));
     setLoading(true);
     try {
       await base44.auth.loginViaEmailPassword(email, password);
       await checkUserAuth();
-      navigate(targetRoute, { replace: true });
+      navigate(targetRoute, {
+        replace: true
+      });
     } catch (err) {
       setError(err.message || "Email ou palavra-passe inválidos");
     } finally {
       setLoading(false);
     }
   };
-
   const handleGoogle = async () => {
     if (isGoogleConfigured()) {
       setLoading(true);
-      setError("");
+      setError(i18nT(""));
       try {
-        await connectGoogleDrive({ prompt: "select_account" });
+        await connectGoogleDrive({
+          prompt: "select_account"
+        });
         await checkUserAuth();
         try {
           await downloadFromGoogleDrive(false);
@@ -58,7 +66,9 @@ export default function Login() {
           console.warn("Download inicial do Google Drive:", syncErr);
         }
         await checkUserAuth();
-        navigate(targetRoute, { replace: true });
+        navigate(targetRoute, {
+          replace: true
+        });
         return;
       } catch (err) {
         console.warn("Google Drive OAuth falhou ou cancelado:", err);
@@ -68,48 +78,24 @@ export default function Login() {
       }
       return;
     }
-    setError("ID de Cliente Google não configurado.");
+    setError(i18nT("ID de Cliente Google não configurado."));
   };
-
   const handleGuest = async () => {
     base44.auth.loginAsGuest(targetRoute);
     await checkUserAuth();
-    navigate(targetRoute, { replace: true });
+    navigate(targetRoute, {
+      replace: true
+    });
   };
-
-  return (
-    <AuthLayout
-      icon={LogIn}
-      title="Bem-vindo à Minha Horta"
-      subtitle="Inicia sessão para guardares as tuas plantações e animais"
-      footer={
-        <>
-          Ainda não tens conta?{" "}
-          <Link to="/register" className="text-emerald-700 font-medium hover:underline">
-            Criar uma conta
-          </Link>
-        </>
-      }
-    >
+  return <AuthLayout icon={LogIn} title={i18nT("Bem-vindo à Minha Horta")} subtitle="Inicia sessão para guardares as tuas plantações e animais" footer={<>{i18nT("Ainda não tens conta?")}{i18nT(" ")}
+          <Link to="/register" className="text-emerald-700 font-medium hover:underline">{i18nT("Criar uma conta")}</Link>
+        </>}>
       <div className="space-y-3 mb-6">
-        <Button
-          variant="outline"
-          className="w-full h-12 text-sm font-medium border-stone-200 hover:bg-stone-50"
-          onClick={handleGoogle}
-        >
-          <GoogleIcon className="w-5 h-5 mr-2" />
-          Continuar com o Google
-        </Button>
+        <Button variant="outline" className="w-full h-12 text-sm font-medium border-stone-200 hover:bg-stone-50" onClick={handleGoogle}>
+          <GoogleIcon className="w-5 h-5 mr-2" />{i18nT("Continuar com o Google")}</Button>
 
-        <Button
-          type="button"
-          variant="secondary"
-          className="w-full h-12 text-sm font-semibold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition-colors shadow-sm"
-          onClick={handleGuest}
-        >
-          <Sprout className="w-4 h-4 mr-2 text-emerald-600" />
-          Entrar em Modo Local (Minha Quinta)
-        </Button>
+        <Button type="button" variant="secondary" className="w-full h-12 text-sm font-semibold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition-colors shadow-sm" onClick={handleGuest}>
+          <Sprout className="w-4 h-4 mr-2 text-emerald-600" />{i18nT("Entrar em Modo Local (Minha Quinta)")}</Button>
       </div>
 
       <div className="relative mb-6">
@@ -117,67 +103,36 @@ export default function Login() {
           <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-3 text-muted-foreground">ou com email</span>
+          <span className="bg-card px-3 text-muted-foreground">{i18nT("ou com email")}</span>
         </div>
       </div>
 
-      {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-          {error}
-        </div>
-      )}
+      {error && <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+          {i18nT(error)}
+        </div>}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{i18nT("Email")}</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              autoFocus
-              placeholder="o-teu-email@exemplo.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="pl-10 h-12"
-              required
-            />
+            <Input id="email" type="email" autoComplete="email" autoFocus placeholder={i18nT("o-teu-email@exemplo.com")} value={email} onChange={e => setEmail(e.target.value)} className="pl-10 h-12" required />
           </div>
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password">Palavra-passe</Label>
-            <Link to="/forgot-password" className="text-xs text-emerald-700 hover:underline">
-              Esqueceste-te da palavra-passe?
-            </Link>
+            <Label htmlFor="password">{i18nT("Palavra-passe")}</Label>
+            <Link to="/forgot-password" className="text-xs text-emerald-700 hover:underline">{i18nT("Esqueceste-te da palavra-passe?")}</Link>
           </div>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="pl-10 h-12"
-              required
-            />
+            <Input id="password" type="password" autoComplete="current-password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className="pl-10 h-12" required />
           </div>
         </div>
         <Button type="submit" className="w-full h-12 font-medium bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white" disabled={loading}>
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              A iniciar sessão...
-            </>
-          ) : (
-            "Iniciar sessão"
-          )}
+          {loading ? <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />{i18nT("A iniciar sessão...")}</> : i18nT("Iniciar sessão")}
         </Button>
       </form>
-    </AuthLayout>
-  );
+    </AuthLayout>;
 }
-

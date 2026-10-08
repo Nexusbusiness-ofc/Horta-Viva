@@ -1,4 +1,4 @@
-import { exportFarmData, importFarmData, mergeFarmData, localAuth } from "./localStorageStore.js";
+import { exportFarmData, importFarmData, mergeFarmData, localAuth, prepareGoogleAccountState, preserveCurrentGoogleAccount } from "./localStorageStore.js";
 
 const STORAGE_KEYS = {
   CLIENT_ID: "hortaviva_google_client_id",
@@ -23,6 +23,22 @@ const SCOPES = [
 
 let tokenClientInstance = null;
 let gisScriptLoaded = false;
+let accountTransitionInProgress = false;
+let applyingDriveSnapshot = false;
+
+function applyDriveSnapshot(data) {
+  applyingDriveSnapshot = true;
+  try { return importFarmData(data, false); }
+  finally { applyingDriveSnapshot = false; }
+}
+
+function assertSyncAccount(token) {
+  if (accountTransitionInProgress || !isGoogleConnected() || localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) !== token) {
+    const error = new Error('A conta Google mudou durante a sincronização. Repete a operação na conta atual.');
+    error.code = 'GOOGLE_ACCOUNT_CHANGED';
+    throw error;
+  }
+}
 
 export const DEFAULT_GOOGLE_CLIENT_ID =
   "112974039146-pndij5p4she2jd23vbqcqknhh2vn65m2.apps.googleusercontent.com";
@@ -31,7 +47,7 @@ export const DEFAULT_GOOGLE_CLIENT_ID =
 export function getGoogleClientId() {
   return (
     localStorage.getItem(STORAGE_KEYS.CLIENT_ID) ||
-    import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+    import.meta.env?.VITE_GOOGLE_CLIENT_ID ||
     DEFAULT_GOOGLE_CLIENT_ID
   );
 }
@@ -162,15 +178,12 @@ export async function connectGoogleDrive(options = {}) {
             return reject(new Error(tokenResponse.error_description || tokenResponse.error));
           }
 
+          accountTransitionInProgress = true;
+          let prepared = false;
+          try {
           const accessToken = tokenResponse.access_token;
           const expiresIn = Number(tokenResponse.expires_in || 3600);
           const expiresAt = Date.now() + (expiresIn - 60) * 1000;
-
-          // 1. Limpar explicitamente qualquer flag de logout e salvar tokens
-          localStorage.removeItem("hortaviva_logged_out");
-          localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
-          localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES_AT, String(expiresAt));
-          localStorage.setItem(STORAGE_KEYS.GRANTED_SCOPES, tokenResponse.scope || SCOPES);
 
           const prevGoogleUser = getGoogleUser();
 
@@ -187,18 +200,25 @@ export async function connectGoogleDrive(options = {}) {
             console.warn("Não foi possível carregar o perfil Google detalhado:", e);
           }
 
+          if (!profile?.email || !(profile.sub || profile.id) || !accessToken) {
+            throw new Error('Não foi possível confirmar a identidade Google. A conta e os dados anteriores foram mantidos.');
+          }
+          const account = prepareGoogleAccountState(profile);
+          prepared = true;
+          // Activate credentials only after the old farm has a recovery copy.
+          localStorage.removeItem('hortaviva_logged_out');
+          localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+          localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES_AT, String(expiresAt));
+          localStorage.setItem(STORAGE_KEYS.GRANTED_SCOPES, tokenResponse.scope || SCOPES);
           const newEmail = (profile?.email || "").toLowerCase().trim();
           const prevEmail = (prevGoogleUser?.email || "").toLowerCase().trim();
           const isAccountSwitch = Boolean(prevEmail && newEmail && prevEmail !== newEmail);
 
           // Se trocou de conta Google ou ligou uma nova, limpar cache de ficheiro anterior
-          if (isAccountSwitch || !prevEmail || prevEmail !== newEmail) {
+          if (account.changed || isAccountSwitch || !prevEmail || prevEmail !== newEmail) {
             localStorage.removeItem(STORAGE_KEYS.DRIVE_FILE_ID);
             localStorage.removeItem(STORAGE_KEYS.LEGACY_DRIVE_FILE_ID);
             localStorage.removeItem(STORAGE_KEYS.LAST_SYNC);
-            localStorage.removeItem("hortaviva_monthly_usage_v2");
-            localStorage.removeItem("hortaviva_photo_identifications_count");
-            localStorage.removeItem("hortaviva_ai_usage_count");
           }
 
           // 3. Validação estrita da subscrição: NUNCA herdar de outra conta
@@ -230,10 +250,28 @@ export async function connectGoogleDrive(options = {}) {
           };
 
           localStorage.setItem(STORAGE_KEYS.GOOGLE_USER, JSON.stringify(googleUser));
-          localAuth.loginWithGoogleUser(googleUser, accessToken);
+          accountTransitionInProgress = false;
+          activeAutomaticSync = null;
+          automaticSyncQueued = false;
+          localAuth.loginWithGoogleUser(googleUser, accessToken, { accountPrepared: true, accountChanged: account.changed });
 
           notifySyncState("synced", "Ligado com sucesso à conta Google.");
           resolve(accessToken);
+          } catch (error) {
+            accountTransitionInProgress = false;
+            if (prepared) {
+              // Fail closed if storage fails after restoring the destination.
+              // Account snapshots remain available; never sync it as the old user.
+              localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+              localStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRES_AT);
+              localStorage.removeItem(STORAGE_KEYS.GOOGLE_USER);
+              localStorage.removeItem('base44_access_token');
+              localStorage.setItem('hortaviva_logged_out', 'true');
+              window.dispatchEvent(new CustomEvent('hortaviva_auth_changed'));
+            }
+            notifySyncState('error', error.message);
+            reject(error);
+          }
         },
       });
 
@@ -246,6 +284,7 @@ export async function connectGoogleDrive(options = {}) {
 }
 
 export function disconnectGoogleDrive() {
+  preserveCurrentGoogleAccount();
   const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
   if (token && window.google?.accounts?.oauth2?.revoke) {
     try {
@@ -269,6 +308,7 @@ export function disconnectGoogleDrive() {
 }
 
 export async function getValidAccessToken(interactive = false) {
+  if (accountTransitionInProgress) throw new Error('A ligação à conta Google ainda está em curso.');
   if (hasValidGoogleToken()) {
     return localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
   }
@@ -286,6 +326,7 @@ export async function getValidAccessToken(interactive = false) {
 }
 
 async function getCachedDriveFile(token, storageKey) {
+  assertSyncAccount(token);
   const cachedId = localStorage.getItem(storageKey);
   if (!cachedId) return null;
 
@@ -295,10 +336,12 @@ async function getCachedDriveFile(token, storageKey) {
     });
     if (response.ok) {
       const data = await response.json();
+      assertSyncAccount(token);
       if (!data.trashed) return cachedId;
     }
   } catch {}
 
+  assertSyncAccount(token);
   localStorage.removeItem(storageKey);
   return null;
 }
@@ -306,6 +349,7 @@ async function getCachedDriveFile(token, storageKey) {
 // Procurar o ficheiro principal no espaço privado da app, partilhado pela mesma
 // conta Google em todos os dispositivos.
 async function findDriveFile(token) {
+  assertSyncAccount(token);
   if (!hasAppDataAccess()) return null;
   const cachedId = await getCachedDriveFile(token, STORAGE_KEYS.DRIVE_FILE_ID);
   if (cachedId) return cachedId;
@@ -317,6 +361,7 @@ async function findDriveFile(token) {
 
   if (!res.ok) throw new Error("Falha ao pesquisar ficheiro no Google Drive.");
   const data = await res.json();
+  assertSyncAccount(token);
   if (data.files && data.files.length > 0) {
     const fileId = data.files[0].id;
     localStorage.setItem(STORAGE_KEYS.DRIVE_FILE_ID, fileId);
@@ -327,6 +372,7 @@ async function findDriveFile(token) {
 
 // Mantém acesso às cópias criadas por versões anteriores da app no Meu Drive.
 async function findLegacyDriveFile(token) {
+  assertSyncAccount(token);
   const cachedId = await getCachedDriveFile(token, STORAGE_KEYS.LEGACY_DRIVE_FILE_ID);
   if (cachedId) return cachedId;
 
@@ -337,6 +383,7 @@ async function findLegacyDriveFile(token) {
 
   if (!res.ok) throw new Error("Falha ao pesquisar cópia anterior no Google Drive.");
   const data = await res.json();
+  assertSyncAccount(token);
   if (data.files && data.files.length > 0) {
     const fileId = data.files[0].id;
     localStorage.setItem(STORAGE_KEYS.LEGACY_DRIVE_FILE_ID, fileId);
@@ -363,9 +410,11 @@ function getSyncComparableData(data = {}) {
   };
 
   return sortValue({
-    version: data.version || 3,
+    version: data.version || 4,
     appName: data.appName || "Horta Viva",
     user: data.user || null,
+    regionalPreferences: data.regionalPreferences || null,
+    appearance: data.appearance || null,
     subscription: data.subscription || null,
     deletedIds: data.deletedIds || {},
     plantings: sortRecords(data.plantings),
@@ -389,6 +438,8 @@ export async function uploadToGoogleDrive(interactive = false, options = {}) {
     const sourceFileId = existingFileId || legacyFileId;
     const updateFileId = existingFileId || (!hasAppDataAccess() ? legacyFileId : null);
 
+    assertSyncAccount(token);
+
     let farmData = exportFarmData(options);
 
     // Se já existe ficheiro remoto, descarrega e funde antes de gravar para nunca perder dados de outro dispositivo
@@ -399,13 +450,15 @@ export async function uploadToGoogleDrive(interactive = false, options = {}) {
         });
         if (remoteRes.ok) {
           const remoteData = await remoteRes.json();
+          assertSyncAccount(token);
           farmData = mergeFarmData(farmData, remoteData, options);
           if (options.forceResetSubscription) {
             farmData.subscription = null;
           }
-          importFarmData(farmData, false);
+          applyDriveSnapshot(farmData);
         }
       } catch (mergeErr) {
+        if (mergeErr.code === 'GOOGLE_ACCOUNT_CHANGED') throw mergeErr;
         console.warn("[GoogleSync] Aviso ao fundir dados remotos antes do upload:", mergeErr);
       }
     }
@@ -415,6 +468,7 @@ export async function uploadToGoogleDrive(interactive = false, options = {}) {
     }
 
     const jsonContent = JSON.stringify(farmData, null, 2);
+    assertSyncAccount(token);
 
     if (updateFileId) {
       const updateRes = await fetch(
@@ -463,16 +517,19 @@ export async function uploadToGoogleDrive(interactive = false, options = {}) {
       );
       if (!createRes.ok) throw new Error("Erro ao criar ficheiro no Google Drive.");
       const created = await createRes.json();
+      assertSyncAccount(token);
       if (created.id) {
         localStorage.setItem(STORAGE_KEYS.DRIVE_FILE_ID, created.id);
       }
     }
 
+    assertSyncAccount(token);
     const now = new Date().toISOString();
     localStorage.setItem(STORAGE_KEYS.LAST_SYNC, now);
     notifySyncState("synced", "Quinta guardada no Google Drive automaticamente.");
     return { success: true, syncedAt: now };
   } catch (e) {
+    if (e.code === 'GOOGLE_ACCOUNT_CHANGED') throw e;
     notifySyncState(hasValidGoogleToken() ? "error" : "needs_reconnect", e.message);
     throw e;
   }
@@ -499,28 +556,49 @@ export async function downloadFromGoogleDrive(interactive = false) {
 
     if (!res.ok) throw new Error("Erro ao ler ficheiro do Google Drive.");
     const remoteData = await res.json();
+    assertSyncAccount(token);
 
     const localData = exportFarmData();
     const mergedData = mergeFarmData(localData, remoteData);
-    const result = importFarmData(mergedData, false);
+    const result = applyDriveSnapshot(mergedData);
 
     // Migra a cópia anterior para o espaço privado da app sem perder os dados.
     if (legacyFileId) {
       await uploadToGoogleDrive(false).catch(() => {});
     }
 
+    assertSyncAccount(token);
     const now = new Date().toISOString();
     localStorage.setItem(STORAGE_KEYS.LAST_SYNC, now);
     notifySyncState("synced", "Dados da quinta sincronizados com o Google Drive.");
     return { success: true, ...result, syncedAt: now };
   } catch (e) {
+    if (e.code === 'GOOGLE_ACCOUNT_CHANGED') throw e;
     notifySyncState(hasValidGoogleToken() ? "error" : "needs_reconnect", e.message);
     throw e;
   }
 }
 
 // Sincronização bidirecional inteligente
-export async function autoSyncGoogleDrive(interactive = false) {
+let activeAutomaticSync = null;
+let automaticSyncQueued = false;
+export function autoSyncGoogleDrive(interactive = false) {
+  // An explicit/current sync already includes the debounced edits.
+  if (autoSyncDebounceTimer) { clearTimeout(autoSyncDebounceTimer); autoSyncDebounceTimer = null; }
+  if (accountTransitionInProgress) return Promise.resolve({ skipped: true });
+  if (activeAutomaticSync) { automaticSyncQueued = true; return activeAutomaticSync; }
+  const operation = runAutomaticSync(interactive).finally(() => {
+    if (activeAutomaticSync !== operation) return;
+    activeAutomaticSync = null;
+    if (automaticSyncQueued) {
+      automaticSyncQueued = false;
+      if (isGoogleConnected()) return autoSyncGoogleDrive(false);
+    }
+  });
+  activeAutomaticSync = operation;
+  return operation;
+}
+async function runAutomaticSync(interactive = false) {
   if (!isGoogleConfigured() || !isGoogleConnected()) return { skipped: true };
   try {
     const token = await getValidAccessToken(interactive);
@@ -534,10 +612,11 @@ export async function autoSyncGoogleDrive(interactive = false) {
       });
       if (res.ok) {
         const remoteData = await res.json();
+        assertSyncAccount(token);
         const localData = exportFarmData();
         const mergedData = mergeFarmData(localData, remoteData);
 
-        importFarmData(mergedData, false);
+        applyDriveSnapshot(mergedData);
 
         // Atualiza sempre que existir uma diferença real: criações, edições,
         // eliminações, lembretes ou qualquer alteração de plano.
@@ -561,6 +640,7 @@ export async function autoSyncGoogleDrive(interactive = false) {
           }
         }
 
+        assertSyncAccount(token);
         const now = new Date().toISOString();
         localStorage.setItem(STORAGE_KEYS.LAST_SYNC, now);
         notifySyncState("synced", "Quinta sincronizada automaticamente.");
@@ -575,6 +655,7 @@ export async function autoSyncGoogleDrive(interactive = false) {
     // Se ainda não existe ficheiro no Drive, cria o primeiro ficheiro
     return await uploadToGoogleDrive(interactive);
   } catch (e) {
+    if (e.code === 'GOOGLE_ACCOUNT_CHANGED') throw e;
     console.warn("[GoogleSync] Sincronização em segundo plano pausada:", e?.message);
     if (!hasValidGoogleToken()) {
       notifySyncState("needs_reconnect", "Sessão expirada. Clica para sincronizar.");
@@ -638,6 +719,7 @@ export async function syncSubscriptionWithGoogleAccount(interactive = true) {
 let autoSyncDebounceTimer = null;
 if (typeof window !== "undefined") {
   window.addEventListener("hortaviva_data_changed", () => {
+    if (applyingDriveSnapshot) return;
     if (!isGoogleConnected()) return;
     if (autoSyncDebounceTimer) clearTimeout(autoSyncDebounceTimer);
     autoSyncDebounceTimer = setTimeout(() => {
@@ -648,6 +730,7 @@ if (typeof window !== "undefined") {
   });
 
   window.addEventListener("hortaviva_subscription_changed", () => {
+    if (applyingDriveSnapshot) return;
     if (!isGoogleConnected()) return;
     if (autoSyncDebounceTimer) clearTimeout(autoSyncDebounceTimer);
     autoSyncDebounceTimer = setTimeout(() => {

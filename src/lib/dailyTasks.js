@@ -3,8 +3,12 @@
 // podas sazonais e mondas (apenas de culturas que o utilizador tem plantadas)
 // para gerar a lista do que fazer hoje.
 
-import { PODA_SCHEMAS } from "./pruningThinningSchemas";
-import { getLastWateredMap } from "./smartAlerts";
+import { PODA_SCHEMAS } from "./pruningThinningSchemas.js";
+import { getLastWateredMap } from "./smartAlerts.js";
+import { readRegionalPreferences } from "./regionalPreferences.js";
+import { getLocalMonth } from "./regionalClimate.js";
+import { getWeatherAdvice, localDateKey } from "./weather.js";
+import { translate } from "./i18n.js";
 
 const WATER_FREQ = {
   "Abundante": 1,
@@ -12,13 +16,9 @@ const WATER_FREQ = {
   "Pouca": 3,
 };
 
-function daysSince(dateStr) {
+function daysSince(dateStr, today) {
   if (!dateStr) return 0;
-  const start = new Date(dateStr + "T00:00:00");
-  const today = new Date();
-  start.setHours(0, 0, 0, 0);
-  today.setHours(0, 0, 0, 0);
-  return Math.max(0, Math.floor((today - start) / 86400000));
+  return Math.max(0, Math.floor((Date.parse(today + 'T00:00:00Z') - Date.parse(dateStr + 'T00:00:00Z')) / 86400000));
 }
 
 function normalize(str) {
@@ -140,14 +140,20 @@ function matchesMonda(monda, plantingNames) {
   });
 }
 
-export function computeDailyTasks({ plantings, plants, myAnimals, farmAnimals, podas, mondas }) {
+function calendarApplies(item) {
+  const adaptation = item.regional_adaptation;
+  return !adaptation || (adaptation.configured && adaptation.status === 'estimate' && !['conditional', 'not_recommended'].includes(adaptation.suitability));
+}
+
+export function computeDailyTasks({ plantings, plants, myAnimals, farmAnimals, podas, mondas, preferences = readRegionalPreferences(), weather = null, now = new Date() }) {
   const tasks = { rega: [], animais: [], podas: [], mondas: [] };
+  const t = (key, vars) => translate(key, preferences.language, vars);
   const plantByName = {};
   (plants || []).forEach(p => { plantByName[p.name] = p; });
   const faById = {};
   (farmAnimals || []).forEach(a => { faById[a.id] = a; });
-  const currentMonth = new Date().getMonth() + 1;
-  const today = new Date().toISOString().split("T")[0];
+  const currentMonth = getLocalMonth(now, preferences);
+  const today = localDateKey(now, preferences.timeZone);
   const lastWateredMap = getLastWateredMap();
 
   // Apenas plantações ativas (exclui as já colhidas)
@@ -161,15 +167,18 @@ export function computeDailyTasks({ plantings, plants, myAnimals, farmAnimals, p
     const freq = WATER_FREQ[water] || 2;
     const lastWatered = lastWateredMap[pl.id] || pl.planted_date || today;
     const isWateredToday = lastWateredMap[pl.id] === today;
-    const daysSinceWater = daysSince(lastWatered);
+    const daysSinceWater = daysSince(lastWatered, today);
+    const environment = ['outdoor','container','greenhouse','indoor'].includes(pl.growing_environment) ? pl.growing_environment : preferences.growingEnvironment;
+    const weatherAdvice = getWeatherAdvice(weather, { ...preferences, growingEnvironment: environment }, { now: Number(now), wateredToday: isWateredToday }).filter(advice => ['rain', 'shelteredRain', 'heat'].includes(advice.kind) && !(environment === 'indoor' && advice.kind === 'heat'));
 
-    if (daysSinceWater >= freq || isWateredToday) {
+    if (daysSinceWater >= freq || isWateredToday || weatherAdvice.some(advice=>advice.kind==='heat')) {
       tasks.rega.push({
         id: `rega-${pl.id}`,
         plantingId: pl.id,
         plantName: pl.plant_name,
-        title: `Regar ${pl.plant_name}`,
-        detail: `Rega ${water.toLowerCase()}${pl.location ? ` · ${pl.location}` : ""}`,
+        title: t(weatherAdvice.some(advice => advice.kind === 'rain') ? 'tasks.checkSoilTitle' : 'tasks.waterTitle', { name: pl.plant_name }),
+        detail: t('tasks.waterDetail', { requirement: water.toLowerCase() }) + (pl.location ? ` · ${pl.location}` : ''),
+        weatherAdvice: weatherAdvice.map(advice => ({ ...advice, message: t(advice.bodyKey, advice.vars) })),
         emoji: pl.plant_emoji || "🌱",
         color: pl.plant_color || "#0ea5e9",
         waterReq: water,
@@ -185,12 +194,12 @@ export function computeDailyTasks({ plantings, plants, myAnimals, farmAnimals, p
     const feeding = fa?.feeding || fa?.feed_items || "";
     const care = fa?.care || "";
     const meta = [
-      ma.quantity ? `${ma.quantity} animal(ns)` : "",
+      ma.quantity ? t('tasks.animalCount', { count: ma.quantity }) : "",
       ma.location || "",
     ].filter(Boolean).join(" · ");
     tasks.animais.push({
       id: `anim-${ma.id}`,
-      title: `Alimentar e cuidar de ${ma.animal_name}`,
+      title: t('tasks.feedTitle', { name: ma.animal_name }),
       detail: meta,
       how: feeding,
       care,
@@ -201,10 +210,10 @@ export function computeDailyTasks({ plantings, plants, myAnimals, farmAnimals, p
 
   // Podas — apenas de espécies plantadas pelo utilizador (ativas) e no mês correto
   (podas || []).forEach(po => {
-    if ((po.when_months || []).includes(currentMonth) && matchesPoda(po, activePlantNames)) {
+    if (calendarApplies(po) && (po.when_months || []).includes(currentMonth) && matchesPoda(po, activePlantNames)) {
       const cleanTitle = po.name.toLowerCase().startsWith("poda")
         ? po.name
-        : `Podar ${po.name}`;
+        : t('tasks.pruneTitle', { name: po.name });
       const schema = PODA_SCHEMAS[po.id] || {};
 
       tasks.podas.push({
@@ -212,7 +221,7 @@ export function computeDailyTasks({ plantings, plants, myAnimals, farmAnimals, p
         podaId: po.id,
         podaName: po.name,
         title: cleanTitle,
-        detail: po.when_info || "Época de poda",
+        detail: po.when_info || t('tasks.pruningSeason'),
         how: po.how,
         tips: po.tips,
         diagramType: schema.diagramType || "cup_shape",
@@ -225,10 +234,16 @@ export function computeDailyTasks({ plantings, plants, myAnimals, farmAnimals, p
 
   // Mondas — apenas de espécies plantadas pelo utilizador (ativas) e no mês correto
   (mondas || []).forEach(mo => {
-    if ((mo.when_months || []).includes(currentMonth) && matchesMonda(mo, activePlantNames)) {
+    const conditional = mo.regional_adaptation?.suitability === 'conditional';
+    const observedStage = conditional && activePlantings.some(planting => {
+      if (!planting.planted_date || !matchesMonda(mo, [planting.plant_name])) return false;
+      const age = daysSince(planting.planted_date, today);
+      return mo.id.includes('tomate') ? age >= 15 : ['monda_cenoura', 'monda_rabanete', 'monda_beterraba', 'monda_nabo'].includes(mo.id) && age >= 12 && age <= 45;
+    });
+    if (((calendarApplies(mo) && (mo.when_months || []).includes(currentMonth)) || observedStage) && matchesMonda(mo, activePlantNames)) {
       const cleanTitle = mo.name.toLowerCase().startsWith("monda")
         ? mo.name
-        : `Monda: ${mo.name}`;
+        : t('tasks.thinTitle', { name: mo.name });
       const isTomato = mo.id.includes("tomate") || normalize(mo.name).includes("tomate");
 
       tasks.mondas.push({
@@ -236,7 +251,7 @@ export function computeDailyTasks({ plantings, plants, myAnimals, farmAnimals, p
         mondaId: mo.id,
         mondaName: mo.name,
         title: cleanTitle,
-        detail: mo.when_stage || mo.when_info || "Época de desbaste e monda",
+        detail: mo.when_stage || mo.when_info || t('tasks.thinningSeason'),
         spacing: mo.spacing || "",
         how: mo.how,
         tips: mo.tips,

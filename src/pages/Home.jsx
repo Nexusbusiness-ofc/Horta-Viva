@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { Loader2, Sparkles, Filter } from "lucide-react";
+import { Loader2, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import HomeMockupHeader from "@/components/home/HomeMockupHeader";
 import MockupHeroCard from "@/components/home/MockupHeroCard";
@@ -16,13 +16,16 @@ import { cachedList } from "@/lib/offlineCatalog";
 import { ViewModeToggle, useViewMode } from "@/components/ui/ViewModeToggle";
 import { useSubscription } from "@/lib/subscription";
 import UpgradeModal from "@/components/subscription/UpgradeModal";
-
-const MONTH_NAMES = [
-  "", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-];
+import { useRegionalPreferences } from '@/lib/RegionalPreferencesContext';
+import { useI18n, CatalogLanguageNote } from '@/lib/I18nContext';
+import { getLocalMonth } from '@/lib/regionalClimate';
+import WeatherCard from '@/components/weather/WeatherCard';
+import RegionSummary from '@/components/regional/RegionSummary';
 
 export default function Home() {
+  const { preferences } = useRegionalPreferences();
+  const { t, locale } = useI18n();
+  const monthName = month => new Intl.DateTimeFormat(locale, { month:'long',timeZone:'UTC' }).format(new Date(Date.UTC(2026,month-1,15)));
   const navigate = useNavigate();
   const [plants, setPlants] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +55,7 @@ export default function Home() {
       .catch(() => {});
   }, []);
 
-  const currentMonth = new Date().getMonth() + 1;
+  const currentMonth = getLocalMonth(new Date(), preferences);
 
   // Filtragem de plantas por pesquisa, categoria e mês
   const visiblePlants = useMemo(() => {
@@ -64,6 +67,7 @@ export default function Home() {
       return list.filter(
         (p) =>
           (p.name || "").toLowerCase().includes(q) ||
+          t(p.name || "").toLowerCase().includes(q) ||
           (p.category || "").toLowerCase().includes(q) ||
           (p.sow_instructions || "").toLowerCase().includes(q) ||
           (p.care_instructions || "").toLowerCase().includes(q)
@@ -131,7 +135,7 @@ export default function Home() {
     }
 
     return list;
-  }, [plants, searchQuery, activeCategory, selectedMonth]);
+  }, [plants, searchQuery, activeCategory, selectedMonth, t]);
 
   const handleCategorySelect = (cat) => {
     if (cat.isSpecialLink) {
@@ -175,6 +179,8 @@ export default function Home() {
 
       {/* Conteúdo Principal adaptado para mobile e ecrãs largos (desktop/PC) */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-28 space-y-6">
+        <RegionSummary />
+        <WeatherCard />
         {/* Quando o utilizador NÃO está a pesquisar, exibe todos os blocos do mockup */}
         {!isSearching && (
           <>
@@ -199,13 +205,13 @@ export default function Home() {
         {isSearching && (
           <div className="flex items-center justify-between pt-1">
             <h2 className="text-sm font-bold text-stone-700">
-              🔍 {visiblePlants.length} resultado{visiblePlants.length !== 1 ? "s" : ""} para "{searchQuery}"
+              🔍 {t('{count} resultados para "{query}"', { count:visiblePlants.length,query:searchQuery })}
             </h2>
             <button
               onClick={handleClearSearch}
               className="text-xs text-emerald-700 hover:text-emerald-800 font-bold"
             >
-              Limpar pesquisa
+              {t('Limpar pesquisa')}
             </button>
           </div>
         )}
@@ -215,7 +221,7 @@ export default function Home() {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
               <h2 className="text-sm font-black text-stone-800">
-                🌱 Catálogo de Alimentos
+                🌱 {t('Catálogo de Alimentos')}
               </h2>
               <span className="text-[11px] text-stone-400 font-bold">
                 ({visiblePlants.length})
@@ -232,27 +238,29 @@ export default function Home() {
                     ? "bg-emerald-50 text-emerald-800 border-emerald-300"
                     : "bg-white text-stone-600 border-stone-200"
                 }`}
-                title="Filtrar por mês do ano"
+                title={t('Filtrar por mês do ano')}
               >
                 <Filter className="w-3 h-3 text-emerald-700" />
-                <span>{selectedMonth === 0 ? "Mês" : MONTH_NAMES[selectedMonth]}</span>
+                <span>{selectedMonth === 0 ? t('Mês') : monthName(selectedMonth)}</span>
               </button>
 
               <ViewModeToggle mode={viewMode} onChange={setViewMode} />
             </div>
           </div>
+          <CatalogLanguageNote />
 
           {/* Seletor de Mês Expansível */}
           {showMonthFilter && (
             <div className="bg-white p-3 rounded-2xl border border-stone-200/80 shadow-xs animate-in fade-in duration-200 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-stone-700">📅 Época de plantio / colheita:</span>
+                <span className="text-xs font-bold text-stone-700">📅 {t('Época de plantio / colheita:')}</span>
+                <button type="button" onClick={() => setSelectedMonth(currentMonth)} className="text-[11px] font-bold text-emerald-700 hover:underline">{monthName(currentMonth)}</button>
                 {selectedMonth !== 0 && (
                   <button
                     onClick={() => setSelectedMonth(0)}
                     className="text-[11px] text-emerald-700 font-bold hover:underline"
                   >
-                    Ver todos
+                    {t('Ver todos')}
                   </button>
                 )}
               </div>
@@ -268,7 +276,7 @@ export default function Home() {
           ) : visiblePlants.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-3xl border border-stone-200/70 p-6">
               <div className="text-4xl mb-2">🌿</div>
-              <p className="text-sm font-bold text-stone-700">Nenhum alimento encontrado nesta categoria.</p>
+              <p className="text-sm font-bold text-stone-700">{t('Nenhum alimento encontrado nesta categoria.')}</p>
               <button
                 onClick={() => {
                   setActiveCategory("all");
@@ -277,7 +285,7 @@ export default function Home() {
                 }}
                 className="mt-3 text-xs text-emerald-700 font-bold underline"
               >
-                Limpar filtros e ver todas as plantas
+                {t('Limpar filtros e ver todas as plantas')}
               </button>
             </div>
           ) : (
@@ -304,7 +312,7 @@ export default function Home() {
         <section id="assistente-ia" className="bg-white rounded-3xl p-4 sm:p-6 border border-stone-200/80 shadow-xs scroll-mt-20">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-lg">🤖</span>
-            <h2 className="text-sm font-black text-stone-800">Assistente Agrónomo IA</h2>
+            <h2 className="text-sm font-black text-stone-800">{t('Assistente Agrónomo IA')}</h2>
           </div>
           <AIAssistant query={aiQuery} plants={plants} onClearQuery={() => setAiQuery(null)} />
         </section>
@@ -312,7 +320,7 @@ export default function Home() {
 
       {/* Rodapé suave */}
       <footer className="text-center pt-2 pb-24 text-xs text-stone-400">
-        <span>🌱 Horta Viva — Cultiva com sabedoria</span>
+        <span>🌱 Horta Viva — {t('Cultiva com sabedoria')}</span>
       </footer>
 
       {/* Modal de Detalhes da Planta ao Clicar */}

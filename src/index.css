@@ -100,3 +100,15 @@
     display: none;
   }
 }
+/* Personal colours share semantic shades throughout the existing interface. */
+:root { --hv-color-50:236 253 245; --hv-color-100:209 250 229; --hv-color-200:167 243 208; --hv-color-300:110 231 183; --hv-color-400:52 211 153; --hv-color-500:16 185 129; --hv-color-600:5 150 105; --hv-color-700:4 120 87; --hv-color-800:6 95 70; --hv-color-900:6 78 59; --hv-color-950:2 44 34; }
+.hv-app-header { background:linear-gradient(145deg,rgb(var(--hv-color-800)),rgb(var(--hv-color-950))); }
+html[data-hv-font="large"] { font-size:18px; }
+html[data-hv-texture]:not([data-hv-texture="none"]) body::after { content:""; position:fixed; inset:0; pointer-events:none; z-index:45; opacity:.045; }
+html[data-hv-texture="paper"] body::after { background:repeating-linear-gradient(12deg,transparent 0 3px,#403522 3px 4px,transparent 4px 9px); opacity:.025; }
+html[data-hv-texture="dots"] body::after { background-image:radial-gradient(rgb(var(--hv-color-900)) .8px,transparent .8px); background-size:12px 12px; }
+html[data-hv-texture="leaves"] body::after { background-image:radial-gradient(ellipse at 30% 20%,rgb(var(--hv-color-700)) 0 6px,transparent 7px),radial-gradient(ellipse at 70% 75%,rgb(var(--hv-color-900)) 0 4px,transparent 5px); background-size:58px 72px; transform:rotate(-7deg) scale(1.2); }
+html[data-hv-contrast="high"] .text-stone-400,html[data-hv-contrast="high"] .text-stone-500 { color:#44403c; }
+html[data-hv-contrast="high"] .border-stone-100,html[data-hv-contrast="high"] .border-stone-200 { border-color:#a8a29e; }
+html[data-hv-motion="reduced"] *,html[data-hv-motion="reduced"] *::before,html[data-hv-motion="reduced"] *::after { animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important; scroll-behavior:auto!important; }
+@media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important; scroll-behavior:auto!important; } }

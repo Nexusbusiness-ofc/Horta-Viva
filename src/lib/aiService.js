@@ -1,5 +1,7 @@
 import { DEFAULT_PLANTS } from "./plantsData.js";
-import { DEFAULT_PODAS, DEFAULT_MONDAS } from "./catalogData.js";
+import { DEFAULT_PODAS } from "./catalogData.js";
+import { readRegionalPreferences } from "./regionalPreferences.js";
+import { getRegionalAIContext, regionalizeItems } from "./regionalClimate.js";
 
 const API_KEY_STORAGE = "hortaviva_gemini_api_key";
 
@@ -67,6 +69,7 @@ export async function callGemini({
 
   const payload = {
     contents: [{ parts }],
+    systemInstruction: { parts: [{ text: getRegionalAIContext() }] },
   };
 
   if (responseJsonSchema) {
@@ -132,15 +135,25 @@ export async function callGemini({
 /**
  * Reconhecimento / correspondência no catálogo botânico integrado da Horta Viva
  */
-export function findPlantInCatalog(nameOrHint) {
+export function findPlantInCatalog(nameOrHint, preferences = readRegionalPreferences()) {
   if (!nameOrHint) return null;
   const q = nameOrHint.toLowerCase().trim();
+  const language = preferences.language || "pt-PT";
+  const lang = language.startsWith("en") ? "en" : language.startsWith("es") ? "es" : "pt";
+  const labels = {
+    pt: { source: "Informação do catálogo de referência", months: "Meses indicativos", unknown: "Confirma a época com orientação local", harvest: "Colheita: janela indicativa" },
+    en: { source: "Reference catalogue information", months: "Indicative months", unknown: "Check timing with local guidance", harvest: "Harvest: approximate window" },
+    es: { source: "Información del catálogo de referencia", months: "Meses orientativos", unknown: "Confirma la época con orientación local", harvest: "Cosecha: ventana orientativa" },
+  }[lang];
+  const formatMonths = months => (months || []).map(month => new Intl.DateTimeFormat(language, { month: "long", timeZone: "UTC" }).format(new Date(Date.UTC(2024, month - 1, 1)))).join(", ");
+  const plants = regionalizeItems("plants", DEFAULT_PLANTS, preferences);
+  const podas = regionalizeItems("podas", DEFAULT_PODAS, preferences);
 
   // Pesquisar em DEFAULT_PLANTS
   // Dar prioridade ao nome exato. Sem isto, por exemplo, "Couve" podia abrir
   // a ficha de "Couve-flor", que surge antes no catálogo.
-  const plant = DEFAULT_PLANTS.find(p => p.name.toLowerCase() === q) ||
-    DEFAULT_PLANTS.find(p =>
+  const plant = plants.find(p => p.name.toLowerCase() === q) ||
+    plants.find(p =>
       p.name.toLowerCase().includes(q) || q.includes(p.name.toLowerCase())
     );
   if (plant) {
@@ -150,20 +163,21 @@ export function findPlantInCatalog(nameOrHint) {
       scientific_name: `${plant.name} (Espécie cultivada)`,
       category: plant.category || "Hortícola",
       confidence: "alta",
-      description: `${plant.name} é uma das culturas mais populares na horta em Portugal. ${plant.care_instructions || ""}`,
+      description: `${labels.source}: ${plant.name}. ${plant.care_instructions || ""}`,
       sun: plant.sun_requirements || "Sol pleno",
       water: plant.water_requirements || "Moderada",
       soil: "Rico em matéria orgânica e bem drenado",
-      when_to_plant: plant.plant_months ? `Meses recomendados: ${plant.plant_months.join(", ")}` : "Primavera / Outono",
-      when_to_harvest: plant.harvest_months ? `Meses de colheita: ${plant.harvest_months.join(", ")}` : plant.days_to_harvest || "90 dias",
+      when_to_plant: plant.plant_months?.length ? `${labels.months}: ${formatMonths(plant.plant_months)}` : labels.unknown,
+      when_to_harvest: plant.harvest_months?.length ? `${labels.harvest}: ${formatMonths(plant.harvest_months)}` : labels.unknown,
+      regional_adaptation: plant.regional_adaptation,
       common_pests: "Pulgões, lagartas, míldio e oídio",
       tips: `${plant.sow_instructions || ""} ${plant.storage_instructions || ""}`,
     };
   }
 
   // Pesquisar em Podas
-  const poda = (DEFAULT_PODAS || []).find(p => p.name.toLowerCase() === q) ||
-    (DEFAULT_PODAS || []).find(p => p.name.toLowerCase().includes(q) || q.includes(p.name.toLowerCase()));
+  const poda = podas.find(p => p.name.toLowerCase() === q) ||
+    podas.find(p => p.name.toLowerCase().includes(q) || q.includes(p.name.toLowerCase()));
   if (poda) {
     return {
       identified: true,
@@ -175,10 +189,11 @@ export function findPlantInCatalog(nameOrHint) {
       sun: "Sol pleno",
       water: "Moderada a baixa após estabelecida",
       soil: "Arejado e profundo",
-      when_to_plant: "Outono ou Inverno",
-      when_to_harvest: "Verão / Outono",
+      when_to_plant: labels.unknown,
+      when_to_harvest: labels.unknown,
+      regional_adaptation: poda.regional_adaptation,
       common_pests: "Cochonilha, mosca-da-fruta, pedrado",
-      tips: `Poda em: ${(poda.when_months || []).join(", ")}. Instruções: ${poda.how || ""}`,
+      tips: `${labels.months}: ${formatMonths(poda.when_months) || labels.unknown}. ${poda.how || ""}`,
     };
   }
 

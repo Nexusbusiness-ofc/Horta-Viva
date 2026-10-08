@@ -1,7 +1,8 @@
+import { useI18n } from "@/lib/I18nContext";
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { RotateCcw, Play, Pause, ZoomIn, ZoomOut, Eye, Ruler, Scissors, CheckCircle2, XCircle, Maximize2, Minimize2 } from "lucide-react";
+import { RotateCcw, Play, Pause, ZoomIn, ZoomOut, Eye, Ruler, Maximize2, Minimize2 } from "lucide-react";
 
 // --- GERADOR DE ETIQUETAS 3D FLUTUANTES NÍTIDAS ---
 function createLabelSprite(text, {
@@ -16,15 +17,12 @@ function createLabelSprite(text, {
   const ctx = canvas.getContext("2d");
   const font = `bold ${fontSize}px system-ui, -apple-system, sans-serif`;
   ctx.font = font;
-
   const fullText = icon ? `${icon}  ${text}` : text;
   const metrics = ctx.measureText(fullText);
   const textWidth = metrics.width;
   const textHeight = fontSize * 1.3;
-
   const width = Math.ceil(textWidth + padding * 3);
   const height = Math.ceil(textHeight + padding * 1.8);
-
   canvas.width = width * 2;
   canvas.height = height * 2;
   ctx.scale(2, 2);
@@ -39,7 +37,6 @@ function createLabelSprite(text, {
   ctx.fillStyle = bgColor;
   ctx.strokeStyle = borderColor;
   ctx.lineWidth = 3;
-
   ctx.beginPath();
   ctx.moveTo(r, 0);
   ctx.lineTo(width - r, 0);
@@ -53,30 +50,32 @@ function createLabelSprite(text, {
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
-
   ctx.shadowColor = "transparent";
   ctx.font = font;
   ctx.fillStyle = textColor;
   ctx.textBaseline = "middle";
   ctx.fillText(fullText, padding * 1.5, height / 2 + 1);
-
   const texture = new THREE.CanvasTexture(canvas);
   texture.minFilter = THREE.LinearFilter;
   texture.generateMipmaps = false;
-
   const spriteMaterial = new THREE.SpriteMaterial({
     map: texture,
     transparent: true,
     depthTest: false
   });
-
   const sprite = new THREE.Sprite(spriteMaterial);
   const scale = 0.0055;
   sprite.scale.set(width * scale, height * scale, 1);
   return sprite;
 }
-
-export default function Monda3DViewer({ diagramType = "root_thinning", name = "Cultura", spacingCm = "5 cm" }) {
+export default function Monda3DViewer({
+  diagramType = "root_thinning",
+  name = "Cultura",
+  spacingCm = "5 cm"
+}) {
+  const {
+    t: i18nT
+  } = useI18n();
   const rootRef = useRef(null);
   const containerRef = useRef(null);
   const rendererRef = useRef(null);
@@ -84,24 +83,20 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
   const reqIdRef = useRef(null);
   const sceneRef = useRef(null);
   const cameraRef = useRef(null);
-
   const [autoRotate, setAutoRotate] = useState(false);
   const [showLabels, setShowLabels] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-
   useEffect(() => {
     if (!sceneRef.current) return;
-    sceneRef.current.traverse((obj) => {
+    sceneRef.current.traverse(obj => {
       if (obj instanceof THREE.Sprite) {
         obj.visible = showLabels;
       }
     });
   }, [showLabels]);
-
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-
     const width = container.clientWidth || 360;
     const height = container.clientHeight || 340;
 
@@ -121,13 +116,16 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
     }
 
     // 3. Renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: "high-performance"
+    });
     rendererRef.current = renderer;
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
     container.replaceChildren(renderer.domElement);
 
     // 4. Controls
@@ -140,7 +138,6 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
     controls.maxDistance = 14;
     controls.autoRotate = autoRotate;
     controls.autoRotateSpeed = 1.4;
-
     if (diagramType === "solanaceae_sucker") {
       controls.target.set(0, 1.6, 0);
     } else {
@@ -151,12 +148,10 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
     // 5. Lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
     scene.add(ambientLight);
-
     const sunLight = new THREE.DirectionalLight(0xfffbeb, 2.3);
     sunLight.position.set(5, 12, 7);
     sunLight.castShadow = true;
     scene.add(sunLight);
-
     const skyFill = new THREE.DirectionalLight(0xa7f3d0, 0.8);
     skyFill.position.set(-5, 4, -4);
     scene.add(skyFill);
@@ -166,44 +161,62 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
     scene.add(modelGroup);
 
     // Materiais
-    const stemMaterial = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.6 });
-    const leafMaterial = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.5, side: THREE.DoubleSide });
+    const stemMaterial = new THREE.MeshStandardMaterial({
+      color: 0x16a34a,
+      roughness: 0.6
+    });
+    const leafMaterial = new THREE.MeshStandardMaterial({
+      color: 0x22c55e,
+      roughness: 0.5,
+      side: THREE.DoubleSide
+    });
     const suckerMaterial = new THREE.MeshStandardMaterial({
-      color: 0xef4444, // Vermelho vivo
+      color: 0xef4444,
+      // Vermelho vivo
       roughness: 0.35,
       emissive: 0xb91c1c,
       emissiveIntensity: 0.4
     });
-    const rootMaterial = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.4 }); // Cenouras laranjas brilhantes
+    const rootMaterial = new THREE.MeshStandardMaterial({
+      color: 0xea580c,
+      roughness: 0.4
+    }); // Cenouras laranjas brilhantes
 
     // Helper tesourinha 3D
     function addMiniShears(pos) {
       const shears = new THREE.Group();
       const bladeGeo = new THREE.BoxGeometry(0.03, 0.28, 0.015);
-      const bladeMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.9 });
+      const bladeMat = new THREE.MeshStandardMaterial({
+        color: 0xf1f5f9,
+        metalness: 0.9
+      });
       const b1 = new THREE.Mesh(bladeGeo, bladeMat);
       b1.rotation.z = Math.PI / 4;
       const b2 = new THREE.Mesh(bladeGeo, bladeMat);
       b2.rotation.z = -Math.PI / 4;
       shears.add(b1);
       shears.add(b2);
-
-      const r1 = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.015, 6, 12), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
+      const r1 = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.015, 6, 12), new THREE.MeshBasicMaterial({
+        color: 0xef4444
+      }));
       r1.position.set(-0.1, -0.12, 0);
-      const r2 = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.015, 6, 12), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
+      const r2 = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.015, 6, 12), new THREE.MeshBasicMaterial({
+        color: 0xef4444
+      }));
       r2.position.set(0.1, -0.12, 0);
       shears.add(r1);
       shears.add(r2);
-
       shears.position.copy(pos);
       modelGroup.add(shears);
     }
-
     if (diagramType === "solanaceae_sucker") {
       // --- MODELO 3D DE DESLADROAMENTO (TOMATEIRO / PIMENTO) ---
       // Base de solo
       const bedGeo = new THREE.CylinderGeometry(2.4, 2.6, 0.3, 32);
-      const bedMat = new THREE.MeshStandardMaterial({ color: 0x543015, roughness: 0.9 });
+      const bedMat = new THREE.MeshStandardMaterial({
+        color: 0x543015,
+        roughness: 0.9
+      });
       const bed = new THREE.Mesh(bedGeo, bedMat);
       bed.position.y = -0.15;
       modelGroup.add(bed);
@@ -227,8 +240,8 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
         const leafGeo = new THREE.SphereGeometry(0.3, 10, 8);
         leafGeo.scale(1.2, 0.1, 1.8);
         const leaf = new THREE.Mesh(leafGeo, leafMaterial);
-        leaf.position.set(0.5 + i * 0.38, 2.05 - i * 0.2, (i % 2 === 0 ? 0.38 : -0.38));
-        leaf.rotation.y = (i % 2 === 0 ? 0.45 : -0.45);
+        leaf.position.set(0.5 + i * 0.38, 2.05 - i * 0.2, i % 2 === 0 ? 0.38 : -0.38);
+        leaf.rotation.y = i % 2 === 0 ? 0.45 : -0.45;
         modelGroup.add(leaf);
       }
 
@@ -244,7 +257,6 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
       const sL1 = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), suckerMaterial);
       sL1.position.set(0.8, 2.58, 0.1);
       modelGroup.add(sL1);
-
       const sL2 = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 8), suckerMaterial);
       sL2.position.set(0.75, 2.52, -0.1);
       modelGroup.add(sL2);
@@ -255,7 +267,10 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
       // Cacho de Tomates Vermelhos com Cálice Estrelado
       const tomatoGroup = new THREE.Group();
       const tomatoGeo = new THREE.SphereGeometry(0.25, 16, 16);
-      const tomatoMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.25 });
+      const tomatoMat = new THREE.MeshStandardMaterial({
+        color: 0xdc2626,
+        roughness: 0.25
+      });
       const tomato = new THREE.Mesh(tomatoGeo, tomatoMat);
       tomatoGroup.add(tomato);
 
@@ -264,7 +279,6 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
       const calyx = new THREE.Mesh(calyxGeo, leafMaterial);
       calyx.position.y = 0.24;
       tomatoGroup.add(calyx);
-
       tomatoGroup.position.set(-0.35, 2.6, 0.1);
       modelGroup.add(tomatoGroup);
 
@@ -310,7 +324,6 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
         lStem.position.set(-0.6, 3.4, 0);
         modelGroup.add(lStem);
       }
-
     } else {
       // --- MODELO 3D DE DESBASTE DE SEMENTEIRA (CENOURAS / RAÍZES) ---
       const bedWidth = 5.6;
@@ -328,13 +341,16 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
 
       // Régua em Centímetros na frente
       const rulerGeo = new THREE.BoxGeometry(bedWidth, 0.08, 0.14);
-      const rulerMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+      const rulerMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.2
+      });
       const ruler = new THREE.Mesh(rulerGeo, rulerMat);
       ruler.position.set(0, 0.04, 0.85);
       modelGroup.add(ruler);
 
       // Cenouras Mantidas (Espaçadas a cada 1.0 unidade / 5 cm reais)
-      [-2.0, -1.0, 0.0, 1.0, 2.0].forEach((x) => {
+      [-2.0, -1.0, 0.0, 1.0, 2.0].forEach(x => {
         // Folhagem fofa
         for (let j = 0; j < 3; j++) {
           const l = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, 0.9, 8), stemMaterial);
@@ -352,12 +368,11 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
       });
 
       // Plântulas a Mondar (Vermelhas com tesoura rente)
-      [-1.5, -0.5, 0.5, 1.5].forEach((x) => {
+      [-1.5, -0.5, 0.5, 1.5].forEach(x => {
         const weed = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.5, 8), suckerMaterial);
         weed.position.set(x, 0.25, 0.04);
         weed.rotation.z = 0.15;
         modelGroup.add(weed);
-
         addMiniShears(new THREE.Vector3(x, 0.05, 0.06));
       });
 
@@ -371,7 +386,6 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
         });
         lStrong.position.set(0, 1.4, 0);
         modelGroup.add(lStrong);
-
         const lWeed = createLabelSprite("CORTAR COM TESOURA RENTE AO CHÃO", {
           bgColor: "#dc2626",
           textColor: "#ffffff",
@@ -380,7 +394,6 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
         });
         lWeed.position.set(0.6, 0.65, 0.1);
         modelGroup.add(lWeed);
-
         const lRuler = createLabelSprite(`Espaçamento Ideal: ${spacingCm}`, {
           bgColor: "#fef3c7",
           textColor: "#92400e",
@@ -397,14 +410,11 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
     function animate() {
       reqIdRef.current = requestAnimationFrame(animate);
       controls.update();
-
       const time = clock.getElapsedTime();
       suckerMaterial.emissiveIntensity = 0.3 + 0.25 * Math.sin(time * 3.5);
-
       renderer.render(scene, camera);
     }
     animate();
-
     function handleResize() {
       if (!container || !camera || !renderer) return;
       const w = container.clientWidth;
@@ -414,13 +424,11 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     }
-
     const resizeObserver = new ResizeObserver(() => {
       handleResize();
     });
     resizeObserver.observe(container);
     window.addEventListener("resize", handleResize);
-
     return () => {
       resizeObserver.disconnect();
       window.removeEventListener("resize", handleResize);
@@ -468,7 +476,6 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
     }, 80);
     return () => clearTimeout(timer);
   }, [isFullscreen]);
-
   const toggleFullscreen = () => {
     if (!isFullscreen) {
       setIsFullscreen(true);
@@ -482,7 +489,6 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
       }
     }
   };
-
   function handleResetFront() {
     if (!cameraRef.current || !controlsRef.current) return;
     if (diagramType === "solanaceae_sucker") {
@@ -494,148 +500,81 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
     }
     controlsRef.current.update();
   }
-
   function handleViewTop() {
     if (!cameraRef.current || !controlsRef.current) return;
     cameraRef.current.position.set(0, 7.5, 0.1);
     controlsRef.current.target.set(0, 1.0, 0);
     controlsRef.current.update();
   }
-
   function handleZoom(factor) {
     if (!cameraRef.current || !controlsRef.current) return;
     cameraRef.current.position.multiplyScalar(factor);
     controlsRef.current.update();
   }
-
-  return (
-    <div
-      ref={rootRef}
-      className={
-        isFullscreen
-          ? "fixed inset-0 z-[9999] bg-stone-950 flex flex-col p-3 sm:p-5 w-screen h-screen overflow-hidden animate-in fade-in duration-200"
-          : "bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-sm space-y-3 p-4 sm:p-5 relative"
-      }
-    >
+  return <div ref={rootRef} className={isFullscreen ? "fixed inset-0 z-[9999] bg-stone-950 flex flex-col p-3 sm:p-5 w-screen h-screen overflow-hidden animate-in fade-in duration-200" : "bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-sm space-y-3 p-4 sm:p-5 relative"}>
       {/* Cabeçalho */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-lime-500 to-emerald-600 text-white flex items-center justify-center font-extrabold text-base shadow-md shadow-lime-200">
-            3D
-          </div>
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-lime-500 to-emerald-600 text-white flex items-center justify-center font-extrabold text-base shadow-md shadow-lime-200">{i18nT("3D")}</div>
           <div>
             <h4 className={`font-extrabold text-sm sm:text-base leading-tight ${isFullscreen ? "text-white" : "text-stone-800"}`}>
-              {name} em Modelo 3D Interativo
-            </h4>
+              {i18nT(name)}{i18nT(" em Modelo 3D Interativo")}</h4>
             <p className={`text-xs ${isFullscreen ? "text-stone-400" : "text-stone-500"}`}>
-              {isFullscreen ? "Modo Tela Toda — Gira e faz zoom para inspecionar cada detalhe" : "Gira com o dedo para ver as raízes e a axila foliar"}
+              {isFullscreen ? i18nT("Modo Tela Toda — Gira e faz zoom para inspecionar cada detalhe") : i18nT("Gira com o dedo para ver as raízes e a axila foliar")}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {spacingCm && (
-            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border shadow-2xs ${
-              isFullscreen ? "bg-stone-900 border-stone-800 text-lime-400" : "bg-lime-50 border-lime-200 text-lime-800"
-            }`}>
+          {spacingCm && <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border shadow-2xs ${isFullscreen ? "bg-stone-900 border-stone-800 text-lime-400" : "bg-lime-50 border-lime-200 text-lime-800"}`}>
               <Ruler className="w-4 h-4" />
-              <span>Espaçamento: {spacingCm}</span>
-            </div>
-          )}
+              <span>{i18nT("Espaçamento: ")}{i18nT(spacingCm)}</span>
+            </div>}
 
-          <button
-            onClick={toggleFullscreen}
-            className={`px-3.5 py-2 rounded-2xl text-xs font-bold flex items-center gap-1.5 shadow-md transition-all active:scale-95 ${
-              isFullscreen
-                ? "bg-rose-600 hover:bg-rose-700 text-white"
-                : "bg-lime-600 hover:bg-lime-700 text-white"
-            }`}
-            title={isFullscreen ? "Sair da Tela Toda (Esc)" : "Ver em Tela Toda"}
-          >
+          <button onClick={toggleFullscreen} className={`px-3.5 py-2 rounded-2xl text-xs font-bold flex items-center gap-1.5 shadow-md transition-all active:scale-95 ${isFullscreen ? "bg-rose-600 hover:bg-rose-700 text-white" : "bg-lime-600 hover:bg-lime-700 text-white"}`} title={isFullscreen ? i18nT("Sair da Tela Toda (Esc)") : i18nT("Ver em Tela Toda")}>
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            <span>{isFullscreen ? "Sair da Tela Toda" : "Tela Toda"}</span>
+            <span>{isFullscreen ? i18nT("Sair da Tela Toda") : i18nT("Tela Toda")}</span>
           </button>
         </div>
       </div>
 
       {/* Canvas 3D com Controles Flutuantes */}
-      <div
-        className={
-          isFullscreen
-            ? "relative flex-1 w-full rounded-2xl overflow-hidden bg-gradient-to-b from-stone-900 via-stone-950 to-black border border-stone-800 shadow-2xl"
-            : "relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden bg-gradient-to-b from-lime-50/60 via-emerald-50/20 to-teal-50/40 border border-lime-100 shadow-inner"
-        }
-      >
+      <div className={isFullscreen ? "relative flex-1 w-full rounded-2xl overflow-hidden bg-gradient-to-b from-stone-900 via-stone-950 to-black border border-stone-800 shadow-2xl" : "relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden bg-gradient-to-b from-lime-50/60 via-emerald-50/20 to-teal-50/40 border border-lime-100 shadow-inner"}>
         <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing touch-none" />
 
         {/* Botões de Controlo Flutuantes */}
         <div className="absolute top-3 right-3 flex flex-col gap-1.5 z-10">
-          <button
-            onClick={toggleFullscreen}
-            className={`p-2.5 rounded-2xl shadow-md border transition-all flex items-center gap-1 text-xs font-bold ${
-              isFullscreen
-                ? "bg-rose-600 text-white border-rose-700 hover:bg-rose-700"
-                : "bg-lime-600 text-white border-lime-700 hover:bg-lime-700"
-            }`}
-            title={isFullscreen ? "Sair da Tela Toda" : "Ver em Tela Toda"}
-          >
+          <button onClick={toggleFullscreen} className={`p-2.5 rounded-2xl shadow-md border transition-all flex items-center gap-1 text-xs font-bold ${isFullscreen ? "bg-rose-600 text-white border-rose-700 hover:bg-rose-700" : "bg-lime-600 text-white border-lime-700 hover:bg-lime-700"}`} title={isFullscreen ? i18nT("Sair da Tela Toda") : i18nT("Ver em Tela Toda")}>
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            <span className="hidden sm:inline">{isFullscreen ? "Sair" : "Tela Toda"}</span>
+            <span className="hidden sm:inline">{isFullscreen ? i18nT("Sair") : i18nT("Tela Toda")}</span>
           </button>
 
-          <button
-            onClick={() => setAutoRotate(!autoRotate)}
-            className={`p-2.5 rounded-2xl shadow-md border transition-all flex items-center gap-1 text-xs font-bold ${
-              autoRotate ? "bg-lime-600 text-white border-lime-700" : "bg-white/95 text-stone-700 border-stone-200 hover:bg-white"
-            }`}
-            title="Girar Sozinho (360°)"
-          >
+          <button onClick={() => setAutoRotate(!autoRotate)} className={`p-2.5 rounded-2xl shadow-md border transition-all flex items-center gap-1 text-xs font-bold ${autoRotate ? "bg-lime-600 text-white border-lime-700" : "bg-white/95 text-stone-700 border-stone-200 hover:bg-white"}`} title={i18nT("Girar Sozinho (360°)")}>
             {autoRotate ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-            <span className="hidden sm:inline">{autoRotate ? "Pausar" : "Girar"}</span>
+            <span className="hidden sm:inline">{autoRotate ? i18nT("Pausar") : i18nT("Girar")}</span>
           </button>
 
-          <button
-            onClick={handleResetFront}
-            className="p-2.5 rounded-2xl bg-white/95 hover:bg-white text-stone-700 shadow-md border border-stone-200 transition-colors flex items-center gap-1 text-xs font-bold"
-            title="Ver de Frente"
-          >
+          <button onClick={handleResetFront} className="p-2.5 rounded-2xl bg-white/95 hover:bg-white text-stone-700 shadow-md border border-stone-200 transition-colors flex items-center gap-1 text-xs font-bold" title={i18nT("Ver de Frente")}>
             <RotateCcw className="w-4 h-4" />
-            <span className="hidden sm:inline">Frente</span>
+            <span className="hidden sm:inline">{i18nT("Frente")}</span>
           </button>
 
-          <button
-            onClick={handleViewTop}
-            className="p-2.5 rounded-2xl bg-white/95 hover:bg-white text-stone-700 shadow-md border border-stone-200 transition-colors flex items-center gap-1 text-xs font-bold"
-            title="Ver de Cima"
-          >
+          <button onClick={handleViewTop} className="p-2.5 rounded-2xl bg-white/95 hover:bg-white text-stone-700 shadow-md border border-stone-200 transition-colors flex items-center gap-1 text-xs font-bold" title={i18nT("Ver de Cima")}>
             <Eye className="w-4 h-4 text-lime-700" />
-            <span className="hidden sm:inline">De Cima</span>
+            <span className="hidden sm:inline">{i18nT("De Cima")}</span>
           </button>
 
           <div className="flex gap-1">
-            <button
-              onClick={() => handleZoom(0.85)}
-              className="p-2 flex-1 rounded-xl bg-white/95 hover:bg-white text-stone-700 shadow-md border border-stone-200 flex items-center justify-center font-bold"
-              title="Aproximar (+)"
-            >
+            <button onClick={() => handleZoom(0.85)} className="p-2 flex-1 rounded-xl bg-white/95 hover:bg-white text-stone-700 shadow-md border border-stone-200 flex items-center justify-center font-bold" title={i18nT("Aproximar (+)")}>
               <ZoomIn className="w-4 h-4" />
             </button>
-            <button
-              onClick={() => handleZoom(1.18)}
-              className="p-2 flex-1 rounded-xl bg-white/95 hover:bg-white text-stone-700 shadow-md border border-stone-200 flex items-center justify-center font-bold"
-              title="Afastar (-)"
-            >
+            <button onClick={() => handleZoom(1.18)} className="p-2 flex-1 rounded-xl bg-white/95 hover:bg-white text-stone-700 shadow-md border border-stone-200 flex items-center justify-center font-bold" title={i18nT("Afastar (-)")}>
               <ZoomOut className="w-4 h-4" />
             </button>
           </div>
 
-          <button
-            onClick={() => setShowLabels(!showLabels)}
-            className={`p-2 rounded-2xl shadow-md border text-xs font-bold transition-all text-center ${
-              showLabels ? "bg-amber-100 text-amber-900 border-amber-300" : "bg-white/95 text-stone-500 border-stone-200"
-            }`}
-          >
-            {showLabels ? "🏷️ Ocultar Texto" : "🏷️ Ver Texto"}
+          <button onClick={() => setShowLabels(!showLabels)} className={`p-2 rounded-2xl shadow-md border text-xs font-bold transition-all text-center ${showLabels ? "bg-amber-100 text-amber-900 border-amber-300" : "bg-white/95 text-stone-500 border-stone-200"}`}>
+            {showLabels ? i18nT("🏷️ Ocultar Texto") : i18nT("🏷️ Ver Texto")}
           </button>
         </div>
 
@@ -643,11 +582,11 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
           <div className="bg-white/95 backdrop-blur-md px-4 py-2 rounded-2xl border-2 border-stone-200/80 shadow-lg flex flex-wrap items-center justify-center gap-4 text-xs font-bold pointer-events-auto">
             <div className="flex items-center gap-2 text-rose-700 bg-rose-50 px-2.5 py-1 rounded-xl border border-rose-200">
               <span className="w-3.5 h-3.5 rounded-full bg-rose-600 inline-block shadow-xs animate-pulse" />
-              <span>✂️ VERMELHO = RETIRAR (Ladrão / Excesso)</span>
+              <span>{i18nT("✂️ VERMELHO = RETIRAR (Ladrão / Excesso)")}</span>
             </div>
             <div className="flex items-center gap-2 text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
               <span className="w-3.5 h-3.5 rounded-full bg-emerald-600 inline-block shadow-xs" />
-              <span>🌿 VERDE = MANTER (Planta forte)</span>
+              <span>{i18nT("🌿 VERDE = MANTER (Planta forte)")}</span>
             </div>
           </div>
         </div>
@@ -656,12 +595,9 @@ export default function Monda3DViewer({ diagramType = "root_thinning", name = "C
       <div className={`border rounded-2xl p-3.5 flex items-center gap-3 text-xs ${isFullscreen ? "bg-stone-900 border-stone-800 text-stone-300" : "bg-amber-50/80 border-amber-200 text-amber-950"}`}>
         <span className="text-2xl shrink-0">💡</span>
         <div>
-          <span className={`font-extrabold block ${isFullscreen ? "text-amber-400" : "text-amber-900"}`}>Como funciona este esquema de monda 3D:</span>
-          <span className="leading-relaxed">
-            Roda a planta para ver a raiz e a axila da folha. O que está a <b>vermelho ✂️</b> é o que se corta (ou com a tesoura rente ao chão ou partindo o ladrão com o polegar). O que está a <b>verde 🌿</b> é a planta que fica para crescer viçosa e saudável!
-          </span>
+          <span className={`font-extrabold block ${isFullscreen ? "text-amber-400" : "text-amber-900"}`}>{i18nT("Como funciona este esquema de monda 3D:")}</span>
+          <span className="leading-relaxed">{i18nT("Roda a planta para ver a raiz e a axila da folha. O que está a ")}<b>{i18nT("vermelho ✂️")}</b>{i18nT(" é o que se corta (ou com a tesoura rente ao chão ou partindo o ladrão com o polegar). O que está a ")}<b>{i18nT("verde 🌿")}</b>{i18nT(" é a planta que fica para crescer viçosa e saudável!")}</span>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }

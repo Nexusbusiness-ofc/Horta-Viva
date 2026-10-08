@@ -20,6 +20,7 @@ if (!fs.existsSync(baseIndexHtmlPath)) {
 const baseHtml = fs.readFileSync(baseIndexHtmlPath, 'utf8');
 
 const ROUTES = [
+  { path: 'definicoes', title: 'Definições da Horta Viva', description: 'Região, língua, meteorologia, perfil e personalização da Horta Viva.' },
   {
     path: 'podas-mondas',
     title: 'Guia de Podas e Mondas em Portugal — Horta Viva',

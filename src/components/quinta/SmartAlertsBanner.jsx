@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { useWeather } from '@/lib/WeatherContext';
+import { useRegionalPreferences } from '@/lib/RegionalPreferencesContext';
 import {
   Bell,
   BellRing,
@@ -6,9 +8,6 @@ import {
   Scissors,
   Sprout,
   CheckCircle2,
-  AlertTriangle,
-  Clock,
-  Sparkles,
   ChevronDown,
   ChevronUp,
   Box,
@@ -39,6 +38,8 @@ export default function SmartAlertsBanner({
   mondas = [],
   onOpen3D,
 }) {
+  const { weather } = useWeather();
+  const { preferences } = useRegionalPreferences();
   const [activeFilter, setActiveFilter] = useState("all");
   const [isExpanded, setIsExpanded] = useState(true);
   const [wateredMap, setWateredMap] = useState(getLastWateredMap());
@@ -57,6 +58,7 @@ export default function SmartAlertsBanner({
 
   // Calcular alertas com o motor inteligente
   const alertsData = computeSmartAlerts({
+    weather, preferences,
     plantings,
     plants,
     myAnimals,
@@ -346,6 +348,7 @@ export default function SmartAlertsBanner({
                             📍 {alert.location}
                           </p>
                         )}
+                        {alert.weatherAdvice?.map(advice=><p key={advice.kind} className="mt-2 rounded-lg bg-white/70 p-2 text-xs leading-relaxed text-sky-900">{advice.message}</p>)}
 
                         <div className="mt-2.5 flex items-center gap-2">
                           <button

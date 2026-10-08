@@ -1,7 +1,7 @@
 // Service Worker da Horta Viva (PWA)
 // Permite instalação no smartphone, arranque instantâneo e acesso offline às fichas da horta.
 
-const CACHE_NAME = 'hortaviva-cache-v4';
+const CACHE_NAME = 'hortaviva-cache-v5-regional';
 
 const CORE_ASSETS = [
   './',
@@ -36,7 +36,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        keys.filter((key) => key.startsWith('hortaviva-cache-') && key !== CACHE_NAME).map((key) => caches.delete(key))
       );
     }).then(() => self.clients.claim())
   );
@@ -45,6 +45,9 @@ self.addEventListener('activate', (event) => {
 // Interceção de pedidos: Network-first com fallback para cache
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+  // Weather and account data manage their own freshness; never cache API replies.
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin || url.pathname.includes('/api/') || request.headers.has('Authorization')) return;
 
   // Apenas métodos GET e protocolos http/https
   if (request.method !== 'GET' || !request.url.startsWith('http')) {

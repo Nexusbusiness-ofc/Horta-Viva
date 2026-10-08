@@ -2,7 +2,11 @@
 // Analisa em tempo real o que o utilizador tem na página "Minha Quinta" (plantações e animais)
 // e gera alertas práticos com frequência de rega, podas sazonais ativas, mondas e colheitas.
 
-import { PODA_SCHEMAS } from "./pruningThinningSchemas";
+import { PODA_SCHEMAS } from "./pruningThinningSchemas.js";
+import { readRegionalPreferences } from "./regionalPreferences.js";
+import { getLocalMonth } from "./regionalClimate.js";
+import { getWeatherAdvice, localDateKey } from "./weather.js";
+import { translate } from "./i18n.js";
 
 const WATER_STORAGE_KEY = "hortaviva_plantings_watered";
 
@@ -13,13 +17,13 @@ const WATER_INTERVALS = {
 };
 
 function todayStr() {
-  return new Date().toISOString().split("T")[0];
+  return localDateKey(new Date(), readRegionalPreferences().timeZone);
 }
 
 function daysDiff(dateA, dateB) {
   if (!dateA || !dateB) return 0;
-  const da = new Date(dateA + "T00:00:00");
-  const db = new Date(dateB + "T00:00:00");
+  const da = new Date(dateA + "T00:00:00Z");
+  const db = new Date(dateB + "T00:00:00Z");
   return Math.floor((db - da) / 86400000);
 }
 
@@ -146,6 +150,11 @@ function matchesPlanting(keywords, catalogItemName, plantingName) {
   return false;
 }
 
+function calendarApplies(item) {
+  const adaptation = item.regional_adaptation;
+  return !adaptation || (adaptation.configured && adaptation.status === 'estimate' && !['conditional', 'not_recommended'].includes(adaptation.suitability));
+}
+
 // --- MOTOR CENTRAL DE ALERTAS INTELIGENTES ---
 export function computeSmartAlerts({
   plantings = [],
@@ -155,9 +164,13 @@ export function computeSmartAlerts({
   podas = [],
   mondas = [],
   lastWateredMap = getLastWateredMap(),
+  preferences = readRegionalPreferences(),
+  weather = null,
+  now = new Date(),
 }) {
-  const today = todayStr();
-  const currentMonth = new Date().getMonth() + 1;
+  const today = localDateKey(now, preferences.timeZone);
+  const currentMonth = getLocalMonth(now, preferences);
+  const t = (key, vars) => translate(key, preferences.language, vars);
   const plantByName = {};
   (plants || []).forEach(p => { plantByName[p.name] = p; });
 
@@ -179,7 +192,9 @@ export function computeSmartAlerts({
     const daysSinceLastWater = daysDiff(lastWatered, today);
 
     let status = "ok";
-    let message = `Rega ${waterReq.toLowerCase()} (a cada ${intervalDays} dias)`;
+    const environment = ['outdoor','container','greenhouse','indoor'].includes(pl.growing_environment) ? pl.growing_environment : preferences.growingEnvironment;
+    const weatherAdvice = getWeatherAdvice(weather, { ...preferences, growingEnvironment: environment }, { now: Number(now), wateredToday: lastWateredMap[pl.id] === today }).filter(advice => ['rain', 'shelteredRain', 'heat'].includes(advice.kind) && !(environment === 'indoor' && advice.kind === 'heat'));
+    let message = t('tasks.waterInterval', { days: intervalDays });
     let badgeText = "Hidratada";
     let urgency = "low";
 
@@ -187,13 +202,13 @@ export function computeSmartAlerts({
       if (daysSinceLastWater > intervalDays) {
         status = "overdue";
         urgency = "high";
-        badgeText = `Atrasada (${daysSinceLastWater - intervalDays + 1}d)`;
-        message = `Atraso na rega! Precisa de água abundante hoje.`;
+        badgeText = t('tasks.waterLate', { days: daysSinceLastWater - intervalDays + 1 });
+        message = t('tasks.waterLateAdvice');
       } else {
         status = "today";
         urgency = "today";
-        badgeText = "Regar Hoje";
-        message = `É dia de rega (${waterReq.toLowerCase()}). Mantém a terra húmida.`;
+        badgeText = t('tasks.waterToday');
+        message = t('tasks.waterDue', { requirement: waterReq.toLowerCase() });
       }
       wateringAlerts.push({
         id: `alert-rega-${pl.id}`,
@@ -211,13 +226,14 @@ export function computeSmartAlerts({
         urgency,
         badgeText,
         message,
+        weatherAdvice: weatherAdvice.map(advice => ({ ...advice, message: t(advice.bodyKey, advice.vars) })),
       });
     } else if (daysSinceLastWater === intervalDays - 1 && intervalDays > 1) {
       // Rega agendada para amanhã (visível como dica informativa)
       status = "tomorrow";
       urgency = "medium";
-      badgeText = "Amanhã";
-      message = `Próxima rega prevista para amanhã.`;
+      badgeText = t('tasks.waterTomorrow');
+      message = t('tasks.waterTomorrowAdvice');
       wateringAlerts.push({
         id: `alert-rega-${pl.id}`,
         type: "rega",
@@ -234,6 +250,7 @@ export function computeSmartAlerts({
         urgency,
         badgeText,
         message,
+        weatherAdvice: weatherAdvice.map(advice => ({ ...advice, message: t(advice.bodyKey, advice.vars) })),
       });
     }
   });
@@ -248,7 +265,7 @@ export function computeSmartAlerts({
   (podas || []).forEach(po => {
     const keywords = PODA_KEYWORDS[po.id] || [];
     const whenMonths = po.when_months || [];
-    const isPruningMonth = whenMonths.includes(currentMonth);
+    const isPruningMonth = calendarApplies(po) && whenMonths.includes(currentMonth);
 
     if (isPruningMonth) {
       const matchingPlantings = activePlantings.filter(pl =>
@@ -266,13 +283,13 @@ export function computeSmartAlerts({
           podaName: po.name,
           emoji: po.emoji || "✂️",
           color: po.color || "#16a34a",
-          whenInfo: po.when_info || "Mês ideal de poda",
+          whenInfo: po.when_info || t('tasks.pruningSeason'),
           how: po.how || "",
           tips: po.tips || "",
           goldenRule: schema.goldenRule || "",
           diagramType: schema.diagramType || "cup_shape",
           urgency: "high",
-          message: `O mês atual (${currentMonth}) é a época ideal para a poda de ${pl.plant_name}!`,
+          message: t('tasks.pruningAdvice', { name: pl.plant_name }),
         });
       });
     }
@@ -282,7 +299,7 @@ export function computeSmartAlerts({
   (mondas || []).forEach(mo => {
     const keywords = MONDA_KEYWORDS[mo.id] || [];
     const whenMonths = mo.when_months || [];
-    const isMondaMonth = whenMonths.includes(currentMonth);
+    const isMondaMonth = calendarApplies(mo) && whenMonths.includes(currentMonth);
 
     const matchingPlantings = activePlantings.filter(pl =>
       matchesPlanting(keywords, mo.name, pl.plant_name)
@@ -293,9 +310,10 @@ export function computeSmartAlerts({
       const isTomato = mo.id.includes("tomate") || normalize(pl.plant_name).includes("tomate");
       const isRoot = ["monda_cenoura", "monda_rabanete", "monda_beterraba", "monda_nabo"].includes(mo.id);
 
+      const phaseKnown = Boolean(pl.planted_date) && mo.regional_adaptation?.status !== 'local_data_required';
       const needsAction =
-        (isTomato && daysSincePlanting >= 15) ||
-        (isRoot && daysSincePlanting >= 12 && daysSincePlanting <= 45) ||
+        (phaseKnown && isTomato && daysSincePlanting >= 15) ||
+        (phaseKnown && isRoot && daysSincePlanting >= 12 && daysSincePlanting <= 45) ||
         isMondaMonth;
 
       if (needsAction) {
@@ -309,14 +327,12 @@ export function computeSmartAlerts({
           emoji: mo.emoji || "🌱",
           color: mo.color || "#84cc16",
           spacing: mo.spacing || "",
-          stage: mo.when_stage || mo.when_info || "Fase recomendada",
+          stage: mo.when_stage || mo.when_info || t('tasks.thinningSeason'),
           how: mo.how || "",
           tips: mo.tips || "",
           diagramType: isTomato ? "solanaceae_sucker" : "root_thinning",
           urgency: "medium",
-          message: isTomato
-            ? `Vigiar axilas e retirar rebentos ladrões com o polegar para concentrar energia nos frutos.`
-            : `Desbastar as plântulas em excesso para garantir o espaçamento ideal de ${mo.spacing || "desenvolvimento"}.`,
+          message: t(isTomato ? 'tasks.thinningTomato' : 'tasks.thinningAdvice'),
         });
       }
     });
@@ -338,8 +354,8 @@ export function computeSmartAlerts({
         expectedDate: pl.expected_harvest_date,
         urgency: "high",
         message: daysToHarvest === 0
-          ? `Atingiu a data prevista de colheita hoje!`
-          : `Ultrapassou a data prevista de colheita há ${Math.abs(daysToHarvest)} dias. Verifica a prontidão!`,
+          ? t('tasks.harvestToday')
+          : t('tasks.harvestPast', { days: Math.abs(daysToHarvest) }),
       });
     } else if (daysToHarvest <= 5) {
       harvestAlerts.push({
@@ -351,7 +367,7 @@ export function computeSmartAlerts({
         plantingColor: pl.plant_color || "#eab308",
         expectedDate: pl.expected_harvest_date,
         urgency: "medium",
-        message: `Faltam apenas ${daysToHarvest} dias para a colheita prevista.`,
+        message: t('tasks.harvestSoon', { days: daysToHarvest }),
       });
     }
   });
@@ -367,7 +383,7 @@ export function computeSmartAlerts({
       color: ma.animal_color || "#ea580c",
       location: ma.location || "",
       urgency: "today",
-      message: `Verificar água fresca e alimentação diária de ${ma.animal_name}.`,
+      message: t('tasks.animalAdvice', { name: ma.animal_name }),
     });
   });
 

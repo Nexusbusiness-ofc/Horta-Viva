@@ -1,11 +1,14 @@
-import { DEFAULT_PLANTS } from "./plantsData";
-import { DEFAULT_ANIMALS, DEFAULT_MUSHROOMS, DEFAULT_PODAS, DEFAULT_MONDAS } from "./catalogData";
-import { resolveAssetUrl } from "./utils";
+import { DEFAULT_PLANTS } from "./plantsData.js";
+import { DEFAULT_ANIMALS, DEFAULT_MUSHROOMS, DEFAULT_PODAS, DEFAULT_MONDAS } from "./catalogData.js";
+import { resolveAssetUrl } from "./utils.js";
+import { readRegionalPreferences } from "./regionalPreferences.js";
+import { regionalizeItems, restoreRegionalOriginal } from "./regionalClimate.js";
 
 // Cache offline simples para catálogos de consulta rápida na horta.
 // Guarda o resultado da última carga com sucesso no localStorage e
 // devolve a cache ou catálogo pré-carregado quando o pedido à API falha (ex: sem rede ou backend).
-const PREFIX = "hv_offline_v8_";
+// Only original reference data belongs in this cache, never a regional view.
+const PREFIX = "hv_offline_v9_";
 
 try {
   if (typeof window !== "undefined" && window.localStorage) {
@@ -32,7 +35,7 @@ function normalizeItems(items, key) {
   return items.map(item => {
     if (!item) return item;
     const seed = seedMap.get(item.id);
-    const updated = { ...item };
+    const updated = restoreRegionalOriginal(item);
     if (updated.image_url) {
       updated.image_url = resolveAssetUrl(updated.image_url);
     }
@@ -49,7 +52,7 @@ function normalizeItems(items, key) {
   });
 }
 
-export async function cachedList(key, fetcher) {
+export async function cachedList(key, fetcher, preferences = readRegionalPreferences()) {
   const storageKey = PREFIX + key;
   const rawFallback = SEED_DATA[key] || [];
   const fallback = normalizeItems(rawFallback, key);
@@ -60,7 +63,7 @@ export async function cachedList(key, fetcher) {
       if (Array.isArray(data) && data.length > 0) {
         const normalized = normalizeItems(data, key);
         try { localStorage.setItem(storageKey, JSON.stringify({ t: Date.now(), data: normalized })); } catch {}
-        return normalized;
+        return regionalizeItems(key, normalized, preferences);
       }
     }
   } catch (e) {
@@ -75,7 +78,7 @@ export async function cachedList(key, fetcher) {
       if (parsed && Array.isArray(parsed.data) && parsed.data.length >= fallback.length && parsed.data.length > 0) {
         const normalized = normalizeItems(parsed.data, key);
         try { localStorage.setItem(storageKey, JSON.stringify({ t: Date.now(), data: normalized })); } catch {}
-        return normalized;
+        return regionalizeItems(key, normalized, preferences);
       }
     }
   } catch {}
@@ -87,5 +90,5 @@ export async function cachedList(key, fetcher) {
     }
   } catch {}
 
-  return fallback;
+  return regionalizeItems(key, fallback, preferences);
 }

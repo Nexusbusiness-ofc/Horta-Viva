@@ -1,3 +1,4 @@
+import { useI18n } from '@/lib/I18nContext';
 import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { Link } from "react-router-dom";
@@ -10,6 +11,7 @@ import { useSubscription, resetSubscriptionToFree } from "@/lib/subscription";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function Perfil() {
+  const { t } = useI18n();
   const { user, checkUserAuth, logout, navigateToLogin } = useAuth();
   const { isUltra, isPro, isPlus } = useSubscription();
   const { toast } = useToast();
@@ -35,8 +37,8 @@ export default function Perfil() {
                 <ArrowLeft className="w-5 h-5" />
               </Link>
               <div className="flex-1">
-                <h1 className="text-xl font-bold text-stone-800 leading-none">O meu perfil</h1>
-                <p className="text-xs text-stone-500">Personaliza a tua experiência</p>
+                <h1 className="text-xl font-bold text-stone-800 leading-none">{t("O meu perfil")}</h1>
+                <p className="text-xs text-stone-500">{t("Personaliza a tua experiência")}</p>
               </div>
               <NavigationDrawer />
             </div>
@@ -70,8 +72,8 @@ export default function Perfil() {
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div className="flex-1">
-              <h1 className="text-xl font-bold text-stone-800 leading-none">O meu perfil</h1>
-              <p className="text-xs text-stone-500">Personaliza a tua experiência</p>
+              <h1 className="text-xl font-bold text-stone-800 leading-none">{t("O meu perfil")}</h1>
+              <p className="text-xs text-stone-500">{t("Personaliza a tua experiência")}</p>
             </div>
             <NavigationDrawer />
           </div>
@@ -101,23 +103,24 @@ export default function Perfil() {
           </div>
           <div className="grid grid-cols-3 gap-3 p-4 text-center">
             <div>
-              <p className="text-xs text-stone-400">Tipo</p>
-              <p className="text-sm font-semibold text-stone-700 truncate">{user.farmer_type || "—"}</p>
+              <p className="text-xs text-stone-400">{t("Tipo")}</p>
+              <p className="text-sm font-semibold text-stone-700 truncate">{t(user.farmer_type || "—")}</p>
             </div>
             <div>
-              <p className="text-xs text-stone-400">Experiência</p>
-              <p className="text-sm font-semibold text-stone-700">{user.experience_years || 0} anos</p>
+              <p className="text-xs text-stone-400">{t("Experiência")}</p>
+              <p className="text-sm font-semibold text-stone-700">{user.experience_years || 0} {t("anos")}</p>
             </div>
             <div>
-              <p className="text-xs text-stone-400">Estação favorita</p>
-              <p className="text-sm font-semibold text-stone-700 truncate">{user.favorite_season || "—"}</p>
+              <p className="text-xs text-stone-400">{t("Estação favorita")}</p>
+              <p className="text-sm font-semibold text-stone-700 truncate">{t(user.favorite_season || "—")}</p>
             </div>
           </div>
         </div>
 
+        <Link to="/definicoes" className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-white p-5 text-sm font-bold text-emerald-800"><span>⚙️ Região, meteorologia e aparência</span><ArrowRight className="h-4 w-4" /></Link>
         {/* Formulário de edição */}
         <div className="bg-white rounded-3xl border border-stone-200/80 shadow-sm p-5">
-          <h3 className="text-sm font-bold text-stone-700 mb-4">Editar perfil</h3>
+          <h3 className="text-sm font-bold text-stone-700 mb-4">{t("Editar perfil")}</h3>
           <ProfileForm user={user} onSaved={checkUserAuth} />
         </div>
 
@@ -220,7 +223,7 @@ export default function Perfil() {
           </div>
 
           <p className="text-xs text-stone-600 leading-relaxed">
-            Mantém as tuas plantações e animais sincronizados entre o computador, telemóvel e tablet através da tua conta Google Drive, ou transfere os dados através de ficheiro ou Pen Drive.
+            Mantém o perfil, a região, a língua, a aparência, as plantações e os animais sincronizados entre dispositivos através da tua conta Google Drive, ou transfere os dados através de ficheiro.
           </p>
 
           <button

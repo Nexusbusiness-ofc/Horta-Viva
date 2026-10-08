@@ -1,3 +1,4 @@
+import { useI18n } from "@/lib/I18nContext";
 import React, { useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -9,46 +10,54 @@ import { UserPlus, Mail, Lock, Loader2, Sprout } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { isGoogleConfigured, connectGoogleDrive, downloadFromGoogleDrive } from "@/lib/googleSync";
-
 export default function Register() {
+  const {
+    t: i18nT
+  } = useI18n();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const rawFromUrl = searchParams.get("from_url") || searchParams.get("returnTo") || "/";
   const fromUrl = rawFromUrl.startsWith("#") ? rawFromUrl.slice(1) : rawFromUrl;
   const targetRoute = fromUrl.startsWith("/") ? fromUrl : `/${fromUrl}`;
-  const { checkUserAuth } = useAuth();
-
+  const {
+    checkUserAuth
+  } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    setError("");
+    setError(i18nT(""));
     if (password !== confirmPassword) {
-      setError("As palavras-passe não coincidem");
+      setError(i18nT("As palavras-passe não coincidem"));
       return;
     }
     setLoading(true);
     try {
-      await base44.auth.register({ email, password });
+      await base44.auth.register({
+        email,
+        password
+      });
       await checkUserAuth();
-      navigate(targetRoute, { replace: true });
+      navigate(targetRoute, {
+        replace: true
+      });
     } catch (err) {
       setError(err.message || "Falha ao criar conta");
     } finally {
       setLoading(false);
     }
   };
-
   const handleGoogle = async () => {
     if (isGoogleConfigured()) {
       setLoading(true);
-      setError("");
+      setError(i18nT(""));
       try {
-        await connectGoogleDrive({ prompt: "select_account" });
+        await connectGoogleDrive({
+          prompt: "select_account"
+        });
         await checkUserAuth();
         try {
           await downloadFromGoogleDrive(false);
@@ -56,7 +65,9 @@ export default function Register() {
           console.warn("Download inicial do Google Drive:", syncErr);
         }
         await checkUserAuth();
-        navigate(targetRoute, { replace: true });
+        navigate(targetRoute, {
+          replace: true
+        });
         return;
       } catch (err) {
         console.warn("Google OAuth / Drive falhou:", err);
@@ -66,48 +77,24 @@ export default function Register() {
       }
       return;
     }
-    setError("ID de Cliente Google não configurado.");
+    setError(i18nT("ID de Cliente Google não configurado."));
   };
-
   const handleGuest = async () => {
     base44.auth.loginAsGuest(targetRoute);
     await checkUserAuth();
-    navigate(targetRoute, { replace: true });
+    navigate(targetRoute, {
+      replace: true
+    });
   };
-
-  return (
-    <AuthLayout
-      icon={UserPlus}
-      title="Criar conta na Minha Horta"
-      subtitle="Regista-te para guardares as tuas plantações e animais"
-      footer={
-        <>
-          Já tens conta?{" "}
-          <Link to="/login" className="text-emerald-700 font-medium hover:underline">
-            Iniciar sessão
-          </Link>
-        </>
-      }
-    >
+  return <AuthLayout icon={UserPlus} title={i18nT("Criar conta na Minha Horta")} subtitle="Regista-te para guardares as tuas plantações e animais" footer={<>{i18nT("Já tens conta?")}{i18nT(" ")}
+          <Link to="/login" className="text-emerald-700 font-medium hover:underline">{i18nT("Iniciar sessão")}</Link>
+        </>}>
       <div className="space-y-3 mb-6">
-        <Button
-          variant="outline"
-          className="w-full h-12 text-sm font-medium border-stone-200 hover:bg-stone-50"
-          onClick={handleGoogle}
-        >
-          <GoogleIcon className="w-5 h-5 mr-2" />
-          Continuar com o Google
-        </Button>
+        <Button variant="outline" className="w-full h-12 text-sm font-medium border-stone-200 hover:bg-stone-50" onClick={handleGoogle}>
+          <GoogleIcon className="w-5 h-5 mr-2" />{i18nT("Continuar com o Google")}</Button>
 
-        <Button
-          type="button"
-          variant="secondary"
-          className="w-full h-12 text-sm font-semibold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition-colors shadow-sm"
-          onClick={handleGuest}
-        >
-          <Sprout className="w-4 h-4 mr-2 text-emerald-600" />
-          Entrar em Modo Local (Minha Quinta)
-        </Button>
+        <Button type="button" variant="secondary" className="w-full h-12 text-sm font-semibold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition-colors shadow-sm" onClick={handleGuest}>
+          <Sprout className="w-4 h-4 mr-2 text-emerald-600" />{i18nT("Entrar em Modo Local (Minha Quinta)")}</Button>
       </div>
 
       <div className="relative mb-6">
@@ -115,78 +102,40 @@ export default function Register() {
           <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-3 text-muted-foreground">ou com email</span>
+          <span className="bg-card px-3 text-muted-foreground">{i18nT("ou com email")}</span>
         </div>
       </div>
 
-      {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-          {error}
-        </div>
-      )}
+      {error && <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+          {i18nT(error)}
+        </div>}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{i18nT("Email")}</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              autoFocus
-              placeholder="o-teu-email@exemplo.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="pl-10 h-12"
-              required
-            />
+            <Input id="email" type="email" autoComplete="email" autoFocus placeholder={i18nT("o-teu-email@exemplo.com")} value={email} onChange={e => setEmail(e.target.value)} className="pl-10 h-12" required />
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">Palavra-passe</Label>
+          <Label htmlFor="password">{i18nT("Palavra-passe")}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="pl-10 h-12"
-              required
-            />
+            <Input id="password" type="password" autoComplete="new-password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className="pl-10 h-12" required />
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirm">Confirmar Palavra-passe</Label>
+          <Label htmlFor="confirm">{i18nT("Confirmar Palavra-passe")}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="confirm"
-              type="password"
-              autoComplete="new-password"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="pl-10 h-12"
-              required
-            />
+            <Input id="confirm" type="password" autoComplete="new-password" placeholder="••••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="pl-10 h-12" required />
           </div>
         </div>
         <Button type="submit" className="w-full h-12 font-medium bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white" disabled={loading}>
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              A criar conta...
-            </>
-          ) : (
-            "Criar conta"
-          )}
+          {loading ? <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />{i18nT("A criar conta...")}</> : i18nT("Criar conta")}
         </Button>
       </form>
-    </AuthLayout>
-  );
+    </AuthLayout>;
 }
-
