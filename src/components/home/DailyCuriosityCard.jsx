@@ -179,8 +179,7 @@ export const CURIOSITIES = [{
 }];
 export default function DailyCuriosityCard() {
   const {
-    t: i18nT,
-    language
+    t: i18nT
   } = useI18n();
   const dayIndex = useMemo(() => {
     const now = new Date();
@@ -224,7 +223,7 @@ export default function DailyCuriosityCard() {
 
           <p className="text-xs sm:text-sm text-stone-700 leading-snug">
             <strong className="font-semibold text-stone-900">{i18nT(cur.title)}: </strong>
-            <span>{language !== "pt-PT" && <span className="block text-xs text-amber-800 mb-1" role="note">{i18nT("As curiosidades detalhadas mantêm o português original.")}</span>}{i18nT(cur.fact)}</span>
+            <span>{i18nT(cur.fact)}</span>
           </p>
         </div>
 

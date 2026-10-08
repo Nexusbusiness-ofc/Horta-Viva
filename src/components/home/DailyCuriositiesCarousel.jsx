@@ -4,8 +4,7 @@ import { Lightbulb, Shuffle, ChevronRight, Sparkles, X, CheckCircle2, Sprout } f
 import { CURIOSITIES } from "./DailyCuriosityCard";
 export default function DailyCuriositiesCarousel() {
   const {
-    t: i18nT,
-    language
+    t: i18nT
   } = useI18n();
   // Índice da curiosidade oficial do dia atual (calculado pelo dia do ano)
   const todayIndex = useMemo(() => {
@@ -66,8 +65,6 @@ export default function DailyCuriositiesCarousel() {
           <span>{i18nT("Outras dicas")}</span>
         </button>
       </div>
-
-      {language !== "pt-PT" && <p className="text-[11px] text-stone-500 px-0.5" role="note">{i18nT("As curiosidades detalhadas mantêm o português original.")}</p>}
 
       {/* Carrossel Horizontal de Cartões de Curiosidades */}
       <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 scrollbar-hide">
@@ -139,7 +136,6 @@ export default function DailyCuriositiesCarousel() {
                 <Lightbulb className="w-3.5 h-3.5 fill-amber-500 text-amber-600" />
                 <span>{i18nT("Sabias que...?")}</span>
               </div>
-              {language !== "pt-PT" && <p className="text-xs text-amber-800" role="note">{i18nT("As curiosidades detalhadas mantêm o português original.")}</p>}
               <p className="font-medium text-stone-800">
                 {i18nT(selectedCuriosity.fact)}
               </p>

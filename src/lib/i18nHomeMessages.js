@@ -76,7 +76,6 @@ Sabedoria das Luas|Lunar folklore|Tradición lunar
 Pimentas Mais Fortes|Hotter chillies|Guindillas más picantes
 Capuchinhas como Escudo|Nasturtiums as a shield|Capuchinas como escudo
 Lavanda e Polinização|Lavender and pollination|Lavanda y polinización
-As curiosidades detalhadas mantêm o português original.|Detailed garden facts remain in the original Portuguese.|Las curiosidades detalladas se mantienen en el portugués original.
 Referência técnica: confirma a autorização local dos produtos e o rótulo antes de qualquer aplicação.|Technical reference: check local product authorization and the label before applying any product.|Referencia técnica: comprueba la autorización local de los productos y la etiqueta antes de aplicarlos.
 Clima local|Local climate|Clima local
 Árido|Arid|Árido

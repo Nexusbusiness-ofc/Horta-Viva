@@ -2,6 +2,7 @@ import { TRANSLATION_ROWS } from './i18nMessages.js';
 import { EXTRA_TRANSLATION_ROWS } from './i18nExtraMessages.js';
 import { CATALOG_NAME_ROWS } from './i18nCatalogNames.js';
 import { HOME_TRANSLATION_ROWS } from './i18nHomeMessages.js';
+import { CURIOSITY_FACT_ROWS } from './i18nCuriosityFacts.js';
 import { WEATHER_TRANSLATIONS } from './weatherTranslations.js';
 
 export const SUPPORTED_LANGUAGES = ['pt-PT', 'pt-BR', 'en', 'es'];
@@ -28,7 +29,7 @@ const brazilian = (text) => text
   .replace(/Regista/g, 'Registre').replace(/regista/g, 'registre')
   .replace(/tua/g, 'sua').replace(/teu/g, 'seu').replace(/tuas/g, 'suas').replace(/teus/g, 'seus');
 
-for (const row of `${TRANSLATION_ROWS}\n${EXTRA_TRANSLATION_ROWS}\n${CATALOG_NAME_ROWS}\n${HOME_TRANSLATION_ROWS}`.trim().split('\n')) {
+for (const row of `${TRANSLATION_ROWS}\n${EXTRA_TRANSLATION_ROWS}\n${CATALOG_NAME_ROWS}\n${HOME_TRANSLATION_ROWS}\n${CURIOSITY_FACT_ROWS}`.trim().split('\n')) {
   const [key, en, es, br] = row.split('|').map((part) => part.trim());
   if (!key) continue;
   messages['pt-PT'][key] = key;
