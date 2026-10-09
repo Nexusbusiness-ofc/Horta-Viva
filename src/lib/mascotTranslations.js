@@ -70,6 +70,15 @@ mascot.accessory.flower|Flor|Flor|Flower|Flor
 mascot.accessory.hat|Chapéu de palha|Chapéu de palha|Straw hat|Sombrero de paja
 mascot.accessory.bow|Laço|Laço|Bow|Lazo
 mascot.accessory.leaf|Folha|Folha|Leaf|Hoja
+mascot.gardenTitle|O teu cantinho na quinta|Seu cantinho na fazenda|Your little farm corner|Tu rincón en la finca
+mascot.marketShort|Mercado|Mercado|Market|Mercado
+mascot.waterShort|Água|Água|Water|Agua
+mascot.levelShort|Nível|Nível|Level|Nivel
+mascot.feedAction|Alimentar|Alimentar|Feed|Alimentar
+mascot.feedShortHint|Usa o botão ou arrasta o alimento até à mascote.|Use o botão ou arraste o alimento até a mascote.|Use the button or drag the food towards your pet.|Usa el botón o arrastra el alimento hacia tu mascota.
+mascot.careTitle|Cuidados & evolução|Cuidados e evolução|Care & evolution|Cuidados y evolución
+mascot.warehouseTitle|O teu armazém|Seu armazém|Your warehouse|Tu almacén
+mascot.warehouseShortHint|Escolhe um alimento. Os produtos à venda ficam reservados no mercado.|Escolha um alimento. Os produtos à venda ficam reservados no mercado.|Choose some food. Products listed for sale are reserved in the market.|Elige un alimento. Los productos en venta quedan reservados en el mercado.
 mascot.percent|{value} de 100|{value} de 100|{value} out of 100|{value} de 100
 `;
 

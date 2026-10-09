@@ -12,10 +12,10 @@ market.balance|As tuas moedas|Suas moedas|Your coins|Tus monedas
 market.coins|{amount} moedas|{amount} moedas|{amount} coins|{amount} monedas
 market.currency|moedas|moedas|coins|monedas
 market.startingBalance|Começas com 120 moedas virtuais.|Você começa com 120 moedas virtuais.|You start with 120 virtual coins.|Empiezas con 120 monedas virtuales.
-market.shopTab|Loja de hoje|Loja de hoje|Today's shop|Tienda de hoy
+market.shopTab|Loja|Loja|Shop|Tienda
 market.stallTab|A minha banca|Minha banca|My stall|Mi puesto
-market.historyTab|Histórico|Histórico|History|Historial
-market.dailyShop|Fresquinhos na banca de hoje|Fresquinhos na banca de hoje|Fresh at today's stall|Recién llegados al puesto de hoy
+market.historyTab|Vendas|Vendas|Sales|Ventas
+market.dailyShop|Fresquinhos do dia|Fresquinhos do dia|Fresh today|Frescos del día
 market.dailyShopHint|Cada pacote pode ser comprado uma vez. Os alimentos vão diretamente para o armazém.|Cada pacote pode ser comprado uma vez. Os alimentos vão diretamente para o armazém.|Each pack can be bought once. Food goes straight to your warehouse.|Cada paquete se puede comprar una vez. Los alimentos van directamente a tu almacén.
 market.offersCount|{count} pacotes diferentes|{count} pacotes diferentes|{count} different packs|{count} paquetes diferentes
 market.refreshIn|Novos pacotes em {time}|Novos pacotes em {time}|New packs in {time}|Nuevos paquetes en {time}
@@ -61,7 +61,7 @@ market.listing.sold|Vendido|Vendido|Sold|Vendido
 market.listing.cancelled|Cancelado|Cancelado|Cancelled|Cancelado
 market.cancel|Retirar da banca|Retirar da banca|Remove from stall|Retirar del puesto
 market.cancelSuccess|As unidades ainda não vendidas regressaram ao armazém.|As unidades ainda não vendidas voltaram ao armazém.|Unsold units returned to your warehouse.|Las unidades sin vender volvieron al almacén.
-market.historyTitle|Pequenas trocas, novas possibilidades|Pequenas trocas, novas possibilidades|Little trades, new possibilities|Pequeños intercambios, nuevas posibilidades
+market.historyTitle|As tuas vendas|Suas vendas|Your sales|Tus ventas
 market.historyHint|Vendas a compradores simulados, com as moedas recebidas e a hora da operação.|Vendas a compradores simulados, com as moedas recebidas e a hora da operação.|Sales to simulated buyers, showing coins received and transaction time.|Ventas a compradores simulados, con las monedas recibidas y la hora de la operación.
 market.simulatedBuyer|Comprador simulado|Comprador simulado|Simulated buyer|Comprador simulado
 market.noSales|As primeiras vendas vão aparecer aqui.|As primeiras vendas vão aparecer aqui.|Your first sales will appear here.|Tus primeras ventas aparecerán aquí.
@@ -79,6 +79,39 @@ market.error.invalid_quantity|Indica uma quantidade inteira válida, dentro do s
 market.error.invalid_price|Escolhe um preço inteiro dentro do intervalo permitido.|Escolha um preço inteiro dentro do intervalo permitido.|Choose a whole price within the allowed range.|Elige un precio entero dentro del intervalo permitido.
 market.error.listing_not_found|Esta oferta já não está disponível. Atualizámos a banca.|Esta oferta não está mais disponível. Atualizamos a banca.|This listing is no longer available. We refreshed the stall.|Esta oferta ya no está disponible. Actualizamos el puesto.
 market.error.offer_expired|A loja já renovou os seus pacotes. Escolhe uma oferta de hoje.|A loja já renovou seus pacotes. Escolha uma oferta de hoje.|The shop has refreshed its packs. Choose an offer from today.|La tienda ya renovó sus paquetes. Elige una oferta de hoy.
+market.gameTitle|Da quinta para a tua banca.|Da fazenda para sua banca.|From your garden to your stall.|Del huerto a tu puesto.
+market.gameSubtitle|Colhe com carinho. Troca com alegria.|Colha com carinho. Troque com alegria.|Grow with care. Trade with joy.|Cultiva con cariño. Intercambia con alegría.
+market.shopInstruction|Toca no preço para ver o pacote e confirmar a compra.|Toque no preço para ver o pacote e confirmar a compra.|Tap a price to view the pack and confirm your purchase.|Toca el precio para ver el paquete y confirmar la compra.
+market.refreshLabel|Novidades em|Novidades em|New stock in|Novedades en
+market.boughtCount|{count}/{total} comprados|{count}/{total} comprados|{count}/{total} bought|{count}/{total} comprados
+market.inspectOffer|Ver pacote de {food}: {quantity} unidades por {price} moedas|Ver pacote de {food}: {quantity} unidades por {price} moedas|View {food} pack: {quantity} units for {price} coins|Ver paquete de {food}: {quantity} unidades por {price} monedas
+market.petTip|Os alimentos seguem para o armazém, prontos para a tua mascote.|Os alimentos vão para o armazém, prontos para sua mascote.|Food goes to your warehouse, ready for your pet.|Los alimentos van al almacén, listos para tu mascota.
+market.feedPet|Ir alimentar|Ir alimentar|Feed your pet|Ir a alimentar
+market.chooseInstruction|1. Escolhe um alimento. 2. Define a quantidade e o preço.|1. Escolha um alimento. 2. Defina a quantidade e o preço.|1. Choose food. 2. Set the quantity and price.|1. Elige un alimento. 2. Define la cantidad y el precio.
+market.lessQuantity|Diminuir quantidade|Diminuir quantidade|Decrease quantity|Reducir cantidad
+market.moreQuantity|Aumentar quantidade|Aumentar quantidade|Increase quantity|Aumentar cantidad
+market.lessPrice|Diminuir preço|Diminuir preço|Decrease price|Reducir precio
+market.morePrice|Aumentar preço|Aumentar preço|Increase price|Aumentar precio
+market.pricePresets|Sugestões de preço|Sugestões de preço|Price suggestions|Sugerencias de precio
+market.priceLow|Baixo|Baixo|Low|Bajo
+market.priceFair|Sugerido|Sugerido|Suggested|Sugerido
+market.priceHigh|Alto|Alto|High|Alto
+market.possibleTotal|Se venderes tudo|Se vender tudo|If everything sells|Si lo vendes todo
+market.reserveShort|As unidades ficam reservadas até serem vendidas ou retirares a oferta.|As unidades ficam reservadas até serem vendidas ou você retirar a oferta.|Units stay reserved until sold or you remove the listing.|Las unidades quedan reservadas hasta venderse o retirar la oferta.
+market.stallInstruction|Preços mais baixos atraem compradores simulados mais depressa.|Preços mais baixos atraem compradores simulados mais rápido.|Lower prices attract simulated buyers sooner.|Los precios más bajos atraen antes a compradores simulados.
+market.perUnitShort|/ unidade|/ unidade|/ unit|/ unidad
+market.earned|+{amount} moedas|+{amount} moedas|+{amount} coins|+{amount} monedas
+market.noListingsHint|Escolhe um alimento do armazém para abrir a tua primeira oferta.|Escolha um alimento do armazém para abrir sua primeira oferta.|Choose food from your warehouse to create your first listing.|Elige un alimento del almacén para crear tu primera oferta.
+market.noSalesHint|Coloca produtos na tua banca. As compras simuladas vão acontecendo ao longo do tempo.|Coloque produtos na sua banca. As compras simuladas acontecem ao longo do tempo.|List products on your stall. Simulated purchases happen gradually over time.|Pon productos en tu puesto. Las compras simuladas se producen poco a poco.
+market.simulationShort|Moedas virtuais · compradores simulados|Moedas virtuais · compradores simulados|Virtual coins · simulated buyers|Monedas virtuales · compradores simulados
+market.close|Fechar|Fechar|Close|Cerrar
+market.packageDetails|Pacote com {quantity} unidades · {price} moedas por unidade|Pacote com {quantity} unidades · {price} moedas por unidade|Pack of {quantity} units · {price} coins per unit|Paquete de {quantity} unidades · {price} monedas por unidad
+market.nutritionPerUnit|Saciedade por alimento|Saciedade por alimento|Fullness per item|Saciedad por alimento
+market.afterPurchase|Saldo após a compra|Saldo após a compra|Balance after purchase|Saldo tras la compra
+market.total|Total do pacote|Total do pacote|Pack total|Total del paquete
+market.packDestination|Compra única de hoje. O pacote vai diretamente para o armazém.|Compra única de hoje. O pacote vai diretamente para o armazém.|Today's one-time purchase. The pack goes straight to your warehouse.|Compra única de hoy. El paquete va directamente al almacén.
+market.notNow|Agora não|Agora não|Not now|Ahora no
+market.confirmBuy|Comprar pacote|Comprar pacote|Buy pack|Comprar paquete
 `;
 
 export const MARKET_TRANSLATIONS = { 'pt-PT': {}, 'pt-BR': {}, en: {}, es: {} };

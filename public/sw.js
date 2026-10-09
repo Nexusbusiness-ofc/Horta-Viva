@@ -1,7 +1,7 @@
 // Service Worker da Horta Viva (PWA)
 // Permite instalação no smartphone, arranque instantâneo e acesso offline às fichas da horta.
 
-const CACHE_NAME = 'hortaviva-cache-v9-market';
+const CACHE_NAME = 'hortaviva-cache-v10-farm-market';
 
 const CORE_ASSETS = [
   './',
