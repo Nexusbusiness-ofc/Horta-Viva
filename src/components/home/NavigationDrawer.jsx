@@ -11,6 +11,12 @@ const SECTIONS = [{
   desc: "mascot.navDesc",
   color: "#c27336"
 }, {
+  to: "/mercado",
+  emoji: "🧺",
+  label: "market.navTitle",
+  desc: "market.navDesc",
+  color: "#b77931"
+}, {
   to: "/definicoes",
   emoji: "⚙️",
   label: "Definições",

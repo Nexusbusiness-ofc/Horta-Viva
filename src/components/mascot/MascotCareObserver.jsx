@@ -3,6 +3,7 @@ import { useWeather } from '@/lib/WeatherContext';
 import { useRegionalPreferences } from '@/lib/RegionalPreferencesContext';
 import { claimHydrationReward } from '@/lib/mascot';
 import { readRegionalPreferences } from '@/lib/regionalPreferences';
+import { settleMarketSales } from '@/lib/mascotMarket';
 
 // Reward completed care from any section, including the daily watering list.
 // The domain rechecks saved crops, weather freshness and the unique daily key.
@@ -13,6 +14,8 @@ export default function MascotCareObserver() {
     let active = true;
     const check = () => {
       if (!active) return;
+      try { settleMarketSales({ preferences: readRegionalPreferences() }); }
+      catch { /* The market keeps its saved ledger intact on storage failure. */ }
       try { claimHydrationReward(null, { weather, preferences: readRegionalPreferences() }); }
       catch { /* Farming remains available; the mascot page explains storage errors. */ }
     };

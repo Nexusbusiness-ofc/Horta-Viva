@@ -10,6 +10,7 @@ import { WeatherProvider } from '@/lib/WeatherContext';
 import RegionalSetupGate from '@/components/regional/RegionalSetupGate';
 import Definicoes from './pages/Definicoes';
 import Mascote from './pages/Mascote';
+import Mercado from './pages/Mercado';
 import MascotCareObserver from './components/mascot/MascotCareObserver';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
@@ -161,6 +162,7 @@ const AuthenticatedApp = () => {
       <Route path="/" element={<Home />} />
       <Route path="/minha-quinta" element={<MinhaQuinta />} />
       <Route path="/mascote" element={<Mascote />} />
+      <Route path="/mercado" element={<Mercado />} />
       <Route path="/calendario-curas" element={<CalendarioCuras />} />
       <Route path="/resumo-mensal" element={<ResumoMensal />} />
       <Route path="/cogumelos" element={<Cogumelos />} />

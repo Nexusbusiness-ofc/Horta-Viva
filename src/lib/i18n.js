@@ -7,6 +7,7 @@ import { WEATHER_TRANSLATIONS } from './weatherTranslations.js';
 import { MASCOT_TRANSLATIONS } from './mascotTranslations.js';
 import { PLANTING_QUANTITY_TRANSLATIONS } from './plantingQuantityTranslations.js';
 import { HARVEST_TRANSLATIONS } from './harvestTranslations.js';
+import { MARKET_TRANSLATIONS } from './marketTranslations.js';
 
 export const SUPPORTED_LANGUAGES = ['pt-PT', 'pt-BR', 'en', 'es'];
 
@@ -56,6 +57,7 @@ export function registerTranslations(catalog) {
 
 registerTranslations(WEATHER_TRANSLATIONS);
 registerTranslations(MASCOT_TRANSLATIONS);
+registerTranslations(MARKET_TRANSLATIONS);
 registerTranslations(PLANTING_QUANTITY_TRANSLATIONS);
 registerTranslations(HARVEST_TRANSLATIONS);
 
