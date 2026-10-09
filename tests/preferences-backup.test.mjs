@@ -16,7 +16,8 @@ test('new backups include saved profile, regional choices, appearance and planti
   localStorage.setItem('hortaviva_gemini_api_key','test-secret-not-exported');
   localStorage.setItem('hortaviva_google_access_token','test-secret-not-exported');
   const backup=exportFarmData();
-  assert.equal(backup.version,4); assert.equal(backup.user.farm_name,'Horta de teste');
+  assert.equal(backup.version,5); assert.equal(backup.user.farm_name,'Horta de teste');
+  assert.ok(Object.hasOwn(backup,'mascot')); assert.deepEqual(backup.lastWatered,{});
   assert.equal(backup.regionalPreferences.countryCode,'PT'); assert.equal(backup.appearance.theme,'ocean');
   assert.equal(backup.plantings[0].growing_environment,'container'); assert.ok(!JSON.stringify(backup).includes('test-secret-not-exported'));
   values.clear(); importFarmData(backup,false);

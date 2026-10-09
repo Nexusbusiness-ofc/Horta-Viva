@@ -119,6 +119,7 @@ export function markPlantingWatered(plantingId, date = todayStr()) {
     map[plantingId] = date;
     localStorage.setItem(WATER_STORAGE_KEY, JSON.stringify(map));
     window.dispatchEvent(new CustomEvent("hortaviva_watered_update", { detail: { plantingId, date } }));
+    window.dispatchEvent(new CustomEvent("hortaviva_data_changed", { detail: { storageKey: WATER_STORAGE_KEY } }));
     return map;
   } catch {
     return {};
@@ -131,6 +132,7 @@ export function removePlantingWatered(plantingId) {
     delete map[plantingId];
     localStorage.setItem(WATER_STORAGE_KEY, JSON.stringify(map));
     window.dispatchEvent(new CustomEvent("hortaviva_watered_update", { detail: { plantingId } }));
+    window.dispatchEvent(new CustomEvent("hortaviva_data_changed", { detail: { storageKey: WATER_STORAGE_KEY } }));
     return map;
   } catch {
     return {};

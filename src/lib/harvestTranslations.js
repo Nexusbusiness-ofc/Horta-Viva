@@ -1,0 +1,20 @@
+const rows = [
+  ['harvest.title','Da horta para o armazém','From garden to storehouse','De la huerta al almacén','Da horta para o armazém'],
+  ['harvest.body','Confirma a quantidade desta plantação. Cada planta dá uma unidade de jogo para alimentar a mascote.','Confirm the number of plants. Each plant gives one game item to feed your companion.','Confirma la cantidad de plantas. Cada planta da una unidad de juego para alimentar a tu mascota.','Confirme a quantidade de plantas. Cada planta dá uma unidade de jogo para alimentar a mascote.'],
+  ['harvest.method','Como queres contar?','How would you like to count?','¿Cómo quieres contar?','Como deseja contar?'],
+  ['harvest.grid','Linhas × colunas','Rows × columns','Filas × columnas','Linhas × colunas'],
+  ['harvest.count','Número de plantas','Number of plants','Número de plantas','Número de plantas'],
+  ['harvest.rows','Linhas','Rows','Filas','Linhas'],
+  ['harvest.columns','Colunas','Columns','Columnas','Colunas'],
+  ['harvest.total','{count} unidades para o armazém','{count} items for your storehouse','{count} unidades para el almacén','{count} unidades para o armazém'],
+  ['harvest.virtual','É uma recompensa virtual, não uma estimativa do peso ou da produção real. Uma colheita por plantação.','This is a virtual reward, not an estimate of weight or actual yield. One harvest per planting.','Es una recompensa virtual, no una estimación del peso o la producción real. Una cosecha por plantación.','É uma recompensa virtual, não uma estimativa do peso ou da produção real. Uma colheita por plantio.'],
+  ['harvest.confirm','Colher e guardar','Harvest and store','Cosechar y guardar','Colher e guardar'],
+  ['harvest.saving','A recolher…','Harvesting…','Cosechando…','Colhendo…'],
+  ['harvest.cancel','Cancelar','Cancel','Cancelar','Cancelar'],
+  ['harvest.invalid','Indica números inteiros positivos, até um total de 1 000 000 plantas.','Enter positive whole numbers, up to a total of 1,000,000 plants.','Indica números enteros positivos, hasta un total de 1 000 000 plantas.','Informe números inteiros positivos, até um total de 1 000 000 plantas.'],
+  ['harvest.error','Não foi possível guardar a colheita. Os dados anteriores foram mantidos.','Could not save this harvest. Previous data has been kept.','No se pudo guardar la cosecha. Se conservaron los datos anteriores.','Não foi possível salvar a colheita. Os dados anteriores foram mantidos.'],
+  ['harvest.success','Colheita guardada no armazém','Harvest saved in your storehouse','Cosecha guardada en el almacén','Colheita salva no armazém'],
+  ['harvest.open','Abrir armazém','Open storehouse','Abrir almacén','Abrir armazém'],
+  ['harvest.updateError','Não foi possível guardar a alteração. Tenta novamente.','Could not save this change. Please try again.','No se pudo guardar el cambio. Inténtalo de nuevo.','Não foi possível salvar a alteração. Tente novamente.'],
+];
+export const HARVEST_TRANSLATIONS = Object.fromEntries(['pt-PT','en','es','pt-BR'].map((language,index)=>[language,Object.fromEntries(rows.map(row=>[row[0],row[index+1]]))]));

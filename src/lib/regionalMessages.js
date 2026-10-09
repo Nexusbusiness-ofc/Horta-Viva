@@ -37,7 +37,7 @@ const messages = {
   welcomeBody: ['Escolhe a tua região. A Horta Viva aproxima os calendários do teu clima e ajuda-te a cuidar com o tempo que tens pela frente.', 'Choose your region. Horta Viva adapts growing calendars to your climate and helps you plan around the weather ahead.', 'Elige tu región. Horta Viva adapta los calendarios a tu clima y te ayuda a planificar según el tiempo previsto.'],
   settings: ['Definições', 'Settings', 'Ajustes'],
   subtitle: ['Localização, língua e cuidados à tua medida.', 'Location, language and care tailored to you.', 'Ubicación, idioma y cuidados a tu medida.'],
-  step: ['Passo {step} de 5', 'Step {step} of 5', 'Paso {step} de 5'],
+  step: ['Passo {step} de 6', 'Step {step} of 6', 'Paso {step} de 6'],
   place: ['Onde cultivas?', 'Where do you grow?', '¿Dónde cultivas?'],
   weather: ['O tempo na tua horta', 'Weather in your garden', 'El tiempo en tu huerto'],
   cultivation: ['Como cultivas?', 'How do you grow?', '¿Cómo cultivas?'],

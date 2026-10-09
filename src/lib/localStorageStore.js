@@ -3,6 +3,7 @@ import { DEFAULT_ANIMALS, DEFAULT_MUSHROOMS, DEFAULT_PODAS, DEFAULT_MONDAS } fro
 import { callGemini } from "./aiService.js";
 import { REGIONAL_STORAGE_KEY, REGIONAL_CHANGE_EVENT, sanitizeRegionalPreferences, writeRegionalPreferences } from './regionalPreferences.js';
 import { APPEARANCE_STORAGE_KEY, APPEARANCE_CHANGE_EVENT, sanitizeAppearance, writeAppearance } from './appearance.js';
+import { MASCOT_STORAGE_KEY, MASCOT_CHANGE_EVENT, WATERED_STORAGE_KEY, sanitizeMascotState, mergeMascotStates, sanitizeWateredMap, mergeWateredMaps, applyHarvestLedgerToPlantings } from './mascot.js';
 
 const STORAGE_KEYS = {
   PLANTINGS: "hortaviva_plantings",
@@ -19,6 +20,7 @@ export const GOOGLE_ACCOUNT_BACKUP_PREFIX = 'hortaviva_account_backup_v1:';
 // Deliberately excludes OAuth tokens, API keys and shared reference catalogues.
 const ACCOUNT_DATA_KEYS = [STORAGE_KEYS.USER, STORAGE_KEYS.PLANTINGS, STORAGE_KEYS.MY_ANIMALS,
   STORAGE_KEYS.REMINDERS, STORAGE_KEYS.PRO_SUBSCRIPTION, REGIONAL_STORAGE_KEY, APPEARANCE_STORAGE_KEY,
+  MASCOT_STORAGE_KEY, WATERED_STORAGE_KEY,
   'hortaviva_deleted_ids', 'hortaviva_monthly_usage_v2', 'hortaviva_photo_identifications_count', 'hortaviva_ai_usage_count'];
 const readJson = key => { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; } };
 const accountIdentity = profile => profile?.sub || profile?.id ? `id:${profile.sub || profile.id}`
@@ -85,6 +87,8 @@ function notifyAccountDataRestored() {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent(REGIONAL_CHANGE_EVENT));
   window.dispatchEvent(new CustomEvent(APPEARANCE_CHANGE_EVENT));
+  window.dispatchEvent(new CustomEvent(MASCOT_CHANGE_EVENT));
+  window.dispatchEvent(new CustomEvent('hortaviva_watered_update'));
   window.dispatchEvent(new CustomEvent('hortaviva_remote_updated'));
 }
 
@@ -114,7 +118,8 @@ class LocalEntityStore {
       const raw = localStorage.getItem(this.storageKey);
       if (!raw) return [];
       const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
+      const items = Array.isArray(parsed) ? parsed : [];
+      return this.storageKey === STORAGE_KEYS.PLANTINGS ? applyHarvestLedgerToPlantings(items, readJson(MASCOT_STORAGE_KEY)) : items;
     } catch {
       return [];
     }
@@ -122,7 +127,8 @@ class LocalEntityStore {
 
   _setItems(items) {
     try {
-      localStorage.setItem(this.storageKey, JSON.stringify(items));
+      const projected = this.storageKey === STORAGE_KEYS.PLANTINGS ? applyHarvestLedgerToPlantings(items, readJson(MASCOT_STORAGE_KEY)) : items;
+      localStorage.setItem(this.storageKey, JSON.stringify(projected));
       if (typeof window !== "undefined") {
         window.dispatchEvent(
           new CustomEvent("hortaviva_data_changed", {
@@ -132,6 +138,7 @@ class LocalEntityStore {
       }
     } catch (e) {
       console.error(`Erro ao guardar em ${this.storageKey}:`, e);
+      throw e;
     }
   }
 
@@ -584,7 +591,9 @@ export const localIntegrations = {
 
 export function exportFarmData(options = {}) {
   const readSettings = (key, sanitize) => { try { const raw = localStorage.getItem(key); return raw ? sanitize(JSON.parse(raw)) : null; } catch { return null; } };
-  const plantings = JSON.parse(localStorage.getItem(STORAGE_KEYS.PLANTINGS) || "[]");
+  const mascot = readSettings(MASCOT_STORAGE_KEY, sanitizeMascotState);
+  const lastWatered = readSettings(WATERED_STORAGE_KEY, sanitizeWateredMap) || {};
+  const plantings = applyHarvestLedgerToPlantings(JSON.parse(localStorage.getItem(STORAGE_KEYS.PLANTINGS) || "[]"), mascot);
   const myAnimals = JSON.parse(localStorage.getItem(STORAGE_KEYS.MY_ANIMALS) || "[]");
   const reminders = JSON.parse(localStorage.getItem(STORAGE_KEYS.REMINDERS) || "[]");
   const user = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || "null");
@@ -607,12 +616,14 @@ export function exportFarmData(options = {}) {
   }
 
   return {
-    version: 4,
+    version: 5,
     appName: "Horta Viva",
     exportedAt: new Date().toISOString(),
     user,
     regionalPreferences: readSettings(REGIONAL_STORAGE_KEY, sanitizeRegionalPreferences),
     appearance: readSettings(APPEARANCE_STORAGE_KEY, sanitizeAppearance),
+    mascot,
+    lastWatered,
     subscription,
     deletedIds,
     plantings,
@@ -622,6 +633,8 @@ export function exportFarmData(options = {}) {
 }
 
 export function mergeFarmData(local, remote, options = {}) {
+  const mascot = mergeMascotStates(local?.mascot, remote?.mascot);
+  const lastWatered = mergeWateredMaps(local?.lastWatered, remote?.lastWatered);
   const latestSettings = key => {
     const a = local?.[key], b = remote?.[key];
     if (!a) return b || null;
@@ -772,15 +785,17 @@ export function mergeFarmData(local, remote, options = {}) {
   }
 
   return {
-    version: 4,
+    version: 5,
     appName: "Horta Viva",
     exportedAt: new Date().toISOString(),
     user: !local?.user ? remote?.user : !remote?.user ? local.user : (Date.parse(remote.user.updated_at || '') || 0) > (Date.parse(local.user.updated_at || '') || 0) ? { ...local.user, ...remote.user } : { ...remote.user, ...local.user },
     regionalPreferences: latestSettings('regionalPreferences'),
     appearance: latestSettings('appearance'),
+    mascot,
+    lastWatered,
     subscription: mergedSubscription,
     deletedIds,
-    plantings: Array.from(plantingsMap.values()),
+    plantings: applyHarvestLedgerToPlantings(Array.from(plantingsMap.values()), mascot),
     myAnimals: Array.from(animalsMap.values()),
     reminders: Array.from(remindersMap.values()),
   };
@@ -792,12 +807,18 @@ export function importFarmData(data, shouldMerge = true) {
   }
 
   const finalData = shouldMerge ? mergeFarmData(exportFarmData(), data) : data;
+  // Consumption is an immutable history. Restoring an older backup must not
+  // recreate already-used food or reopen a credited harvest on this account.
+  const mascot = mergeMascotStates(readJson(MASCOT_STORAGE_KEY), finalData.mascot);
+  if (mascot) localStorage.setItem(MASCOT_STORAGE_KEY, JSON.stringify(mascot));
+  const watered = mergeWateredMaps(readJson(WATERED_STORAGE_KEY), finalData.lastWatered);
+  if (finalData.lastWatered || localStorage.getItem(WATERED_STORAGE_KEY)) localStorage.setItem(WATERED_STORAGE_KEY, JSON.stringify(watered));
   // Older backups omit settings; never replace existing choices with defaults.
   if (finalData.regionalPreferences && typeof finalData.regionalPreferences === 'object') writeRegionalPreferences(sanitizeRegionalPreferences(finalData.regionalPreferences), { restored: true });
   if (finalData.appearance && typeof finalData.appearance === 'object') writeAppearance(sanitizeAppearance(finalData.appearance), { restored: true });
 
   if (Array.isArray(finalData.plantings)) {
-    localStorage.setItem(STORAGE_KEYS.PLANTINGS, JSON.stringify(finalData.plantings));
+    localStorage.setItem(STORAGE_KEYS.PLANTINGS, JSON.stringify(applyHarvestLedgerToPlantings(finalData.plantings, mascot)));
   }
   if (Array.isArray(finalData.myAnimals)) {
     localStorage.setItem(STORAGE_KEYS.MY_ANIMALS, JSON.stringify(finalData.myAnimals));
@@ -858,6 +879,8 @@ export function importFarmData(data, shouldMerge = true) {
   }
 
   if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(MASCOT_CHANGE_EVENT));
+    window.dispatchEvent(new CustomEvent('hortaviva_watered_update'));
     window.dispatchEvent(new CustomEvent("hortaviva_remote_updated"));
     const finalUser = (() => {
       try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.USER)); } catch { return null; }

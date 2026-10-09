@@ -5,7 +5,9 @@ import { base44 } from "@/api/base44Client";
 import { X, Sprout, MapPin, Calendar, Package, StickyNote } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { canAddPlantation, FREE_PLANTATIONS_LIMIT } from "@/lib/subscription";
-const STATUS_OPTIONS = ["Plantada", "Em crescimento", "Pronta a colher", "Colhida"];
+const STATUS_OPTIONS = ["Plantada", "Em crescimento", "Pronta a colher"];
+const MAX_PLANT_COUNT = 1000000;
+const positiveInteger = value => Number.isSafeInteger(Number(value)) && Number(value) > 0 && Number(value) <= MAX_PLANT_COUNT;
 export default function PlantingForm({
   plants,
   onClose,
@@ -24,12 +26,20 @@ export default function PlantingForm({
     expected_harvest_date: editing?.expected_harvest_date || "",
     location: editing?.location || "",
     growing_environment: editing?.growing_environment || preferences.growingEnvironment || 'outdoor',
+    quantity_method: ['grid', 'count'].includes(editing?.quantity_method) ? editing.quantity_method : editing?.rows && (editing?.columns || editing?.cols) ? 'grid' : 'count',
+    rows: editing?.rows ?? '',
+    columns: editing?.columns ?? editing?.cols ?? '',
+    plant_count: editing?.plant_count ?? '',
     quantity: editing?.quantity || "",
     notes: editing?.notes || "",
     status: editing?.status || "Plantada"
   });
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
+  const [quantityError, setQuantityError] = useState(false);
+  const numericCount = form.quantity_method === 'grid'
+    ? positiveInteger(form.rows) && positiveInteger(form.columns) ? Number(form.rows) * Number(form.columns) : 0
+    : positiveInteger(form.plant_count) ? Number(form.plant_count) : 0;
   const {
     toast
   } = useToast();
@@ -56,6 +66,14 @@ export default function PlantingForm({
       data.plant_name = search.trim();
     }
     if (!data.plant_name || !data.planted_date) return;
+    if (!positiveInteger(numericCount)) { setQuantityError(true); return; }
+    setQuantityError(false);
+    data.plant_count = numericCount;
+    data.rows = form.quantity_method === 'grid' ? Number(form.rows) : null;
+    data.columns = form.quantity_method === 'grid' ? Number(form.columns) : null;
+    // Harvesting is confirmed from the planting card; changing this form's
+    // status never creates an inventory entry.
+    if (data.status === 'Colhida' && editing?.status !== 'Colhida') data.status = editing?.status || 'Plantada';
     // Remove strings vazias para não falhar validação de formatos (ex: date)
     Object.keys(data).forEach(k => {
       if (data[k] === "") delete data[k];
@@ -147,8 +165,28 @@ export default function PlantingForm({
           </div>
 
           <div className="space-y-2"><label htmlFor="planting-environment" className="text-sm font-semibold text-stone-700">{i18nT('Ambiente de cultivo')}</label><select id="planting-environment" value={form.growing_environment} onChange={e=>set('growing_environment',e.target.value)} className="w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-3 text-sm">{[['outdoor','Ao ar livre'],['container','Em vaso / floreira'],['greenhouse','Em estufa'],['indoor','No interior']].map(([key,label])=><option key={key} value={key}>{i18nT(label)}</option>)}</select><p className="text-xs text-stone-500">{i18nT('A chuva só é considerada na rega de plantações ao ar livre. Verifica sempre a humidade do solo.')}</p></div>
-          {/* Localização e quantidade */}
-          <div className="grid grid-cols-2 gap-3">
+          <fieldset className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4">
+            <legend className="px-1 text-sm font-bold text-emerald-900">{i18nT('planting.quantityTitle')}</legend>
+            <p className="text-xs leading-relaxed text-stone-600">{i18nT('planting.quantityHelp')}</p>
+            <label htmlFor="planting-quantity-method" className="block text-xs font-semibold text-stone-600">{i18nT('planting.quantityMethod')}</label>
+            <select id="planting-quantity-method" value={form.quantity_method} onChange={e => { set('quantity_method', e.target.value); setQuantityError(false); }} className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm">
+              <option value="count">{i18nT('planting.quantityCount')}</option>
+              <option value="grid">{i18nT('planting.quantityGrid')}</option>
+            </select>
+            {form.quantity_method === 'grid' ? <div className="grid grid-cols-2 gap-3">
+              {[['rows', 'planting.rows'], ['columns', 'planting.columns']].map(([field, key]) => <div key={field} className="space-y-1.5">
+                <label htmlFor={`planting-${field}`} className="block text-xs font-semibold text-stone-600">{i18nT(key)} *</label>
+                <input id={`planting-${field}`} type="number" inputMode="numeric" min="1" max={MAX_PLANT_COUNT} step="1" required value={form[field]} onChange={e => { set(field, e.target.value); setQuantityError(false); }} className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-300" />
+              </div>)}
+            </div> : <div className="space-y-1.5">
+              <label htmlFor="planting-count" className="block text-xs font-semibold text-stone-600">{i18nT('planting.plantCount')} *</label>
+              <input id="planting-count" type="number" inputMode="numeric" min="1" max={MAX_PLANT_COUNT} step="1" required value={form.plant_count} onChange={e => { set('plant_count', e.target.value); setQuantityError(false); }} className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-300" />
+            </div>}
+            {positiveInteger(numericCount) && <p role="status" className="text-sm font-bold text-emerald-900">{i18nT('planting.quantityTotal', { count: numericCount })}</p>}
+            {quantityError && <p role="alert" className="text-xs font-semibold text-rose-700">{i18nT('planting.quantityInvalid')}</p>}
+          </fieldset>
+          {/* Localização e nota de quantidade preservada das versões anteriores. */}
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-stone-600 flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5 text-stone-500" />{i18nT(" Local")}</label>
@@ -156,8 +194,8 @@ export default function PlantingForm({
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-stone-600 flex items-center gap-1.5">
-                <Package className="w-3.5 h-3.5 text-stone-500" />{i18nT(" Quantidade")}</label>
-              <input type="text" value={form.quantity} onChange={e => set("quantity", e.target.value)} placeholder={i18nT("5 sementes, 3 linhas...")} className="w-full bg-stone-50 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-300" />
+                <Package className="w-3.5 h-3.5 text-stone-500" />{i18nT('planting.quantityNotes')}</label>
+              <input type="text" value={form.quantity} onChange={e => set("quantity", e.target.value)} placeholder={i18nT('planting.quantityNotesPlaceholder')} className="w-full bg-stone-50 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-300" />
             </div>
           </div>
 
@@ -165,10 +203,11 @@ export default function PlantingForm({
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-stone-600">{i18nT("Estado")}</label>
             <div className="flex flex-wrap gap-2">
-              {i18nT(STATUS_OPTIONS.map(s => <button key={s} type="button" onClick={() => set("status", s)} className={`text-xs font-medium px-3 py-1.5 rounded-full transition-all ${form.status === s ? "bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-sm" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}>
+              {i18nT((editing?.status === 'Colhida' ? ['Colhida'] : STATUS_OPTIONS).map(s => <button key={s} type="button" onClick={() => set("status", s)} className={`text-xs font-medium px-3 py-1.5 rounded-full transition-all ${form.status === s ? "bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-sm" : "bg-stone-100 text-stone-600 hover:bg-stone-200"}`}>
                   {i18nT(s)}
                 </button>))}
             </div>
+            {editing?.status !== 'Colhida' && <p className="text-xs leading-relaxed text-stone-500">{i18nT('planting.harvestHint')}</p>}
           </div>
 
           {/* Notas */}

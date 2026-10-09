@@ -20,6 +20,7 @@ if (!fs.existsSync(baseIndexHtmlPath)) {
 const baseHtml = fs.readFileSync(baseIndexHtmlPath, 'utf8');
 
 const ROUTES = [
+  { path: 'mascote', title: 'Mascote e Armazém — Horta Viva', description: 'Cuida da tua mascote, recolhe as colheitas da quinta e acompanha a sua evolução.' },
   { path: 'definicoes', title: 'Definições da Horta Viva', description: 'Região, língua, meteorologia, perfil e personalização da Horta Viva.' },
   {
     path: 'podas-mondas',

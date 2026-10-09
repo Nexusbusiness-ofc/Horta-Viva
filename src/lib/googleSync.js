@@ -415,6 +415,8 @@ function getSyncComparableData(data = {}) {
     user: data.user || null,
     regionalPreferences: data.regionalPreferences || null,
     appearance: data.appearance || null,
+    mascot: data.mascot || null,
+    lastWatered: data.lastWatered || {},
     subscription: data.subscription || null,
     deletedIds: data.deletedIds || {},
     plantings: sortRecords(data.plantings),

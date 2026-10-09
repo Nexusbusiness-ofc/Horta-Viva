@@ -21,6 +21,7 @@ import { useI18n, CatalogLanguageNote } from '@/lib/I18nContext';
 import { getLocalMonth } from '@/lib/regionalClimate';
 import WeatherCard from '@/components/weather/WeatherCard';
 import RegionSummary from '@/components/regional/RegionSummary';
+import MascotHomeCard from '@/components/mascot/MascotHomeCard';
 
 export default function Home() {
   const { preferences } = useRegionalPreferences();
@@ -181,6 +182,7 @@ export default function Home() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-28 space-y-6">
         <RegionSummary />
         <WeatherCard />
+        <MascotHomeCard />
         {/* Quando o utilizador NÃO está a pesquisar, exibe todos os blocos do mockup */}
         {!isSearching && (
           <>

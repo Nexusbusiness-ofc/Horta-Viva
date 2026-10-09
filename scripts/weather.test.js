@@ -12,6 +12,19 @@ function fixture({ temperature = 23, rain = 1, wind = 2 } = {}) {
 }
 function forecast(options = {}) { return normalizeForecast(fixture(options), { preferences: prefs, now: start }); }
 
+test('current pet rain uses only the hour containing now, never a future six-hour forecast', () => {
+  const weather = normalizeForecast(fixture(), { preferences: prefs, now: start + WEATHER_CACHE_MS / 2 });
+  assert.equal(weather.currentRain.start, new Date(start).toISOString());
+  assert.equal(weather.currentRain.precipitationMm, 1);
+  assert.equal(weather.currentRain.estimated, true);
+  const payload = fixture();
+  payload.properties.timeseries = payload.properties.timeseries.slice(1);
+  assert.equal(normalizeForecast(payload, { preferences: prefs, now: start }).currentRain, null);
+  const onlySixHours = fixture();
+  delete onlySixHours.properties.timeseries[0].data.next_1_hours;
+  assert.equal(normalizeForecast(onlySixHours, { preferences: prefs, now: start }).currentRain, null);
+});
+
 test('hourly rain and its overlapping six-hour aggregates are never counted twice', () => {
   const intervals = precipitationIntervals(fixture().properties.timeseries);
   assert.equal(sumPrecipitation(intervals, start, 6).precipitationMm, 6);

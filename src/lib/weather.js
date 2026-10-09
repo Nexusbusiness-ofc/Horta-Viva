@@ -119,6 +119,17 @@ export function normalizeForecast(payload, { preferences = {}, now = Date.now(),
   if (!Number.isFinite(windowStart)) throw weatherError('incomplete_forecast');
   const updatedAt = payload.properties.meta?.updated_at;
   const stale = current >= Number(expiresAt) || !Number.isFinite(Date.parse(updatedAt)) || current - Date.parse(updatedAt) > 12 * WEATHER_CACHE_MS;
+  // Current modelled rain is a separate signal from the future accumulation
+  // windows. It can fill the virtual pet's bowl, never mark crops as watered.
+  const currentRow = usable.find(row => Date.parse(row.time) <= current && current < Date.parse(row.time) + WEATHER_CACHE_MS && row.data?.next_1_hours);
+  const hourlyRain = currentRow?.data?.next_1_hours;
+  const currentRain = currentRow && finite(hourlyRain?.details?.precipitation_amount) ? {
+    start: currentRow.time,
+    end: new Date(Date.parse(currentRow.time) + WEATHER_CACHE_MS).toISOString(),
+    precipitationMm: Math.max(0, hourlyRain.details.precipitation_amount),
+    symbol: hourlyRain.summary?.symbol_code || '',
+    estimated: true,
+  } : null;
   return {
     source: WEATHER_SOURCE,
     location: weatherCoordinates(preferences),
@@ -129,6 +140,7 @@ export function normalizeForecast(payload, { preferences = {}, now = Date.now(),
     days,
     next6h: sumPrecipitation(intervals, windowStart, 6),
     next24h: sumPrecipitation(intervals, windowStart, 24),
+    currentRain,
     isStale: stale,
     offline: false,
     adviceAllowed: !stale,

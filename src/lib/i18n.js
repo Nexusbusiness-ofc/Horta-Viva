@@ -4,6 +4,9 @@ import { CATALOG_NAME_ROWS } from './i18nCatalogNames.js';
 import { HOME_TRANSLATION_ROWS } from './i18nHomeMessages.js';
 import { CURIOSITY_FACT_ROWS } from './i18nCuriosityFacts.js';
 import { WEATHER_TRANSLATIONS } from './weatherTranslations.js';
+import { MASCOT_TRANSLATIONS } from './mascotTranslations.js';
+import { PLANTING_QUANTITY_TRANSLATIONS } from './plantingQuantityTranslations.js';
+import { HARVEST_TRANSLATIONS } from './harvestTranslations.js';
 
 export const SUPPORTED_LANGUAGES = ['pt-PT', 'pt-BR', 'en', 'es'];
 
@@ -52,6 +55,9 @@ export function registerTranslations(catalog) {
 }
 
 registerTranslations(WEATHER_TRANSLATIONS);
+registerTranslations(MASCOT_TRANSLATIONS);
+registerTranslations(PLANTING_QUANTITY_TRANSLATIONS);
+registerTranslations(HARVEST_TRANSLATIONS);
 
 /** Pure: does not inspect browser language, storage, the DOM or external services. */
 export function translate(key, language = 'pt-PT', vars = {}) {

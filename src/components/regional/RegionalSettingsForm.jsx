@@ -8,18 +8,32 @@ import { localAuth } from '@/lib/localStorageStore';
 import { readAppearance } from '@/lib/appearance';
 import { useAppearance } from '@/lib/AppearanceContext';
 import { readFarmProfile, sanitizeFarmProfile } from '@/lib/farmProfile';
+import { readMascotState, writeMascotSettings } from '@/lib/mascot';
+import MascotSettingsFields from '@/components/mascot/MascotSettingsFields';
 import FarmProfileFields from './FarmProfileFields';
 import AppearanceFields from './AppearanceFields';
 import SyncBackupModal from '@/components/quinta/SyncBackupModal';
 
 const fieldClass = 'w-full rounded-xl border border-stone-200 bg-white px-3.5 py-3 text-sm text-stone-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100';
 const labelClass = 'mb-2 block text-xs font-bold uppercase tracking-wide text-stone-600';
+const mascotStorageMessages = {
+  'pt-PT': 'Não foi possível ler os dados da mascote. A cópia existente foi mantida e não será substituída ao guardar. Podes guardar as restantes definições e tentar novamente mais tarde.',
+  'pt-BR': 'Não foi possível ler os dados da mascote. A cópia existente foi mantida e não será substituída ao salvar. Você pode salvar as outras configurações e tentar novamente mais tarde.',
+  en: 'The pet data could not be read. The existing copy has been kept and will not be replaced when saving. You can save your other settings and try again later.',
+  es: 'No se pudieron leer los datos de la mascota. Se conserva la copia existente y no se sustituirá al guardar. Puedes guardar los demás ajustes e intentarlo de nuevo más tarde.',
+};
+const mascotRetryMessages = { 'pt-PT': 'Tentar novamente', 'pt-BR': 'Tentar novamente', en: 'Try again', es: 'Intentar de nuevo' };
+function readMascotEditor() {
+  try { return { settings: readMascotState().settings, failed: false }; }
+  catch { return { settings: null, failed: true }; }
+}
 
 export default function RegionalSettingsForm({ onboarding = false }) {
   const { preferences, savePreferences, storageError } = useRegionalPreferences();
   const [draft, setDraft] = useState(preferences);
   const { appearance, saveAppearance } = useAppearance();
   const [appearanceDraft, setAppearanceDraft] = useState(appearance);
+  const [mascotEditor, setMascotEditor] = useState(readMascotEditor);
   const [profile, setProfile] = useState(readFarmProfile);
   const [saving, setSaving] = useState(false);
   const [showSync, setShowSync] = useState(false);
@@ -44,7 +58,7 @@ export default function RegionalSettingsForm({ onboarding = false }) {
   const patch = value => { setDraft(current => ({ ...current, ...value })); setError(''); setSaved(false); };
 
   useEffect(() => {
-    const restored = () => { const next = readRegionalPreferences(); setDraft(next); setAppearanceDraft(readAppearance()); setProfile(readFarmProfile()); setQuery(next.locality); setSelectedLocation(hasCoordinates(next)); };
+    const restored = () => { const next = readRegionalPreferences(); setDraft(next); setAppearanceDraft(readAppearance()); setMascotEditor(readMascotEditor()); setProfile(readFarmProfile()); setQuery(next.locality); setSelectedLocation(hasCoordinates(next)); };
     window.addEventListener('hortaviva_remote_updated', restored);
     return () => window.removeEventListener('hortaviva_remote_updated', restored);
   }, []);
@@ -94,21 +108,27 @@ export default function RegionalSettingsForm({ onboarding = false }) {
     if (step === 0 && !draft.region.trim()) { setError(t('regionRequired')); return; }
     if (step === 1 && draft.weatherEnabled && !hasCoordinates(draft)) { setError(t('locationRequired')); return; }
     if (step === 2 && !profile.farm_name.trim()) { setError(t('farmRequired')); return; }
-    setError(''); setStep(current => Math.min(4, current + 1));
+    setError(''); setStep(current => Math.min(5, current + 1));
   };
 
   const submit = async event => {
     event.preventDefault();
-    if (onboarding && step < 4) { next(); return; }
+    if (onboarding && step < 5) { next(); return; }
     if (!draft.region.trim()) { setError(t('regionRequired')); if (onboarding) setStep(0); return; }
     if (draft.weatherEnabled && !hasCoordinates(draft)) { setError(t('locationRequired')); if (onboarding) setStep(1); return; }
     if (!profile.farm_name.trim()) { setError(t('farmRequired')); if (onboarding) setStep(2); return; }
     setSaving(true);
+    setError(''); setSaved(false);
     try {
       const cleaned = sanitizeFarmProfile(profile);
       await localAuth.updateMe({ ...cleaned, location: [draft.locality || draft.region, getCountryName(draft.countryCode,draft.language)].filter(Boolean).join(' · ') });
       saveAppearance(appearanceDraft);
+      if (!mascotEditor.failed) {
+        try { writeMascotSettings(mascotEditor.settings); }
+        catch (failure) { setMascotEditor({ settings: null, failed: true }); throw failure; }
+      }
       const result = savePreferences({ ...draft, onboarded: true });
+      if (!result.persisted) { setError(t('saveFailure')); return; }
       setSaved(result.persisted);
     } catch { setError(t('saveFailure')); }
     finally { setSaving(false); }
@@ -129,7 +149,7 @@ export default function RegionalSettingsForm({ onboarding = false }) {
         </div>
       </aside>}
       <form onSubmit={submit} className={onboarding ? 'p-5 sm:p-8' : 'space-y-5'}>
-        {onboarding && <div className="mb-6"><p className="mb-2 text-xs font-bold uppercase tracking-widest text-emerald-700">{t('step',{step:step+1})}</p><div className="flex gap-2">{[0,1,2,3,4].map(index => <span key={index} className={`h-1.5 flex-1 rounded-full ${index<=step?'bg-emerald-600':'bg-stone-100'}`} />)}</div></div>}
+        {onboarding && <div className="mb-6"><p className="mb-2 text-xs font-bold uppercase tracking-widest text-emerald-700">{t('step',{step:step+1})}</p><div className="flex gap-2">{[0,1,2,3,4,5].map(index => <span key={index} className={`h-1.5 flex-1 rounded-full ${index<=step?'bg-emerald-600':'bg-stone-100'}`} />)}</div></div>}
         {(!onboarding || step === 0) && <section className="space-y-5 rounded-2xl border border-stone-100 bg-white p-1 sm:p-2">
           <h2 className="flex items-center gap-2 text-xl font-bold text-stone-800"><Globe2 className="h-5 w-5 text-emerald-700" />{t('place')}</h2>
           {onboarding&&<button type="button" onClick={()=>setShowSync(true)} className="w-full rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm font-bold text-emerald-900">{t('restoreGoogle')}</button>}
@@ -161,12 +181,13 @@ export default function RegionalSettingsForm({ onboarding = false }) {
           <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4"><p className="text-sm font-bold text-amber-950">{t('estimated')}</p><p className="mt-1.5 text-xs leading-relaxed text-amber-900/80">{t('estimateBody')}</p></div>
         </section>}
         {(!onboarding || step === 4) && <AppearanceFields value={appearanceDraft} onChange={setAppearanceDraft} language={draft.language} />}
+        {(!onboarding || step === 5) && <section id="mascote" className="scroll-mt-24">{mascotEditor.failed ? <div role="alert" className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm leading-relaxed text-amber-950"><p>{mascotStorageMessages[draft.language] || mascotStorageMessages['pt-PT']}</p><button type="button" disabled={saving} onClick={() => { setMascotEditor(readMascotEditor()); setSaved(false); }} className="mt-3 rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs font-bold disabled:opacity-60">{mascotRetryMessages[draft.language] || mascotRetryMessages['pt-PT']}</button></div> : <MascotSettingsFields value={mascotEditor.settings} onChange={value => { setMascotEditor({ settings: value, failed: false }); setError(''); setSaved(false); }} language={draft.language} />}</section>}
         {error&&<p role="alert" className="mt-4 rounded-xl bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
         {storageError&&<p role="alert" className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">{t('storageError')}</p>}
         {saved&&<p role="status" className="mt-4 flex items-center gap-2 rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-900"><Check className="h-4 w-4" />{t('saved')}</p>}
         <div className="mt-6 flex items-center gap-3 border-t border-stone-100 pt-5">
-          {onboarding&&step>0&&<button type="button" onClick={()=>{setStep(value=>value-1);setError('');}} className="flex items-center gap-1 rounded-xl border border-stone-200 px-3 py-3 text-sm font-semibold text-stone-600"><ArrowLeft className="h-4 w-4" />{t('back')}</button>}
-          <button type="submit" disabled={geoBusy||saving} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-800 px-4 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-900 disabled:opacity-60">{saving?<Loader2 className="h-4 w-4 animate-spin" />:t(onboarding?(step<4?'continue':'start'):'save')}<ArrowRight className="h-4 w-4 shrink-0" /></button>
+          {onboarding&&step>0&&<button type="button" disabled={saving} onClick={()=>{setStep(value=>value-1);setError('');}} className="flex items-center gap-1 rounded-xl border border-stone-200 px-3 py-3 text-sm font-semibold text-stone-600 disabled:opacity-60"><ArrowLeft className="h-4 w-4" />{t('back')}</button>}
+          <button type="submit" disabled={geoBusy||saving} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-800 px-4 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-900 disabled:opacity-60">{saving?<Loader2 className="h-4 w-4 animate-spin" />:t(onboarding?(step<5?'continue':'start'):'save')}<ArrowRight className="h-4 w-4 shrink-0" /></button>
         </div>
         {onboarding&&step===1&&draft.weatherEnabled&&!hasCoordinates(draft)&&<button type="button" className="mt-3 w-full text-center text-xs font-semibold text-stone-500 underline" onClick={()=>{patch({weatherEnabled:false});setStep(2);}}>{t('noWeather')}</button>}
       </form>

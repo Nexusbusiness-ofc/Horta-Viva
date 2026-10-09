@@ -9,6 +9,8 @@ import { AppearanceProvider } from '@/lib/AppearanceContext';
 import { WeatherProvider } from '@/lib/WeatherContext';
 import RegionalSetupGate from '@/components/regional/RegionalSetupGate';
 import Definicoes from './pages/Definicoes';
+import Mascote from './pages/Mascote';
+import MascotCareObserver from './components/mascot/MascotCareObserver';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -158,6 +160,7 @@ const AuthenticatedApp = () => {
       <Route path="/oauth-consent" element={<OAuthConsent />} />
       <Route path="/" element={<Home />} />
       <Route path="/minha-quinta" element={<MinhaQuinta />} />
+      <Route path="/mascote" element={<Mascote />} />
       <Route path="/calendario-curas" element={<CalendarioCuras />} />
       <Route path="/resumo-mensal" element={<ResumoMensal />} />
       <Route path="/cogumelos" element={<Cogumelos />} />
@@ -177,7 +180,7 @@ function RegionalAppShell() {
   const location = useLocation();
   useEffect(() => { document.documentElement.lang = preferences.language; }, [preferences.language]);
   const catalogKey = location.pathname.replace(/\/+$/, '') === '/definicoes' ? 'settings' : JSON.stringify([preferences.countryCode, preferences.region, preferences.latitude, preferences.longitude, preferences.climate, preferences.language, preferences.growingEnvironment, preferences.wetSeasonMonths, preferences.timeZone]);
-  return <RegionalSetupGate><WeatherProvider><AuthenticatedApp key={catalogKey} /><BottomNav /><BackToTopButton /><InstallPrompt /><Toaster /></WeatherProvider></RegionalSetupGate>;
+  return <RegionalSetupGate><WeatherProvider><MascotCareObserver /><AuthenticatedApp key={catalogKey} /><BottomNav /><BackToTopButton /><InstallPrompt /><Toaster /></WeatherProvider></RegionalSetupGate>;
 }
 
 function App() {

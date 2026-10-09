@@ -5,6 +5,12 @@ import { Menu, Smartphone } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { usePWAInstall, IOSInstructionsModal } from "@/components/pwa/InstallPrompt";
 const SECTIONS = [{
+  to: "/mascote",
+  emoji: "🌱",
+  label: "mascot.navTitle",
+  desc: "mascot.navDesc",
+  color: "#c27336"
+}, {
   to: "/definicoes",
   emoji: "⚙️",
   label: "Definições",

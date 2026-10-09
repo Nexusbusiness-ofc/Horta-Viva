@@ -1,0 +1,30 @@
+.hv-mascot { width: 100%; user-select: none; }
+.hv-mascot svg { width: 100%; height: 100%; overflow: visible; display: block; }
+.hv-mascot-body { animation: hv-pet-breathe 4s ease-in-out infinite; }
+.hv-mascot-eyes { transform-box: fill-box; transform-origin: center; animation: hv-pet-blink 6.7s infinite; }
+.hv-mascot-leaves { transform-origin: 132px 102px; animation: hv-pet-leaf 5s ease-in-out infinite; }
+.hv-mascot--eat .hv-mascot-body { animation: hv-pet-eat .35s ease-in-out 4; }
+.hv-mascot--eat .hv-mascot-chew { transform-box: fill-box; transform-origin: center; animation: hv-pet-chew .22s ease-in-out 6; }
+.hv-mascot--celebrate .hv-mascot-body { animation: hv-pet-jump .65s ease-in-out 2; }
+.hv-mascot--wave .hv-mascot-arm { transform-origin: 74px 178px; animation: hv-pet-wave .45s ease-in-out 3; }
+.hv-mascot-sparkles { animation: hv-pet-sparkle 1.3s ease-out both; }
+.hv-pet-cloud { animation: hv-cloud-drift 18s ease-in-out infinite alternate; }
+.hv-pet-butterfly { animation: hv-butterfly-float 7s ease-in-out infinite; }
+.hv-pet-food-flight { position: absolute; left: 50%; top: 82%; z-index: 20; font-size: 2.5rem; pointer-events: none; animation: hv-food-throw .7s cubic-bezier(.18,.66,.42,1) both; }
+.hv-pet-stage { isolation: isolate; touch-action: pan-y; }
+.hv-pet-food-handle { touch-action: none; -webkit-user-select: none; user-select: none; }
+@keyframes hv-pet-breathe { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-3px) rotate(1deg); } }
+@keyframes hv-pet-blink { 0%,43%,46%,100% { transform: scaleY(1); } 44.5% { transform: scaleY(.06); } }
+@keyframes hv-pet-leaf { 0%,100% { transform: rotate(-3deg); } 50% { transform: rotate(4deg); } }
+@keyframes hv-pet-eat { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(2px) scale(1.025,.98); } }
+@keyframes hv-pet-chew { 50% { transform: scale(.6,1.25); } }
+@keyframes hv-pet-jump { 0%,100% { transform: translateY(0); } 45% { transform: translateY(-18px) rotate(3deg); } }
+@keyframes hv-pet-wave { 50% { transform: rotate(25deg); } }
+@keyframes hv-pet-sparkle { 0% { opacity: 0; transform: translateY(12px); } 25%,65% { opacity: 1; } 100% { opacity: 0; transform: translateY(-12px); } }
+@keyframes hv-food-throw { 0% { opacity: 1; transform: translate(calc(-50% + var(--throw-x, 0px)),var(--throw-y, 0px)) scale(1) rotate(-20deg); } 45% { opacity: 1; transform: translate(-50%,-175px) scale(.85) rotate(80deg); } 100% { opacity: 0; transform: translate(-50%,-110px) scale(.1) rotate(170deg); } }
+@keyframes hv-cloud-drift { to { transform: translateX(18px); } }
+@keyframes hv-butterfly-float { 0%,100% { transform: translate(0,0) rotate(-8deg); } 50% { transform: translate(10px,-8px) rotate(8deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .hv-mascot *, .hv-pet-cloud, .hv-pet-butterfly, .hv-pet-food-flight { animation: none !important; transition: none !important; }
+  .hv-pet-food-flight { opacity: 0; }
+}

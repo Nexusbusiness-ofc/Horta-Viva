@@ -16,7 +16,7 @@ export function RegionalPreferencesProvider({ children }) {
   const savePreferences = useCallback(value => {
     const next = sanitizeRegionalPreferences(value);
     try { const saved = writeRegionalPreferences(next); setPreferences(saved); setStorageError(false); return { preferences: saved, persisted: true }; }
-    catch { setPreferences(next); setStorageError(true); return { preferences: next, persisted: false }; }
+    catch { setStorageError(true); return { preferences: next, persisted: false }; }
   }, []);
   return <RegionalPreferencesContext.Provider value={{ preferences, savePreferences, storageError }}>{children}</RegionalPreferencesContext.Provider>;
 }

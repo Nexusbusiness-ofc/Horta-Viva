@@ -1,6 +1,6 @@
 import { useI18n } from "@/lib/I18nContext";
 import { useAuth } from '@/lib/AuthContext';
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Plus, Loader2, ArrowLeft, Sprout, PawPrint, Camera, Cloud, Sparkles, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -19,7 +19,12 @@ import NavigationDrawer from "@/components/home/NavigationDrawer";
 import { useSubscription, FREE_PLANTATIONS_LIMIT, FREE_ANIMALS_LIMIT, PLUS_PLANTATIONS_LIMIT, PLUS_ANIMALS_LIMIT, PRO_PLANTATIONS_LIMIT, PRO_ANIMALS_LIMIT } from "@/lib/subscription";
 import UpgradeModal from "@/components/subscription/UpgradeModal";
 import ProSubscriptionView from "@/components/subscription/ProSubscriptionView";
+import HarvestDialog from '@/components/quinta/HarvestDialog';
+import { harvestPlanting, hasHarvest, readMascotState } from '@/lib/mascot';
+import { useToast } from '@/components/ui/use-toast';
+import { readAccountScope } from '@/lib/accountScope';
 const FILTERS = ["Todas", "Plantada", "Em crescimento", "Pronta a colher", "Colhida"];
+const safeMascotState = () => { try { return readMascotState(); } catch { return null; } };
 export default function MinhaQuinta() {
   const { user } = useAuth();
   const {
@@ -32,6 +37,10 @@ export default function MinhaQuinta() {
   const [farmAnimals, setFarmAnimals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingPlanting, setEditingPlanting] = useState(null);
+  const [harvestTarget, setHarvestTarget] = useState(null);
+  const [mascotState, setMascotState] = useState(safeMascotState);
+  const { toast } = useToast();
   const [showAnimalForm, setShowAnimalForm] = useState(false);
   const [editingAnimal, setEditingAnimal] = useState(null);
   const [filter, setFilter] = useState("Todas");
@@ -52,10 +61,26 @@ export default function MinhaQuinta() {
     canAddAnimal
   } = useSubscription();
   const requireAuth = useRequireAuth();
+  const loadSequence = useRef(0);
+  const mounted = useRef(true);
+  const loadedScope = useRef(null);
+  const visibleScope = useRef(readAccountScope());
   const load = async () => {
+    const sequence = ++loadSequence.current;
+    const scope = readAccountScope();
+    const current = () => mounted.current && sequence === loadSequence.current && scope !== null && scope === readAccountScope();
+    if (visibleScope.current !== scope) {
+      visibleScope.current = scope;
+      setShowForm(false); setEditingPlanting(null); setHarvestTarget(null);
+      setShowAnimalForm(false); setEditingAnimal(null);
+      setPlantings([]); setMyAnimals([]);
+    }
+    loadedScope.current = null;
+    setMascotState(safeMascotState());
     setLoading(true);
     try {
       const [p, allPlants, ma, fa] = await Promise.all([base44.entities.Planting.list("-planted_date").catch(() => []), cachedList("plants", () => base44.entities.Plant.list()), base44.entities.MyAnimal.list("-added_date").catch(() => []), cachedList("farmanimals", () => base44.entities.FarmAnimal.list())]);
+      if (!current()) return;
       const updates = [];
       for (const pl of p) {
         const target = getAutoStatus(pl);
@@ -77,9 +102,14 @@ export default function MinhaQuinta() {
       setPlants(allPlants);
       setMyAnimals(ma);
       setFarmAnimals(fa);
+      loadedScope.current = scope;
       if (updates.length) {
         try {
-          await Promise.all(updates.map(u => base44.entities.Planting.update(u.id, u.data)));
+          for (const update of updates) {
+            if (!current()) return;
+            await base44.entities.Planting.update(update.id, update.data);
+          }
+          if (!current()) return;
           setPlantings(prev => prev.map(pl => {
             const u = updates.find(x => x.id === pl.id);
             return u ? u.local : pl;
@@ -87,10 +117,11 @@ export default function MinhaQuinta() {
         } catch {/* as atualizações de estado são best-effort */}
       }
     } finally {
-      setLoading(false);
+      if (current()) setLoading(false);
     }
   };
   useEffect(() => {
+    mounted.current = true;
     load();
     const handleSyncChange = e => {
       setIsSynced(isGoogleConnected());
@@ -101,6 +132,8 @@ export default function MinhaQuinta() {
     };
     window.addEventListener("hortaviva_sync_change", handleSyncChange);
     window.addEventListener("hortaviva_remote_updated", handleRemoteUpdate);
+    window.addEventListener("hortaviva_auth_changed", handleRemoteUpdate);
+    window.addEventListener("storage", handleRemoteUpdate);
     if (isGoogleConnected()) {
       autoSyncGoogleDrive(false).then(() => {
         setIsSynced(isGoogleConnected());
@@ -108,8 +141,11 @@ export default function MinhaQuinta() {
       }).catch(() => {});
     }
     return () => {
+      mounted.current = false; ++loadSequence.current;
       window.removeEventListener("hortaviva_sync_change", handleSyncChange);
       window.removeEventListener("hortaviva_remote_updated", handleRemoteUpdate);
+      window.removeEventListener("hortaviva_auth_changed", handleRemoteUpdate);
+      window.removeEventListener("storage", handleRemoteUpdate);
     };
   }, []);
   const handleManualSync = async () => {
@@ -126,7 +162,12 @@ export default function MinhaQuinta() {
     }
   };
   const handleUpdate = async (id, data) => {
-    await base44.entities.Planting.update(id, data);
+    const scope = loadedScope.current;
+    if (scope === null || scope !== readAccountScope()) return;
+    if (data.status === 'Colhida') { setHarvestTarget(plantings.find(planting=>planting.id === id)); return; }
+    try { await base44.entities.Planting.update(id, data); }
+    catch { toast({ title: i18nT('harvest.updateError'), variant: 'destructive' }); return; }
+    if (!mounted.current || scope !== readAccountScope()) return;
     setPlantings(prev => prev.map(p => p.id === id ? {
       ...p,
       ...data
@@ -134,23 +175,40 @@ export default function MinhaQuinta() {
     autoSyncGoogleDrive();
   };
   const handleDelete = async id => {
+    const scope = loadedScope.current;
+    if (scope === null || scope !== readAccountScope()) return;
     try {
       await base44.entities.Planting.delete(id);
     } catch (e) {
-      // se já não existir no servidor, remove na mesma do estado local
+      toast({ title: i18nT('harvest.updateError'), variant: 'destructive' }); return;
     }
+    if (!mounted.current || scope !== readAccountScope()) return;
     setPlantings(prev => prev.filter(p => p.id !== id));
     autoSyncGoogleDrive();
   };
   const handleSaved = () => {
     setShowForm(false);
+    setEditingPlanting(null);
     load();
     autoSyncGoogleDrive();
   };
+  const confirmHarvest = async quantityData => {
+    const scope = loadedScope.current;
+    if (!harvestTarget || scope === null || scope !== readAccountScope()) throw new Error('Account changed');
+    harvestPlanting(harvestTarget.id, quantityData);
+    setHarvestTarget(null);
+    await load();
+    if (!mounted.current || scope !== readAccountScope()) return;
+    toast({ title: i18nT('harvest.success'), description: i18nT('harvest.total',{count:quantityData.plant_count}) });
+    autoSyncGoogleDrive();
+  };
   const handleAnimalDelete = async id => {
+    const scope = loadedScope.current;
+    if (scope === null || scope !== readAccountScope()) return;
     try {
       await base44.entities.MyAnimal.delete(id);
-    } catch {}
+    } catch { toast({ title: i18nT('harvest.updateError'), variant: 'destructive' }); return; }
+    if (!mounted.current || scope !== readAccountScope()) return;
     setMyAnimals(prev => prev.filter(a => a.id !== id));
     autoSyncGoogleDrive();
   };
@@ -171,6 +229,7 @@ export default function MinhaQuinta() {
       setEditingAnimal(null);
       setShowAnimalForm(true);
     } else {
+      setEditingPlanting(null);
       if (!canAddPlantation(plantings.length)) {
         setUpgradeReason("plantacoes");
         setShowUpgradeModal(true);
@@ -260,6 +319,7 @@ export default function MinhaQuinta() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200/70 bg-white/80 px-4 py-3 shadow-sm"><Link to="/mascote" className="flex items-center gap-2 text-sm font-bold text-stone-800"><span className="text-xl" aria-hidden="true">🌱</span>{i18nT('mascot.navTitle')}</Link><Link to="/mascote#armazem" className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900 hover:bg-amber-100">{i18nT('harvest.open')} →</Link></div>
         {/* Banner de Sincronização Pendente / Reconexão Google */}
         {syncStatus === "needs_reconnect" && <div className="bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border border-amber-300/80 rounded-3xl p-4 sm:p-4.5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in">
             <div className="flex items-center gap-3">
@@ -372,7 +432,7 @@ export default function MinhaQuinta() {
                   {filtered.length === 0 ? <div className="text-center py-12">
                       <p className="text-sm text-stone-400">{i18nT("Nenhuma plantação neste estado.")}</p>
                     </div> : <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {i18nT(filtered.map(p => <PlantingCard key={p.id} planting={p} plants={plants} onUpdate={handleUpdate} onDelete={handleDelete} />))}
+                      {i18nT(filtered.map(p => <PlantingCard key={p.id} planting={p} plants={plants} onUpdate={handleUpdate} onDelete={handleDelete} onEdit={planting=>{setEditingPlanting(planting);setShowForm(true);}} onHarvest={!hasHarvest(p.id,mascotState) ? setHarvestTarget : undefined} />))}
                     </div>}
                 </> : myAnimals.length === 0 ? <div className="text-center py-20">
                   <div className="text-6xl mb-4">🐾</div>
@@ -393,7 +453,8 @@ export default function MinhaQuinta() {
         <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent font-medium">{i18nT("🌱 Minha Horta — Cultiva com sabedoria")}</span>
       </footer>
 
-      {showForm && <PlantingForm plants={plants} onClose={() => setShowForm(false)} onSaved={handleSaved} />}
+      {showForm && <PlantingForm plants={plants} editing={editingPlanting} onClose={() => {setShowForm(false);setEditingPlanting(null);}} onSaved={handleSaved} />}
+      {harvestTarget && <HarvestDialog key={harvestTarget.id} planting={harvestTarget} onClose={()=>setHarvestTarget(null)} onHarvest={confirmHarvest} />}
       {showAnimalForm && <MyAnimalForm animals={farmAnimals} editing={editingAnimal} onClose={() => {
       setShowAnimalForm(false);
       setEditingAnimal(null);
