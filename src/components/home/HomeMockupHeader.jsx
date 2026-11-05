@@ -54,6 +54,9 @@ export default function HomeMockupHeader({
 
           {/* Links Rápidos de Navegação para Desktop (PC) */}
           <nav className="hidden lg:flex items-center gap-1 bg-white/10 backdrop-blur-xl rounded-full px-3 py-1.5 border border-white/20 shadow-inner">
+            <Link to="/catalogo" className="text-xs font-bold px-3 py-1.5 rounded-full text-white/95 hover:text-white hover:bg-white/20 transition-all">
+              {i18nT("Catálogo")}
+            </Link>
             <Link to="/minha-quinta" className="text-xs font-bold px-3 py-1.5 rounded-full text-white/95 hover:text-white hover:bg-white/20 transition-all">
               {i18nT("Minha Quinta")}
             </Link>

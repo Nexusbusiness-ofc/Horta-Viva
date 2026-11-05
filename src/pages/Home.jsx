@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { Loader2, Filter, Sprout, Sparkles, Calendar, Compass } from "lucide-react";
-import { useNavigate, Link } from "react-router-dom";
+import { Loader2, Filter, Sprout, Sparkles, Calendar, Compass, ArrowRight } from "lucide-react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import HomeMockupHeader from "@/components/home/HomeMockupHeader";
 import MockupHeroCard from "@/components/home/MockupHeroCard";
 import DailyCuriositiesCarousel from "@/components/home/DailyCuriositiesCarousel";
@@ -17,18 +17,21 @@ import { ViewModeToggle, useViewMode } from "@/components/ui/ViewModeToggle";
 import { getLunarPhaseInfo } from "@/lib/agronomicWisdom";
 import { useSubscription } from "@/lib/subscription";
 import UpgradeModal from "@/components/subscription/UpgradeModal";
-import { useRegionalPreferences } from '@/lib/RegionalPreferencesContext';
-import { useI18n, CatalogLanguageNote } from '@/lib/I18nContext';
-import { getLocalMonth } from '@/lib/regionalClimate';
-import WeatherCard from '@/components/weather/WeatherCard';
-import RegionSummary from '@/components/regional/RegionSummary';
-import MascotHomeCard from '@/components/mascot/MascotHomeCard';
+import { useRegionalPreferences } from "@/lib/RegionalPreferencesContext";
+import { useI18n, CatalogLanguageNote } from "@/lib/I18nContext";
+import { getLocalMonth } from "@/lib/regionalClimate";
+import WeatherCard from "@/components/weather/WeatherCard";
+import RegionSummary from "@/components/regional/RegionSummary";
+import MascotHomeCard from "@/components/mascot/MascotHomeCard";
+import Emoji3D from "@/components/ui/Emoji3D";
 
 export default function Home() {
   const { preferences } = useRegionalPreferences();
   const { t, locale } = useI18n();
-  const monthName = month =>
-    new Intl.DateTimeFormat(locale, { month: 'long', timeZone: 'UTC' }).format(
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const monthName = (month) =>
+    new Intl.DateTimeFormat(locale, { month: "long", timeZone: "UTC" }).format(
       new Date(Date.UTC(2026, month - 1, 15))
     );
   const navigate = useNavigate();
@@ -45,6 +48,11 @@ export default function Home() {
   const [pendingTasksCount, setPendingTasksCount] = useState(1);
   const [viewMode, setViewMode] = useViewMode("hortaviva_plant_view_mode", "large");
   const { isUltra, isPro, isPlus, isPaid } = useSubscription();
+
+  // Separador rápido no topo: 'catalogo' (visível logo no 1.º ecrã) | 'painel' (dashboard completo)
+  const [activeHomeTab, setActiveHomeTab] = useState(
+    searchParams.get("tab") === "painel" ? "painel" : "catalogo"
+  );
 
   useEffect(() => {
     cachedList("plants", () => base44.entities.Plant.list())
@@ -64,11 +72,11 @@ export default function Home() {
 
   // Contadores rápidos para o mês atual
   const sowNowCount = useMemo(
-    () => plants.filter(p => (p.sow_months || []).includes(currentMonth)).length,
+    () => plants.filter((p) => (p.sow_months || []).includes(currentMonth)).length,
     [plants, currentMonth]
   );
   const harvestNowCount = useMemo(
-    () => plants.filter(p => (p.harvest_months || []).includes(currentMonth)).length,
+    () => plants.filter((p) => (p.harvest_months || []).includes(currentMonth)).length,
     [plants, currentMonth]
   );
 
@@ -188,6 +196,13 @@ export default function Home() {
     setSearchQuery("");
   };
 
+  const handleSearchChange = (query) => {
+    setSearchQuery(query);
+    if (query.trim() && activeHomeTab !== "catalogo") {
+      setActiveHomeTab("catalogo");
+    }
+  };
+
   const handleGoToAI = (text) => {
     if (text && text.trim()) {
       setAiQuery(text.trim());
@@ -215,17 +230,355 @@ export default function Home() {
       {/* 1. Topo Verde Floresta Arredondado com Barra de Pesquisa em Pílula */}
       <HomeMockupHeader
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        onSearchChange={handleSearchChange}
         onClearSearch={handleClearSearch}
         onGoToAI={handleGoToAI}
         pendingTasksCount={pendingTasksCount}
       />
 
-      {/* Conteúdo Principal em Bento Layout */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-28 space-y-6">
-        {!isSearching && (
-          <>
-            {/* Painel Bento Superior: Hero à esquerda + Clima, Região e Mascote organizados */}
+      {/* Conteúdo Principal */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-28 space-y-5">
+        {/* Alternador Rápido no Topo: Catálogo de Alimentos vs. Painel Geral da Quinta */}
+        <div className="flex items-center justify-between gap-2 bg-white/95 backdrop-blur-md p-1.5 sm:p-2 rounded-2xl sm:rounded-3xl border border-emerald-900/10 shadow-sm max-w-lg mx-auto">
+          <button
+            type="button"
+            onClick={() => setActiveHomeTab("catalogo")}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-black transition-all ${
+              activeHomeTab === "catalogo"
+                ? "bg-gradient-to-r from-emerald-700 via-green-700 to-teal-800 text-white shadow-md shadow-emerald-900/20"
+                : "text-stone-600 hover:text-emerald-800 hover:bg-emerald-50/50"
+            }`}
+          >
+            <Emoji3D emoji="🌱" size="sm" />
+            <span className="truncate">{t("Catálogo de Culturas")}</span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
+                activeHomeTab === "catalogo"
+                  ? "bg-white/20 text-white"
+                  : "bg-emerald-100 text-emerald-800"
+              }`}
+            >
+              {visiblePlants.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveHomeTab("painel")}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-black transition-all ${
+              activeHomeTab === "painel"
+                ? "bg-gradient-to-r from-emerald-700 via-green-700 to-teal-800 text-white shadow-md shadow-emerald-900/20"
+                : "text-stone-600 hover:text-emerald-800 hover:bg-emerald-50/50"
+            }`}
+          >
+            <Emoji3D emoji="🏡" size="sm" />
+            <span className="truncate">{t("Painel & Resumo")}</span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
+                activeHomeTab === "painel"
+                  ? "bg-white/20 text-white"
+                  : "bg-amber-100 text-amber-900"
+              }`}
+            >
+              ✨ {t("Quinta")}
+            </span>
+          </button>
+        </div>
+
+        {/* =========================================================================
+            MODO 1: CATÁLOGO DE CULTURAS (Imediato no 1.º Ecrã!)
+            ========================================================================= */}
+        {activeHomeTab === "catalogo" && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            {/* Barra Compacta de Estado (Clima + Lua + Região) numa linha única */}
+            <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 scrollbar-hide text-xs">
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-emerald-200/80 text-stone-700 font-bold shadow-2xs">
+                  <span>📍</span>
+                  <span className="truncate">{preferences.region || "Portugal"}</span>
+                </span>
+                <Link
+                  to="/sabedoria-agricola"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-emerald-200/80 hover:border-emerald-300 text-stone-700 hover:text-emerald-800 font-bold shadow-2xs transition-all"
+                  title={t("Fase Lunar de Hoje")}
+                >
+                  <span>{todayMoon.emoji}</span>
+                  <span className="truncate">
+                    {t(todayMoon.name)} · {todayMoon.illumination}%
+                  </span>
+                </Link>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveHomeTab("painel")}
+                className="shrink-0 text-[11px] font-extrabold text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-1"
+              >
+                <span>{t("Ver Clima & Painel da Quinta")}</span>
+                <span>➔</span>
+              </button>
+            </div>
+
+            {/* Cabeçalho do Catálogo + Filtros */}
+            <div className="bg-white rounded-3xl p-4 sm:p-5 border border-emerald-200/70 shadow-xs space-y-3.5">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 text-white flex items-center justify-center shadow-sm shadow-emerald-200">
+                    <Sprout className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-base sm:text-lg font-black text-stone-800 leading-none">
+                        {t("Catálogo de Alimentos")}
+                      </h2>
+                      <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                        {visiblePlants.length}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-stone-500 font-medium mt-0.5">
+                      {t("Calendários de sementeira, plantação, colheita e cuidados")}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowMonthFilter((prev) => !prev)}
+                    className={`text-xs font-extrabold px-3 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all ${
+                      selectedMonth !== 0 || showMonthFilter
+                        ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                        : "bg-stone-50 hover:bg-emerald-50 text-stone-700 border-stone-200"
+                    }`}
+                    title={t("Filtrar por mês do ano")}
+                  >
+                    <Filter className="w-3.5 h-3.5" />
+                    <span>{selectedMonth === 0 ? t("Filtrar Mês") : monthName(selectedMonth)}</span>
+                  </button>
+
+                  <ViewModeToggle mode={viewMode} onChange={setViewMode} />
+                </div>
+              </div>
+
+              {/* Pílulas de Ação Rápida do Mês Atual (Semear Agora / Colher Agora) */}
+              {!isSearching && (
+                <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
+                  <button
+                    type="button"
+                    onClick={() => setSeasonActionFilter("all")}
+                    className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all ${
+                      seasonActionFilter === "all"
+                        ? "bg-stone-900 text-white border-stone-900 shadow-2xs"
+                        : "bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100"
+                    }`}
+                  >
+                    <span>📋</span>
+                    <span>{t("Todas as épocas")}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSeasonActionFilter((prev) => (prev === "sow_now" ? "all" : "sow_now"))
+                    }
+                    className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all ${
+                      seasonActionFilter === "sow_now"
+                        ? "bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-200"
+                        : "bg-emerald-50/80 text-emerald-800 border-emerald-200 hover:bg-emerald-100/80"
+                    }`}
+                  >
+                    <span>🌱</span>
+                    <span>
+                      {t("Semear em")} {currentMonthFormatted}
+                    </span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                        seasonActionFilter === "sow_now"
+                          ? "bg-white/25 text-white"
+                          : "bg-emerald-200/80 text-emerald-900"
+                      }`}
+                    >
+                      {sowNowCount}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSeasonActionFilter((prev) =>
+                        prev === "harvest_now" ? "all" : "harvest_now"
+                      )
+                    }
+                    className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all ${
+                      seasonActionFilter === "harvest_now"
+                        ? "bg-amber-500 text-white border-amber-500 shadow-sm shadow-amber-200"
+                        : "bg-amber-50/80 text-amber-900 border-amber-200 hover:bg-amber-100/80"
+                    }`}
+                  >
+                    <span>🧺</span>
+                    <span>
+                      {t("Colher em")} {currentMonthFormatted}
+                    </span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                        seasonActionFilter === "harvest_now"
+                          ? "bg-white/25 text-white"
+                          : "bg-amber-200/80 text-amber-900"
+                      }`}
+                    >
+                      {harvestNowCount}
+                    </span>
+                  </button>
+                </div>
+              )}
+
+              {/* Pílulas de Categorias */}
+              {!isSearching && (
+                <CategoryFilterPills
+                  activeCategory={activeCategory}
+                  onSelectCategory={handleCategorySelect}
+                />
+              )}
+
+              {/* Seletor de Mês Expansível */}
+              {showMonthFilter && (
+                <div className="bg-stone-50 p-3.5 rounded-2xl border border-stone-200/80 animate-in fade-in duration-200 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold text-stone-700">
+                      📅 {t("Época de plantio / colheita:")}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMonth(currentMonth)}
+                        className="text-[11px] font-extrabold text-emerald-700 hover:underline"
+                      >
+                        {t("Mês atual")} ({monthName(currentMonth)})
+                      </button>
+                      {selectedMonth !== 0 && (
+                        <button
+                          onClick={() => setSelectedMonth(0)}
+                          className="text-[11px] text-stone-600 font-bold hover:underline"
+                        >
+                          {t("Ver todos")}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <MonthSelector selectedMonth={selectedMonth} onSelect={setSelectedMonth} />
+                </div>
+              )}
+            </div>
+
+            <CatalogLanguageNote />
+
+            {/* Grelha de Plantas */}
+            {loading ? (
+              <div className="flex justify-center py-16">
+                <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+              </div>
+            ) : visiblePlants.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-3xl border border-stone-200/70 p-6 shadow-2xs">
+                <div className="text-4xl mb-2">🌿</div>
+                <p className="text-sm font-bold text-stone-700">
+                  {t("Nenhum alimento encontrado nesta categoria.")}
+                </p>
+                <button
+                  onClick={() => {
+                    setActiveCategory("all");
+                    setSeasonActionFilter("all");
+                    setSelectedMonth(0);
+                    setSearchQuery("");
+                  }}
+                  className="mt-3 text-xs text-emerald-700 font-extrabold underline"
+                >
+                  {t("Limpar filtros e ver todas as plantas")}
+                </button>
+              </div>
+            ) : (
+              <div
+                className={
+                  viewMode === "grid"
+                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3.5"
+                    : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5"
+                }
+              >
+                {visiblePlants.map((p) => (
+                  <PlantCard
+                    key={p.id}
+                    plant={p}
+                    onClick={() => setSelectedPlant(p)}
+                    compact={viewMode === "grid"}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Banner de atalho para o Painel da Quinta */}
+            <div className="mt-8 bg-gradient-to-r from-emerald-800 via-green-800 to-teal-900 rounded-3xl p-5 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg border border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-3xl shrink-0">
+                  🏡
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black leading-tight">
+                    {t("Queres consultar o tempo e o estado da quinta?")}
+                  </h3>
+                  <p className="text-xs text-emerald-200/90 mt-0.5">
+                    {t("Acede à meteorologia detalhada, fase da lua, mascote e curiosidades")}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveHomeTab("painel")}
+                className="px-4 py-2.5 rounded-xl bg-white text-emerald-900 hover:bg-emerald-50 text-xs font-black shadow-md shrink-0 transition-transform active:scale-95 flex items-center justify-center gap-1.5"
+              >
+                <span>{t("Abrir Painel da Quinta")}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            MODO 2: PAINEL DA QUINTA & FERRAMENTAS (Dashboard Completo)
+            ========================================================================= */}
+        {activeHomeTab === "painel" && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* Banner Chamativo para o Catálogo */}
+            <div className="bg-gradient-to-r from-emerald-800 via-green-800 to-teal-900 rounded-3xl p-5 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg border border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-3xl shrink-0">
+                  🌱
+                </div>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/20 text-emerald-100">
+                    {plants.length || 94} {t("Culturas Disponíveis")}
+                  </span>
+                  <h3 className="text-base sm:text-lg font-black mt-1 leading-tight">
+                    {t("Catálogo de Plantas & Alimentos")}
+                  </h3>
+                  <p className="text-xs text-emerald-200/90 mt-0.5">
+                    {t("Sementeira, colheita, consociações e cuidados mês a mês")}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveHomeTab("catalogo")}
+                  className="px-4 py-2.5 rounded-xl bg-white text-emerald-900 hover:bg-emerald-50 text-xs font-black shadow-md transition-transform active:scale-95"
+                >
+                  {t("Ver no Início ➔")}
+                </button>
+                <Link
+                  to="/catalogo"
+                  className="px-4 py-2.5 rounded-xl bg-emerald-700/80 hover:bg-emerald-700 border border-white/20 text-white text-xs font-black shadow-md transition-transform active:scale-95"
+                >
+                  {t("Página Exclusiva ➔")}
+                </Link>
+              </div>
+            </div>
+
+            {/* Painel Bento Superior: Hero + Clima, Região e Mascote */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
               <div className="lg:col-span-7 flex flex-col justify-between gap-3">
                 <RegionSummary />
@@ -255,12 +608,16 @@ export default function Home() {
                       <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-white/20 text-emerald-100">
                         {t("Calendário Lunar de Hoje")} · {todayMoon.illumination}%
                       </span>
-                      <h3 className="text-lg sm:text-xl font-black mt-0.5 leading-tight">{t(todayMoon.name)}</h3>
+                      <h3 className="text-lg sm:text-xl font-black mt-0.5 leading-tight">
+                        {t(todayMoon.name)}
+                      </h3>
                       <p className="text-[11px] text-emerald-100/90">{t(todayMoon.sapFlow)}</p>
                     </div>
                   </div>
                 </div>
-                <p className="text-xs text-white/90 leading-relaxed line-clamp-2">{t(todayMoon.bestFor)}</p>
+                <p className="text-xs text-white/90 leading-relaxed line-clamp-2">
+                  {t(todayMoon.bestFor)}
+                </p>
                 <div className="flex items-center justify-between pt-2 border-t border-white/15 text-xs font-extrabold text-amber-300">
                   <span>{t(todayMoon.recommendedTasks[0])}</span>
                   <span>{t("Ver 28 dias ➔")}</span>
@@ -312,222 +669,13 @@ export default function Home() {
 
             {/* Carrossel Horizontal: Curiosidades Diárias da Horta */}
             <DailyCuriositiesCarousel />
-          </>
-        )}
-
-        {isSearching && (
-          <div className="flex items-center justify-between pt-1 bg-white rounded-2xl px-4 py-3 border border-emerald-200/80 shadow-2xs">
-            <h2 className="text-sm font-extrabold text-stone-800">
-              🔍 {t('{count} resultados para "{query}"', { count: visiblePlants.length, query: searchQuery })}
-            </h2>
-            <button
-              onClick={handleClearSearch}
-              className="text-xs text-emerald-700 hover:text-emerald-800 font-extrabold px-2.5 py-1 rounded-lg bg-emerald-50"
-            >
-              {t('Limpar pesquisa')}
-            </button>
           </div>
         )}
-
-        {/* Secção do Catálogo de Plantas & Alimentos */}
-        <section className="space-y-4 pt-1">
-          {/* Cabeçalho do Catálogo + Filtro Sazonal Rápido */}
-          <div className="bg-white rounded-3xl p-4 sm:p-5 border border-emerald-200/70 shadow-xs space-y-3.5">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 text-white flex items-center justify-center shadow-sm shadow-emerald-200">
-                  <Sprout className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-base sm:text-lg font-black text-stone-800 leading-none">
-                      {t('Catálogo de Alimentos')}
-                    </h2>
-                    <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                      {visiblePlants.length}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-stone-500 font-medium mt-0.5">
-                    {t('Calendários de sementeira, plantação, colheita e cuidados')}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {/* Botão de filtro sazonal por mês */}
-                <button
-                  type="button"
-                  onClick={() => setShowMonthFilter((prev) => !prev)}
-                  className={`text-xs font-extrabold px-3 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all ${
-                    selectedMonth !== 0 || showMonthFilter
-                      ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                      : "bg-stone-50 hover:bg-emerald-50 text-stone-700 border-stone-200"
-                  }`}
-                  title={t('Filtrar por mês do ano')}
-                >
-                  <Filter className="w-3.5 h-3.5" />
-                  <span>{selectedMonth === 0 ? t('Filtrar Mês') : monthName(selectedMonth)}</span>
-                </button>
-
-                <ViewModeToggle mode={viewMode} onChange={setViewMode} />
-              </div>
-            </div>
-
-            {/* Pílulas de Ação Rápida do Mês Atual (Semear Agora / Colher Agora) */}
-            {!isSearching && (
-              <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
-                <button
-                  type="button"
-                  onClick={() => setSeasonActionFilter("all")}
-                  className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all ${
-                    seasonActionFilter === "all"
-                      ? "bg-stone-900 text-white border-stone-900 shadow-2xs"
-                      : "bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100"
-                  }`}
-                >
-                  <span>📋</span>
-                  <span>{t('Todas as épocas')}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSeasonActionFilter(prev => (prev === "sow_now" ? "all" : "sow_now"))
-                  }
-                  className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all ${
-                    seasonActionFilter === "sow_now"
-                      ? "bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-200"
-                      : "bg-emerald-50/80 text-emerald-800 border-emerald-200 hover:bg-emerald-100/80"
-                  }`}
-                >
-                  <span>🌱</span>
-                  <span>
-                    {t('Semear em')} {currentMonthFormatted}
-                  </span>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                      seasonActionFilter === "sow_now"
-                        ? "bg-white/25 text-white"
-                        : "bg-emerald-200/80 text-emerald-900"
-                    }`}
-                  >
-                    {sowNowCount}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSeasonActionFilter(prev => (prev === "harvest_now" ? "all" : "harvest_now"))
-                  }
-                  className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all ${
-                    seasonActionFilter === "harvest_now"
-                      ? "bg-amber-500 text-white border-amber-500 shadow-sm shadow-amber-200"
-                      : "bg-amber-50/80 text-amber-900 border-amber-200 hover:bg-amber-100/80"
-                  }`}
-                >
-                  <span>🧺</span>
-                  <span>
-                    {t('Colher em')} {currentMonthFormatted}
-                  </span>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                      seasonActionFilter === "harvest_now"
-                        ? "bg-white/25 text-white"
-                        : "bg-amber-200/80 text-amber-900"
-                    }`}
-                  >
-                    {harvestNowCount}
-                  </span>
-                </button>
-              </div>
-            )}
-
-            {/* Pílulas de Categorias */}
-            {!isSearching && (
-              <CategoryFilterPills
-                activeCategory={activeCategory}
-                onSelectCategory={handleCategorySelect}
-              />
-            )}
-
-            {/* Seletor de Mês Expansível */}
-            {showMonthFilter && (
-              <div className="bg-stone-50 p-3.5 rounded-2xl border border-stone-200/80 animate-in fade-in duration-200 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-extrabold text-stone-700">
-                    📅 {t('Época de plantio / colheita:')}
-                  </span>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedMonth(currentMonth)}
-                      className="text-[11px] font-extrabold text-emerald-700 hover:underline"
-                    >
-                      {t('Mês atual')} ({monthName(currentMonth)})
-                    </button>
-                    {selectedMonth !== 0 && (
-                      <button
-                        onClick={() => setSelectedMonth(0)}
-                        className="text-[11px] text-stone-600 font-bold hover:underline"
-                      >
-                        {t('Ver todos')}
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <MonthSelector selectedMonth={selectedMonth} onSelect={setSelectedMonth} />
-              </div>
-            )}
-          </div>
-
-          <CatalogLanguageNote />
-
-          {/* Lista / Grelha de Plantas */}
-          {loading ? (
-            <div className="flex justify-center py-16">
-              <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
-            </div>
-          ) : visiblePlants.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-3xl border border-stone-200/70 p-6 shadow-2xs">
-              <div className="text-4xl mb-2">🌿</div>
-              <p className="text-sm font-bold text-stone-700">
-                {t('Nenhum alimento encontrado nesta categoria.')}
-              </p>
-              <button
-                onClick={() => {
-                  setActiveCategory("all");
-                  setSeasonActionFilter("all");
-                  setSelectedMonth(0);
-                  setSearchQuery("");
-                }}
-                className="mt-3 text-xs text-emerald-700 font-extrabold underline"
-              >
-                {t('Limpar filtros e ver todas as plantas')}
-              </button>
-            </div>
-          ) : (
-            <div
-              className={
-                viewMode === "grid"
-                  ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3.5"
-                  : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5"
-              }
-            >
-              {visiblePlants.map((p) => (
-                <PlantCard
-                  key={p.id}
-                  plant={p}
-                  onClick={() => setSelectedPlant(p)}
-                  compact={viewMode === "grid"}
-                />
-              ))}
-            </div>
-          )}
-        </section>
 
         {/* Assistente IA Integrado */}
         <section
           id="assistente-ia"
-          className="bg-gradient-to-br from-white via-emerald-50/30 to-teal-50/30 rounded-3xl p-4 sm:p-6 border border-emerald-200/80 shadow-sm scroll-mt-20"
+          className="bg-gradient-to-br from-white via-emerald-50/30 to-teal-50/30 rounded-3xl p-4 sm:p-6 border border-emerald-200/80 shadow-sm scroll-mt-20 mt-6"
         >
           <div className="flex items-center gap-2.5 mb-3">
             <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white flex items-center justify-center shadow-sm">
@@ -535,10 +683,10 @@ export default function Home() {
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-black text-stone-800 leading-none">
-                {t('Assistente Agrónomo IA')}
+                {t("Assistente Agrónomo IA")}
               </h2>
               <p className="text-[11px] text-stone-500 font-medium mt-0.5">
-                {t('Tira dúvidas sobre cultivo, pragas, rega e calendário regional')}
+                {t("Tira dúvidas sobre cultivo, pragas, rega e calendário regional")}
               </p>
             </div>
           </div>
@@ -548,7 +696,7 @@ export default function Home() {
 
       {/* Rodapé suave */}
       <footer className="text-center pt-2 pb-24 text-xs text-stone-400 font-medium">
-        <span>🌱 Horta Viva — {t('Cultiva com sabedoria')}</span>
+        <span>🌱 Horta Viva — {t("Cultiva com sabedoria")}</span>
       </footer>
 
       {/* Modal de Detalhes da Planta ao Clicar */}

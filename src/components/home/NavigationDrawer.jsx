@@ -10,8 +10,15 @@ const SECTIONS = [
     to: "/",
     emoji: "🏡",
     label: "Início",
-    desc: "Página principal e catálogo",
+    desc: "Painel geral e resumo",
     color: "#16a34a"
+  },
+  {
+    to: "/catalogo",
+    emoji: "🌱",
+    label: "Catálogo de Culturas",
+    desc: "94 alimentos, sementeira e colheita",
+    color: "#15803d"
   },
   {
     to: "/minha-quinta",

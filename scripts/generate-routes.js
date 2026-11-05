@@ -20,6 +20,8 @@ if (!fs.existsSync(baseIndexHtmlPath)) {
 const baseHtml = fs.readFileSync(baseIndexHtmlPath, 'utf8');
 
 const ROUTES = [
+  { path: 'catalogo', title: 'Catálogo de Plantas e Alimentos — Horta Viva', description: 'Catálogo completo de 94 culturas: legumes, hortaliças, frutos, raízes e aromáticas. Calendários de sementeira, colheita e consociações.' },
+  { path: 'sabedoria-agricola', title: 'Sabedoria Agrícola & Ferramentas — Horta Viva', description: 'Calendário Lunar de 28 dias, simulador de consociação de plantas, rotação de culturas a 4 anos e caldas biológicas.' },
   { path: 'mercado', title: 'Loja e Mercado Virtual — Horta Viva', description: 'Compra alimentos para a mascote e vende as tuas colheitas num mercado simulado com moedas de jogo.' },
   { path: 'mascote', title: 'Mascote e Armazém — Horta Viva', description: 'Cuida da tua mascote, recolhe as colheitas da quinta e acompanha a sua evolução.' },
   { path: 'definicoes', title: 'Definições da Horta Viva', description: 'Região, língua, meteorologia, perfil e personalização da Horta Viva.' },

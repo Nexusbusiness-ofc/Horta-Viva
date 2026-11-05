@@ -1,7 +1,7 @@
 import { useI18n } from "@/lib/I18nContext";
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ClipboardList, Home, Sprout, UserRound } from "lucide-react";
+import { ClipboardList, Home, Sprout, BookOpen, UserRound } from "lucide-react";
 
 const NAV_ITEMS = [
   {
@@ -10,9 +10,9 @@ const NAV_ITEMS = [
     icon: Home
   },
   {
-    to: "/tarefas-hoje",
-    label: "Tarefas",
-    icon: ClipboardList
+    to: "/catalogo",
+    label: "Catálogo",
+    icon: BookOpen
   },
   {
     to: "/minha-quinta",
@@ -20,9 +20,9 @@ const NAV_ITEMS = [
     icon: Sprout
   },
   {
-    to: "/perfil",
-    label: "Perfil",
-    icon: UserRound
+    to: "/tarefas-hoje",
+    label: "Tarefas",
+    icon: ClipboardList
   }
 ];
 

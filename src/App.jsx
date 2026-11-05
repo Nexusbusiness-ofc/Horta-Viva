@@ -24,6 +24,7 @@ import ResetPassword from './pages/ResetPassword';
 import OAuthConsent from './pages/OAuthConsent';
 // Add page imports here
 import Home from './pages/Home';
+import Catalogo from './pages/Catalogo';
 import MinhaQuinta from './pages/MinhaQuinta';
 import CalendarioCuras from './pages/CalendarioCuras';
 import ResumoMensal from './pages/ResumoMensal';
@@ -161,6 +162,7 @@ const AuthenticatedApp = () => {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/oauth-consent" element={<OAuthConsent />} />
       <Route path="/" element={<Home />} />
+      <Route path="/catalogo" element={<Catalogo />} />
       <Route path="/minha-quinta" element={<MinhaQuinta />} />
       <Route path="/mascote" element={<Mascote />} />
       <Route path="/mercado" element={<Mercado />} />
