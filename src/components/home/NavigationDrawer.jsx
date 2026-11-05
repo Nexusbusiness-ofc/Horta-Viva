@@ -35,6 +35,13 @@ const SECTIONS = [
     color: "#15803d"
   },
   {
+    to: "/sabedoria-agricola",
+    emoji: "🧭",
+    label: "Sabedoria Agrícola",
+    desc: "Lua, Consociação, Caldas, Pragas & Diário",
+    color: "#059669"
+  },
+  {
     to: "/calendario-curas",
     emoji: "🌿",
     label: "Curas & Tratamentos",

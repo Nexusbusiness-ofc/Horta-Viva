@@ -14,6 +14,7 @@ import HomeExploreGrid from "@/components/home/HomeExploreGrid";
 import OnboardingProfile from "@/components/profile/OnboardingProfile";
 import { cachedList } from "@/lib/offlineCatalog";
 import { ViewModeToggle, useViewMode } from "@/components/ui/ViewModeToggle";
+import { getLunarPhaseInfo } from "@/lib/agronomicWisdom";
 import { useSubscription } from "@/lib/subscription";
 import UpgradeModal from "@/components/subscription/UpgradeModal";
 import { useRegionalPreferences } from '@/lib/RegionalPreferencesContext';
@@ -203,6 +204,7 @@ export default function Home() {
   };
 
   const isSearching = searchQuery.trim().length > 0;
+  const todayMoon = useMemo(() => getLunarPhaseInfo(new Date()), []);
   const currentMonthFormatted = (() => {
     const raw = monthName(currentMonth);
     return raw.charAt(0).toUpperCase() + raw.slice(1);
@@ -237,6 +239,76 @@ export default function Home() {
 
             {/* Grelha em Destaque: 4 Áreas da App com Imagens Representativas */}
             <HomeExploreGrid />
+
+            {/* Painel Interativo: Fase Lunar de Hoje + Centro de Sabedoria Agrícola */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+              <Link
+                to="/sabedoria-agricola"
+                className={`lg:col-span-5 rounded-3xl bg-gradient-to-br ${todayMoon.bg} text-white p-5 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all flex flex-col justify-between gap-3 border border-white/15`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-13 h-13 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center text-3xl shrink-0">
+                      {todayMoon.emoji}
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-white/20 text-emerald-100">
+                        {t("Calendário Lunar de Hoje")} · {todayMoon.illumination}%
+                      </span>
+                      <h3 className="text-lg sm:text-xl font-black mt-0.5 leading-tight">{t(todayMoon.name)}</h3>
+                      <p className="text-[11px] text-emerald-100/90">{t(todayMoon.sapFlow)}</p>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-white/90 leading-relaxed line-clamp-2">{t(todayMoon.bestFor)}</p>
+                <div className="flex items-center justify-between pt-2 border-t border-white/15 text-xs font-extrabold text-amber-300">
+                  <span>{t(todayMoon.recommendedTasks[0])}</span>
+                  <span>{t("Ver 28 dias ➔")}</span>
+                </div>
+              </Link>
+
+              <div className="lg:col-span-7 rounded-3xl bg-white border border-emerald-900/12 p-5 shadow-sm flex flex-col justify-between gap-3.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                      ✨ {t("Novo · Ferramentas Avançadas")}
+                    </span>
+                    <h3 className="text-base sm:text-lg font-extrabold text-stone-800 mt-1">
+                      🧭 {t("Centro de Sabedoria Agrícola")}
+                    </h3>
+                  </div>
+                  <Link
+                    to="/sabedoria-agricola"
+                    className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold shadow-xs transition-all shrink-0"
+                  >
+                    {t("Abrir Tudo ➔")}
+                  </Link>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {[
+                    { emoji: "🤝", title: "Consociação", desc: "Plantas Amigas vs. Evitar" },
+                    { emoji: "🌙", title: "Lua Agrícola", desc: "Fases de sementeira e poda" },
+                    { emoji: "🔄", title: "Rotação 4 Anos", desc: "Saúde e azoto do solo" },
+                    { emoji: "📐", title: "Calc. Canteiro", desc: "Quantas plantas cabem" },
+                    { emoji: "🧪", title: "Caldas Bio", desc: "Urtiga, Bordalesa, Alho" },
+                    { emoji: "🧺", title: "Diário & €", desc: "Colheitas e poupança" }
+                  ].map((feat, i) => (
+                    <Link
+                      key={i}
+                      to="/sabedoria-agricola"
+                      className="rounded-2xl bg-stone-50 hover:bg-emerald-50/70 border border-stone-200/80 hover:border-emerald-300 p-2.5 transition-all flex items-start gap-2"
+                    >
+                      <span className="text-lg leading-none mt-0.5">{feat.emoji}</span>
+                      <div className="min-w-0">
+                        <p className="text-xs font-extrabold text-stone-800 truncate">{t(feat.title)}</p>
+                        <p className="text-[10px] text-stone-500 truncate">{t(feat.desc)}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
 
             {/* Carrossel Horizontal: Curiosidades Diárias da Horta */}
             <DailyCuriositiesCarousel />

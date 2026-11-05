@@ -34,6 +34,7 @@ import IdentificarPlanta from './pages/IdentificarPlanta';
 import TarefasHoje from './pages/TarefasHoje';
 import Perfil from './pages/Perfil';
 import HortaVivaPro from './pages/HortaVivaPro';
+import SabedoriaAgricola from './pages/SabedoriaAgricola';
 import InstallPrompt from '@/components/pwa/InstallPrompt';
 import BottomNav from '@/components/navigation/BottomNav';
 import BackToTopButton from '@/components/navigation/BackToTopButton';
@@ -168,6 +169,7 @@ const AuthenticatedApp = () => {
       <Route path="/cogumelos" element={<Cogumelos />} />
       <Route path="/animais" element={<Animais />} />
       <Route path="/podas-mondas" element={<PodasMondas />} />
+      <Route path="/sabedoria-agricola" element={<SabedoriaAgricola />} />
       <Route path="/identificar" element={<IdentificarPlanta />} />
       <Route path="/tarefas-hoje" element={<TarefasHoje />} />
       <Route path="/perfil" element={<Perfil />} />

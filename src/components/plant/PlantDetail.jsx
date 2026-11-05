@@ -1,12 +1,13 @@
 import { useI18n, CatalogLanguageNote } from "@/lib/I18nContext";
 import { translatedMonth } from "@/lib/i18n";
 import RegionalCalendarNotice from "@/components/regional/RegionalCalendarNotice";
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Sun, Droplets, Sprout, Calendar, Package, Shovel, Heart, ClipboardList, PlusCircle } from "lucide-react";
+import { Sun, Droplets, Sprout, Calendar, Package, Shovel, Heart, ClipboardList, PlusCircle, Ruler, RefreshCw, Sparkles } from "lucide-react";
 import PlantCareCalendar from "@/components/plant/PlantCareCalendar";
 import { Image } from "@/components/ui/image";
 import Emoji3D from "@/components/ui/Emoji3D";
+import { getPlantAgronomyProfile, calculateBedPlan } from "@/lib/agronomicWisdom";
 
 const MONTH_SHORT = ["", "J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
@@ -57,9 +58,18 @@ export default function PlantDetail({
     language
   } = useI18n();
   const [showCuras, setShowCuras] = useState(false);
+  const [bedLength, setBedLength] = useState(2.5);
+  const [bedWidth, setBedWidth] = useState(1.2);
+
   if (!plant) return null;
   const color = plant.color || "#16a34a";
   const currentMonth = new Date().getMonth() + 1;
+
+  const agronomy = useMemo(() => getPlantAgronomyProfile(plant), [plant]);
+  const bedPlan = useMemo(
+    () => calculateBedPlan(plant, bedLength, bedWidth),
+    [plant, bedLength, bedWidth]
+  );
 
   const badges = [
     {
@@ -164,12 +174,17 @@ export default function PlantDetail({
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <span
-                className="inline-block text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full mb-1.5"
-                style={{ backgroundColor: color, color: "#fff" }}
-              >
-                {i18nT(plant.category)}
-              </span>
+              <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+                <span
+                  className="inline-block text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full"
+                  style={{ backgroundColor: color, color: "#fff" }}
+                >
+                  {i18nT(plant.category)}
+                </span>
+                <span className="inline-block text-[11px] font-bold px-2.5 py-1 rounded-full bg-white/80 text-stone-700 border border-stone-200/80">
+                  {i18nT(agronomy.family)}
+                </span>
+              </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-stone-800 leading-tight">
                 {i18nT(plant.name)}
               </h2>
@@ -257,6 +272,155 @@ export default function PlantDetail({
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* 🤝 Consociação de Culturas: Plantas Amigas vs. Evitar Junto */}
+          <div className="rounded-3xl bg-white border border-emerald-900/12 p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-extrabold text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
+                <span>🤝</span>
+                <span>{i18nT("Consociação no Canteiro (Amigas vs. Evitar)")}</span>
+              </p>
+              <Link
+                to="/sabedoria-agricola"
+                onClick={onClose}
+                className="text-[11px] font-extrabold text-emerald-700 hover:underline flex items-center gap-1"
+              >
+                <Sparkles className="w-3 h-3" />
+                <span>{i18nT("Simulador")}</span>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Plantas Amigas */}
+              <div className="rounded-2xl bg-emerald-50/70 border border-emerald-200/80 p-3 space-y-2">
+                <p className="text-xs font-extrabold text-emerald-800 flex items-center gap-1.5">
+                  <span>✅</span> {i18nT("Boas Companheiras")}
+                </p>
+                <div className="space-y-2">
+                  {agronomy.good.map((c, idx) => (
+                    <div key={idx} className="bg-white/90 rounded-xl p-2 border border-emerald-100 flex items-start gap-2">
+                      <Emoji3D item={{ id: c.id, name: c.name }} size="sm" badge />
+                      <div className="min-w-0">
+                        <p className="text-xs font-extrabold text-stone-800 leading-tight">{i18nT(c.name)}</p>
+                        <p className="text-[11px] text-stone-600 leading-snug mt-0.5">{i18nT(c.reason)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Plantas a Evitar */}
+              <div className="rounded-2xl bg-rose-50/70 border border-rose-200/80 p-3 space-y-2">
+                <p className="text-xs font-extrabold text-rose-800 flex items-center gap-1.5">
+                  <span>⛔</span> {i18nT("Evitar Plantar Junto")}
+                </p>
+                <div className="space-y-2">
+                  {agronomy.bad.map((c, idx) => (
+                    <div key={idx} className="bg-white/90 rounded-xl p-2 border border-rose-100 flex items-start gap-2">
+                      <Emoji3D item={{ id: c.id, name: c.name }} size="sm" badge />
+                      <div className="min-w-0">
+                        <p className="text-xs font-extrabold text-stone-800 leading-tight">{i18nT(c.name)}</p>
+                        <p className="text-[11px] text-stone-600 leading-snug mt-0.5">{i18nT(c.reason)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 📐 Calculadora Interativa de Canteiro & Colheita */}
+          <div className="rounded-3xl bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 text-white p-4 sm:p-5 shadow-md space-y-3.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center">
+                  <Ruler className="w-4 h-4 text-amber-300" />
+                </div>
+                <div>
+                  <h3 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-white">
+                    {i18nT("📐 Calculadora de Canteiro & Produção")}
+                  </h3>
+                  <p className="text-[11px] text-emerald-100/80">
+                    {i18nT("Compasso recomendado:")} {bedPlan.rowSpacingCm} cm × {bedPlan.plantSpacingCm} cm
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-black px-2.5 py-1 rounded-full bg-amber-400 text-amber-950">
+                {bedPlan.areaM2} m²
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <label className="bg-white/10 border border-white/15 rounded-2xl p-2.5 block">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-200 block">
+                  {i18nT("Comprimento (m)")}
+                </span>
+                <input
+                  type="number"
+                  min="0.5"
+                  max="50"
+                  step="0.5"
+                  value={bedLength}
+                  onChange={e => setBedLength(e.target.value)}
+                  className="w-full bg-transparent text-white font-black text-base outline-none mt-0.5"
+                />
+              </label>
+              <label className="bg-white/10 border border-white/15 rounded-2xl p-2.5 block">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-200 block">
+                  {i18nT("Largura (m)")}
+                </span>
+                <input
+                  type="number"
+                  min="0.4"
+                  max="20"
+                  step="0.2"
+                  value={bedWidth}
+                  onChange={e => setBedWidth(e.target.value)}
+                  className="w-full bg-transparent text-white font-black text-base outline-none mt-0.5"
+                />
+              </label>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="bg-white/12 rounded-2xl p-2.5 border border-white/10">
+                <p className="text-lg sm:text-xl font-black text-amber-300">{bedPlan.totalPlants}</p>
+                <p className="text-[10px] text-emerald-100 font-bold">
+                  {i18nT("Plantas")} ({bedPlan.rows}×{bedPlan.cols})
+                </p>
+              </div>
+              <div className="bg-white/12 rounded-2xl p-2.5 border border-white/10">
+                <p className="text-lg sm:text-xl font-black text-emerald-200">~{bedPlan.estimatedYieldKg} kg</p>
+                <p className="text-[10px] text-emerald-100 font-bold">{i18nT("Colheita est.")}</p>
+              </div>
+              <div className="bg-white/12 rounded-2xl p-2.5 border border-white/10">
+                <p className="text-lg sm:text-xl font-black text-sky-200">{bedPlan.weeklyWaterLiters} L</p>
+                <p className="text-[10px] text-emerald-100 font-bold">{i18nT("Rega / semana")}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 🔄 Rotação de Culturas no Solo */}
+          <div className={`rounded-2xl border p-4 space-y-2 ${agronomy.rotationGroup.bg}`}>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-extrabold text-stone-800 flex items-center gap-1.5">
+                <RefreshCw className="w-4 h-4 text-emerald-700" />
+                <span>{i18nT("Rotação de Culturas:")} {i18nT(agronomy.rotationGroup.title)}</span>
+              </span>
+            </div>
+            <p className="text-xs text-stone-600 leading-relaxed">
+              {i18nT(agronomy.rotationGroup.nutrientRole)}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-[11px]">
+              <div className="bg-white/80 rounded-xl px-3 py-2 border border-stone-200/70">
+                <span className="font-extrabold text-stone-500 block">{i18nT("⬅️ Plantar Antes:")}</span>
+                <span className="font-bold text-stone-800">{i18nT(agronomy.rotationGroup.prevGroup)}</span>
+              </div>
+              <div className="bg-white/80 rounded-xl px-3 py-2 border border-stone-200/70">
+                <span className="font-extrabold text-stone-500 block">{i18nT("➡️ Plantar Depois:")}</span>
+                <span className="font-bold text-emerald-800">{i18nT(agronomy.rotationGroup.nextGroup)}</span>
+              </div>
             </div>
           </div>
 
