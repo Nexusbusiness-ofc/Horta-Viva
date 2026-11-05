@@ -2,6 +2,7 @@ import { useI18n } from "@/lib/I18nContext";
 import { translatedMonth } from "@/lib/i18n";
 import React, { useState } from "react";
 import { Image } from "@/components/ui/image";
+import Emoji3D from "@/components/ui/Emoji3D";
 import { Sprout, Apple, Sparkles, Calendar, Layers, ChevronRight, CheckCircle2 } from "lucide-react";
 
 const MONTH_SHORT = ["", "J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
@@ -172,13 +173,15 @@ export default function PodaCard({
             />
           ) : (
             <div
-              className="w-full h-full flex items-center justify-center text-4xl"
+              className="w-full h-full flex items-center justify-center"
               style={{ background: `linear-gradient(135deg, ${color}25, ${color}08)` }}
             >
-              {poda.emoji || i18nT("🌳")}
+              <Emoji3D item={poda} size="xl" />
             </div>
           )}
-          <span className="absolute top-1.5 left-1.5 text-xl drop-shadow-xs">{i18nT(poda.emoji)}</span>
+          <div className="absolute top-1.5 left-1.5">
+            <Emoji3D item={poda} size="sm" badge />
+          </div>
           {isActiveNow && (
             <span className="absolute top-1.5 right-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-emerald-600 text-white shadow-sm">
               {i18nT("Em época")}
@@ -271,11 +274,13 @@ export default function PodaCard({
             className="w-full h-full flex items-center justify-center"
             style={{ background: `linear-gradient(135deg, ${color}22, ${color}06)` }}
           >
-            <span className="text-5xl">{i18nT(poda.emoji)}</span>
+            <Emoji3D item={poda} size="2xl" />
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-transparent" />
-        <span className="absolute top-2.5 left-3 text-2xl drop-shadow-md">{i18nT(poda.emoji)}</span>
+        <div className="absolute top-2.5 left-3">
+          <Emoji3D item={poda} size="md" badge />
+        </div>
 
         <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
           <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-white/95 text-emerald-800 shadow-sm flex items-center gap-1 backdrop-blur-xs">

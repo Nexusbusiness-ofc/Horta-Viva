@@ -3,6 +3,7 @@ import { translatedMonth } from "@/lib/i18n";
 import RegionalCalendarNotice from "@/components/regional/RegionalCalendarNotice";
 import React, { useState } from "react";
 import { Image } from "@/components/ui/image";
+import Emoji3D from "@/components/ui/Emoji3D";
 import { Calendar, Hand, Ruler, Lightbulb, Sprout, BookOpen, Layers, Lock } from "lucide-react";
 import MondaSchemaViewer from "./MondaSchemaViewer";
 import { useSubscription } from "@/lib/subscription";
@@ -56,14 +57,14 @@ export default function MondaDetail({
           v0: monda.name
         })} className="w-full h-full block" focalPointY={0.4} />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
-            <span className="absolute bottom-3 left-4 text-4xl drop-shadow-lg">{i18nT(monda.emoji)}</span>
+            <div className="absolute bottom-3 left-4"><Emoji3D item={monda} size="xl" badge /></div>
           </div>}
 
         <div className="relative px-6 pt-6 pb-4 shrink-0" style={{
         background: `linear-gradient(135deg, ${color}22, ${color}08)`
       }}>
           <button onClick={onClose} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/80 hover:bg-white flex items-center justify-center text-stone-500 shadow-sm transition-colors">✕</button>
-          {!monda.image_url && <div className="text-6xl mb-2">{i18nT(monda.emoji)}</div>}
+          {!monda.image_url && <div className="mb-2"><Emoji3D item={monda} size="2xl" badge /></div>}
           <h2 className="text-2xl font-bold text-stone-800">{i18nT(monda.name)}</h2>
           <span className="inline-block mt-1 text-xs font-medium px-3 py-1 rounded-full" style={{
           backgroundColor: color + "22",

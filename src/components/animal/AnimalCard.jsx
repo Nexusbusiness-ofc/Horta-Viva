@@ -1,6 +1,7 @@
 import { useI18n } from "@/lib/I18nContext";
 import React from "react";
 import { resolveAssetUrl } from "@/lib/utils";
+import Emoji3D from "@/components/ui/Emoji3D";
 import { ChevronRight } from "lucide-react";
 
 const DIFFICULTY_STYLES = {
@@ -45,7 +46,7 @@ export default function AnimalCard({
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <div className="absolute bottom-1.5 left-2 right-2 flex items-center gap-1.5">
-                <span className="text-base drop-shadow">{animal.emoji || i18nT("🐔")}</span>
+                <Emoji3D item={animal} size="sm" badge />
                 <span className="font-bold text-white text-xs sm:text-sm truncate drop-shadow">
                   {i18nT(animal.name)}
                 </span>
@@ -58,7 +59,7 @@ export default function AnimalCard({
                 background: `linear-gradient(135deg, ${animal.color || "#c2410c"}25, ${animal.color || "#c2410c"}08)`
               }}
             >
-              <span className="text-4xl drop-shadow-xs">{animal.emoji || i18nT("🐔")}</span>
+              <Emoji3D item={animal} size="xl" />
               <span className="font-bold text-stone-800 text-xs sm:text-sm text-center truncate mt-1">
                 {i18nT(animal.name)}
               </span>
@@ -107,7 +108,7 @@ export default function AnimalCard({
             </span>
           </div>
           <div className="absolute bottom-2.5 left-3 right-3 flex items-center gap-2">
-            <span className="text-2xl drop-shadow">{animal.emoji || i18nT("🐔")}</span>
+            <Emoji3D item={animal} size="md" badge />
             <div className="flex-1 min-w-0">
               <h3 className="font-extrabold text-white text-base leading-tight truncate drop-shadow">
                 {i18nT(animal.name)}
@@ -125,7 +126,7 @@ export default function AnimalCard({
             background: `linear-gradient(135deg, ${animal.color || "#c2410c"}22, ${animal.color || "#c2410c"}08)`
           }}
         >
-          <div className="text-4xl">{animal.emoji || i18nT("🐔")}</div>
+          <Emoji3D item={animal} size="xl" badge />
           <div className="flex-1 min-w-0">
             <h3 className="font-extrabold text-stone-800 text-base leading-tight truncate">
               {i18nT(animal.name)}

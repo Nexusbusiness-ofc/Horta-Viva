@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="145%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000" flood-opacity="0.28"/>
+    </filter>
+    <filter id="inSh" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#000" flood-opacity="0.2"/>
+    </filter>
+    <radialGradient id="leafG" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#86efac"/>
+      <stop offset="45%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#14532d"/>
+    </radialGradient>
+    <radialGradient id="leafDarkG" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#4ade80"/>
+      <stop offset="50%" stop-color="#15803d"/>
+      <stop offset="100%" stop-color="#052e16"/>
+    </radialGradient>
+    
+    <radialGradient id="persG" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fdba74"/>
+      <stop offset="45%" stop-color="#f97316"/>
+      <stop offset="85%" stop-color="#c2410c"/>
+      <stop offset="100%" stop-color="#7c2d12"/>
+    </radialGradient>
+  
+  </defs>
+  <g filter="url(#sh)">
+    
+    <ellipse cx="64" cy="74" rx="44" ry="38" fill="url(#persG)"/>
+    <ellipse cx="46" cy="58" rx="12" ry="14" transform="rotate(-25 46 58)" fill="#fff" opacity="0.5"/>
+    <path d="M64 24 L86 36 L64 46 L42 36 Z" fill="url(#leafDarkG)"/>
+    <path d="M50 22 L78 48 M78 22 L50 48" stroke="#22c55e" stroke-width="10" stroke-linecap="round"/>
+  
+  </g>
+</svg>

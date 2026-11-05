@@ -1,6 +1,7 @@
 import { useI18n } from "@/lib/I18nContext";
 import React from "react";
 import { resolveAssetUrl } from "@/lib/utils";
+import Emoji3D from "@/components/ui/Emoji3D";
 import { ChevronRight } from "lucide-react";
 
 const EDIBILITY_STYLES = {
@@ -58,7 +59,7 @@ export default function MushroomCard({
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <div className="absolute bottom-1.5 left-2 right-2 flex items-center gap-1.5">
-                <span className="text-base drop-shadow">{mushroom.emoji || i18nT("🍄")}</span>
+                <Emoji3D item={mushroom} size="sm" badge />
                 <span className="font-bold text-white text-xs sm:text-sm truncate drop-shadow">
                   {i18nT(mushroom.name)}
                 </span>
@@ -71,7 +72,7 @@ export default function MushroomCard({
                 background: `linear-gradient(135deg, ${mushroom.color || "#a16207"}25, ${mushroom.color || "#a16207"}08)`
               }}
             >
-              <span className="text-4xl drop-shadow-xs">{mushroom.emoji || i18nT("🍄")}</span>
+              <Emoji3D item={mushroom} size="xl" />
               <span className="font-bold text-stone-800 text-xs sm:text-sm text-center truncate mt-1">
                 {i18nT(mushroom.name)}
               </span>
@@ -108,7 +109,7 @@ export default function MushroomCard({
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
           <div className="absolute bottom-2.5 left-3 right-3 flex items-center gap-2">
-            <span className="text-2xl drop-shadow">{mushroom.emoji || i18nT("🍄")}</span>
+            <Emoji3D item={mushroom} size="md" badge />
             <div className="flex-1 min-w-0">
               <h3 className="font-extrabold text-white text-base leading-tight truncate drop-shadow">
                 {i18nT(mushroom.name)}
@@ -126,7 +127,7 @@ export default function MushroomCard({
             background: `linear-gradient(135deg, ${mushroom.color || "#a16207"}22, ${mushroom.color || "#a16207"}08)`
           }}
         >
-          <div className="text-4xl">{mushroom.emoji || i18nT("🍄")}</div>
+          <Emoji3D item={mushroom} size="xl" badge />
           <div className="flex-1 min-w-0">
             <h3 className="font-extrabold text-stone-800 text-base leading-tight truncate">
               {i18nT(mushroom.name)}

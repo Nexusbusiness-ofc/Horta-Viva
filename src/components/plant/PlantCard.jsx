@@ -5,6 +5,7 @@ import { translatedMonth } from "@/lib/i18n";
 import React from "react";
 import { Sprout, Sun, Droplets, ChevronRight } from "lucide-react";
 import { Image } from "@/components/ui/image";
+import Emoji3D from "@/components/ui/Emoji3D";
 
 const MONTH_SHORT = ["", "J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
@@ -50,10 +51,10 @@ export default function PlantCard({
             />
           ) : (
             <div
-              className="w-full h-full flex items-center justify-center text-4xl"
+              className="w-full h-full flex items-center justify-center"
               style={{ background: `linear-gradient(135deg, ${color}25, ${color}08)` }}
             >
-              {plant.emoji || i18nT("🌱")}
+              <Emoji3D item={plant} size="xl" />
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none" />
@@ -77,6 +78,11 @@ export default function PlantCard({
               {i18nT(plant.difficulty)}
             </span>
           )}
+
+          {/* Emoji 3D representativo sobre a imagem */}
+          <div className="absolute bottom-1.5 right-1.5">
+            <Emoji3D item={plant} size="sm" badge />
+          </div>
         </div>
 
         <div className="p-2.5 flex-1 flex flex-col justify-between min-w-0">
@@ -120,8 +126,8 @@ export default function PlantCard({
             className="absolute inset-0 w-full h-full block group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
-          <div className="text-6xl drop-shadow-lg transition-transform duration-300 group-hover:scale-110">
-            {i18nT(plant.emoji)}
+          <div className="transition-transform duration-300 group-hover:scale-110">
+            <Emoji3D item={plant} size="2xl" />
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
@@ -150,7 +156,7 @@ export default function PlantCard({
           </div>
         )}
 
-        {/* Título e Categoria sobre a imagem */}
+        {/* Título, Categoria e Emoji 3D sobre a imagem */}
         <div className="absolute bottom-2.5 left-3.5 right-3.5 flex items-end justify-between gap-2">
           <div className="min-w-0">
             <span
@@ -163,9 +169,7 @@ export default function PlantCard({
               {i18nT(plant.name)}
             </h3>
           </div>
-          {plant.emoji && (
-            <span className="text-2xl drop-shadow-md shrink-0">{i18nT(plant.emoji)}</span>
-          )}
+          <Emoji3D item={plant} size="md" badge />
         </div>
       </div>
 

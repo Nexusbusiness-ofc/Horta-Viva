@@ -3,6 +3,7 @@ import { translatedMonth } from "@/lib/i18n";
 import RegionalCalendarNotice from "@/components/regional/RegionalCalendarNotice";
 import React, { useState } from "react";
 import { Image } from "@/components/ui/image";
+import Emoji3D from "@/components/ui/Emoji3D";
 import { Scissors, Calendar, Wrench, Lightbulb, Trees, BookOpen, Layers, CheckCircle2 } from "lucide-react";
 import PodaSchemaViewer from "./PodaSchemaViewer";
 import { PRUNING_TYPE_META, getPruningSchedule, formatShortMonths } from "./PodaCard";
@@ -85,7 +86,9 @@ export default function PodaDetail({
               focalPointY={0.4}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
-            <span className="absolute bottom-3 left-4 text-4xl drop-shadow-lg">{i18nT(poda.emoji)}</span>
+            <div className="absolute bottom-3 left-4">
+              <Emoji3D item={poda} size="xl" badge />
+            </div>
           </div>
         )}
 
@@ -99,7 +102,11 @@ export default function PodaDetail({
           >
             ✕
           </button>
-          {!poda.image_url && <div className="text-6xl mb-2">{i18nT(poda.emoji)}</div>}
+          {!poda.image_url && (
+            <div className="mb-3">
+              <Emoji3D item={poda} size="2xl" badge />
+            </div>
+          )}
           <h2 className="text-2xl font-bold text-stone-800">{i18nT(poda.name)}</h2>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             <span

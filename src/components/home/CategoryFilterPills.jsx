@@ -1,11 +1,12 @@
 import { useI18n } from "@/lib/I18nContext";
 import React from "react";
+import Emoji3D from "@/components/ui/Emoji3D";
 
 const CATEGORIES = [
   {
     id: "all",
     label: "Todos",
-    emoji: "✨"
+    emoji: "🌱"
   },
   {
     id: "hortalicas",
@@ -40,13 +41,13 @@ const CATEGORIES = [
   {
     id: "podas",
     label: "Podas",
-    emoji: "✂️",
+    emoji: "🌳",
     isSpecialLink: "/podas-mondas"
   },
   {
     id: "animais",
     label: "Animais",
-    emoji: "🐾",
+    emoji: "🐔",
     isSpecialLink: "/animais"
   }
 ];
@@ -69,13 +70,13 @@ export default function CategoryFilterPills({
               <button
                 key={cat.id}
                 onClick={() => onSelectCategory(cat)}
-                className={`shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-extrabold transition-all duration-200 active:scale-95 whitespace-nowrap ${
+                className={`group shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-extrabold transition-all duration-200 active:scale-95 whitespace-nowrap ${
                   isActive
                     ? "bg-gradient-to-r from-[#155e37] via-emerald-700 to-teal-700 text-white shadow-md shadow-emerald-900/20 ring-2 ring-emerald-500/20"
                     : "bg-white text-stone-700 border border-stone-200/90 hover:border-emerald-300 hover:bg-emerald-50/40 hover:text-emerald-800 shadow-2xs"
                 }`}
               >
-                <span className="text-sm leading-none">{i18nT(cat.emoji)}</span>
+                <Emoji3D emoji={cat.emoji} size="sm" />
                 <span>{i18nT(cat.label)}</span>
               </button>
             );
