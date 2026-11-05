@@ -36,6 +36,13 @@ function normalizeItems(items, key) {
     if (!item) return item;
     const seed = seedMap.get(item.id);
     const updated = restoreRegionalOriginal(item);
+    if (seed) {
+      if (Array.isArray(seed.when_months)) updated.when_months = [...seed.when_months];
+      if (Array.isArray(seed.formation_months)) updated.formation_months = [...seed.formation_months];
+      if (Array.isArray(seed.production_months)) updated.production_months = [...seed.production_months];
+      if (Array.isArray(seed.cleaning_months)) updated.cleaning_months = [...seed.cleaning_months];
+      if (seed.pruning_calendar) updated.pruning_calendar = seed.pruning_calendar;
+    }
     if (updated.image_url) {
       updated.image_url = resolveAssetUrl(updated.image_url);
     }

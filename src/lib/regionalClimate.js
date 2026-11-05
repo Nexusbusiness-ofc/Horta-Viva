@@ -2,7 +2,7 @@ import { readRegionalPreferences } from "./regionalPreferences.js";
 
 // Deliberately approximate: these rules are not local frost/rainfall normals.
 // See docs/regional-calendars.md for agronomic sources and the model's limits.
-const MONTH_FIELDS = ["sow_months", "plant_months", "harvest_months", "when_months", "season_months"];
+const MONTH_FIELDS = ["sow_months", "plant_months", "harvest_months", "when_months", "season_months", "formation_months", "production_months", "cleaning_months"];
 const ALL_MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 const CLIMATES = new Set(["mediterranean", "temperate", "continental", "tropical", "arid"]);
 const SOUTH_COUNTRIES = new Set(["AU", "NZ", "ZA", "AR", "CL", "UY", "PY", "BO", "MG", "MZ", "AO", "BW", "NA", "ZM", "ZW", "MW", "LS", "SZ", "MU", "FJ"]);

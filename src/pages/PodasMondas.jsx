@@ -23,6 +23,7 @@ export default function PodasMondas() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todas");
   const [selected, setSelected] = useState(null);
+  const [selectedPruningType, setSelectedPruningType] = useState("production");
   const [showUniversalGuide, setShowUniversalGuide] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
   const [viewMode, setViewMode] = useViewMode("hortaviva_podas_view_mode", "large");
@@ -161,7 +162,10 @@ export default function PodasMondas() {
             <div className="text-5xl mb-3">{tab === "podas" ? i18nT("🌳") : i18nT("🌱")}</div>
             <p className="text-stone-500">{i18nT("Nenhum resultado encontrado.")}</p>
           </div> : <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-3.5" : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"}>
-            {i18nT(filtered.map(item => tab === "podas" ? <PodaCard key={item.id} poda={item} onClick={() => setSelected(item)} compact={viewMode === "grid"} /> : <MondaCard key={item.id} monda={item} onClick={() => setSelected(item)} compact={viewMode === "grid"} />))}
+            {i18nT(filtered.map(item => tab === "podas" ? <PodaCard key={item.id} poda={item} onClick={pruningType => {
+            setSelectedPruningType(typeof pruningType === "string" ? pruningType : "production");
+            setSelected(item);
+          }} compact={viewMode === "grid"} /> : <MondaCard key={item.id} monda={item} onClick={() => setSelected(item)} compact={viewMode === "grid"} />))}
           </div>}
       </main>
 
@@ -169,7 +173,7 @@ export default function PodasMondas() {
         <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent font-medium">{i18nT("🌱 Minha Horta — Cultiva com sabedoria")}</span>
       </footer>
 
-      {selected && tab === "podas" && <PodaDetail poda={selected} onClose={() => setSelected(null)} />}
+      {selected && tab === "podas" && <PodaDetail poda={selected} initialPruningType={selectedPruningType} onClose={() => setSelected(null)} />}
       {selected && tab === "mondas" && <MondaDetail monda={selected} onClose={() => setSelected(null)} />}
 
       <UniversalPruningGuideModal isOpen={showUniversalGuide} onClose={() => setShowUniversalGuide(false)} />

@@ -827,9 +827,29 @@ export const DEFAULT_PODAS = [
     color: "#7c3aed",
     image_url: "./images/podas/vinha.jpg",
     category: "Vinha",
-    when_months: [1, 2, 3],
-    when_info: "Durante o repouso vegetativo de inverno profundo, antes do choro da videira (fevereiro a início de março).",
-    pruning_types: "Poda em seco (de produção): sistemas Royat (cordão com talões) ou Guyot (vara e talão de reserva).",
+    when_months: [12, 1, 2, 3],
+    formation_months: [1, 2, 5, 6],
+    production_months: [12, 1, 2, 3],
+    cleaning_months: [12, 1, 2, 6, 7],
+    pruning_calendar: {
+      formation: {
+        season: "Inverno (Jan–Fev) e Primavera (Mai–Jun)",
+        stage: "1.º ao 3.º ano (Cepa Jovem)",
+        summary: "Selecionar a vara mais forte e direita para formar o tronco vertical no tutor e conduzir os 2 braços principais no arame."
+      },
+      production: {
+        season: "Repouso de Inverno (Dezembro a Março)",
+        stage: "Anual em cepas adultas",
+        summary: "Cortar as varas que já produziram, deixando talões curtos de 2 a 3 gomos (Royat) ou vara longa e talão de reserva (Guyot) antes do choro."
+      },
+      cleaning: {
+        season: "Inverno (Dez–Fev) e Verão (Jun–Jul)",
+        stage: "Manutenção e cepas velhas",
+        summary: "Retirar madeira morta, braços com fungos (escoriose/eutipiose), ladrões no tronco velho e renovar braços compridos pelo talão de retorno."
+      }
+    },
+    when_info: "Durante o repouso vegetativo de inverno profundo, antes do choro da videira (dezembro a início de março), complementada com orientação em verde.",
+    pruning_types: "Poda de formação (condução no arame), poda em seco de produção (sistemas Royat ou Guyot) e poda de limpeza/rejuvenescimento de braços.",
     how: "Corte das varas que já produziram. Deixar varas com 2 a 3 gomos produtivos bem formados e eliminar varas fracas ou mal posicionadas. Manter o equilíbrio entre o crescimento vegetativo e a carga de uva.",
     tools: "Tesoura de poda de uma mão bem afiada, serrote pequeno para ramos velhos e solução alcoólica para desinfeção entre cepas.",
     tips: "O corte deve ser sempre inclinado (em bisel) no sentido oposto ao gomo mais alto para evitar que a água da chuva e as lágrimas de seiva escorram sobre a gema fértil.",
@@ -842,9 +862,29 @@ export const DEFAULT_PODAS = [
     color: "#16a34a",
     image_url: "./images/podas/vinha_verde.jpg",
     category: "Vinha",
-    when_months: [5, 6, 7],
-    when_info: "Final da primavera e início do verão, durante o crescimento ativo dos pâmpanos e após o vingamento das uvas.",
-    pruning_types: "Desponta, esladroamento, desfolha pontual na zona dos cachos e monda de cachos.",
+    when_months: [4, 5, 6, 7, 8],
+    formation_months: [4, 5, 6],
+    production_months: [5, 6, 7, 8],
+    cleaning_months: [4, 5, 6, 7],
+    pruning_calendar: {
+      formation: {
+        season: "Primavera (Abril a Junho)",
+        stage: "Videiras jovens em condução",
+        summary: "Escolher os pâmpanos mais bem posicionados para formar a estrutura nos arames e suprimir brotos baixos ao longo do tronco."
+      },
+      production: {
+        season: "Fim da Primavera ao Verão (Maio a Agosto)",
+        stage: "Floração ao Pintor dos bagos",
+        summary: "Despontar extremidades vigorosas, mondar cachos em excesso e abrir janelas de luz na folhagem para maturação e doçura das uvas."
+      },
+      cleaning: {
+        season: "Primavera e Início de Verão (Abril a Julho)",
+        stage: "Arejamento sanitário anual",
+        summary: "Esladroar rebentos que nascem na madeira velha, remover netos emaranhados e retirar folhas basais envelhecidas junto aos cachos."
+      }
+    },
+    when_info: "Da primavera ao verão (abril a agosto), durante o crescimento ativo dos pâmpanos, vingamento e maturação das uvas.",
+    pruning_types: "Desponta, esladroamento, orientação de pâmpanos, desfolha pontual na zona dos cachos e monda de cachos.",
     how: "Eliminar rebentos ladrões que brotam da madeira velha. Despontar as extremidades dos ramos longos para travar o crescimento e concentrar nutrientes nos cachos. Retirar algumas folhas velhas à volta dos cachos para arejamento.",
     tools: "Tesoura de poda pequena ou desbaste manual dos rebentos tenros com os dedos.",
     tips: "Arejar os cachos previne o oídio e o míldio, permitindo que a luz solar direta melhore a maturação dos bagos e a concentração de açúcares.",
@@ -859,9 +899,29 @@ export const DEFAULT_PODAS = [
     color: "#dc2626",
     image_url: "./images/podas/macieira.jpg",
     category: "Fruteiras de pepita",
-    when_months: [1, 2],
-    when_info: "Pleno inverno quando a macieira tiver perdido completamente as folhas e a seiva estiver em repouso total.",
-    pruning_types: "Poda de formação nos primeiros anos (taça ou eixo central); poda anual de frutificação e renovação de dardos.",
+    when_months: [11, 12, 1, 2, 3, 6, 7],
+    formation_months: [12, 1, 2, 6, 7],
+    production_months: [12, 1, 2, 3],
+    cleaning_months: [11, 12, 1, 2, 7, 8],
+    pruning_calendar: {
+      formation: {
+        season: "Inverno (Dez–Fev) e Verão (Jun–Jul)",
+        stage: "1.º ao 4.º ano (Árvore Jovem)",
+        summary: "Definir eixo central ou taça aberta com 3 a 4 pernadas no inverno e arquear ramos laterais no verão para induzir botões florais."
+      },
+      production: {
+        season: "Dormência Invernal (Dezembro a Março)",
+        stage: "Anual em árvores adultas",
+        summary: "Conservar dardos, bolsas e lamburdas floríferas, encurtar ramos mistos longos e equilibrar a carga para evitar anos sem maçãs."
+      },
+      cleaning: {
+        season: "Inverno (Nov–Fev) e Poda Verde (Jul–Ago)",
+        stage: "Manutenção e árvores velhas",
+        summary: "Suprimir ladrões verticais no verão, cortar ramos secos, cruzados ou com cancro e abrir o centro da copa para entrada de sol."
+      }
+    },
+    when_info: "Poda principal no repouso de inverno (dezembro a início de março) e intervenção complementar em verde no verão (junho a agosto).",
+    pruning_types: "Poda de formação nos primeiros anos (taça ou eixo central); poda anual de frutificação/produção e poda de limpeza e rejuvenescimento.",
     how: "Eliminar ramos cruzados, ramos secos ou doentes e os ladrões verticais que roubam vigor. Clarear o centro da árvore para criar uma copa aberta que receba luz solar em todas as maçãs interiores.",
     tools: "Tesourão de poda de dois braços, tesoura de poda afiada e serrote curvo para pernadas mais grossas.",
     tips: "Preservar os lambiques e dardos curtos (órgãos florais onde nascem as maçãs). Evitar cortar pontas frutíferas saudáveis sem necessidade.",
@@ -874,9 +934,29 @@ export const DEFAULT_PODAS = [
     color: "#84cc16",
     image_url: "./images/podas/pereira.jpg",
     category: "Fruteiras de pepita",
-    when_months: [1, 2],
-    when_info: "Meses frios de janeiro e fevereiro antes do inchamento dos gomos florais.",
-    pruning_types: "Poda de limpeza, desbaste de ramos vigorosos e manutenção da pirâmide ou taça.",
+    when_months: [11, 12, 1, 2, 6, 7],
+    formation_months: [12, 1, 2, 5, 6],
+    production_months: [12, 1, 2],
+    cleaning_months: [11, 12, 1, 2, 6, 7],
+    pruning_calendar: {
+      formation: {
+        season: "Inverno (Dez–Fev) e Primavera (Mai–Jun)",
+        stage: "1.º ao 4.º ano (Árvore Jovem)",
+        summary: "Estruturar em eixo central ou pirâmide e arquear suavemente os ramos muito verticais na primavera (45°–60°) para travar o vigor."
+      },
+      production: {
+        season: "Pleno Inverno (Dezembro a Fevereiro)",
+        stage: "Anual antes do inchamento dos gomos",
+        summary: "Selecionar esporões e bolsas florais próximas do eixo principal e encurtar ramos compridos para melhorar o calibre da pêra."
+      },
+      cleaning: {
+        season: "Inverno (Nov–Fev) e Verão (Jun–Jul)",
+        stage: "Limpeza e rejuvenescimento",
+        summary: "Retirar ladrões verticais vigorosos no início do verão, eliminar madeira seca ou com pedrado e renovar esporões envelhecidos."
+      }
+    },
+    when_info: "Meses frios de dezembro a fevereiro antes do inchamento dos gomos florais, com desladroamento e arqueamento em maio–julho.",
+    pruning_types: "Poda de formação (pirâmide ou eixo), poda de produção em esporões e poda de limpeza/rejuvenescimento.",
     how: "Suprimir ladrões muito verticais, encurtar os ramos mistos muito compridos e selecionar os esporões e bolsas com botões de flor mais compactos e perto do eixo principal.",
     tools: "Tesoura de poda de corte deslizante bem afiada e desinfetada.",
     tips: "As pereiras têm forte tendência para o crescimento vertical erecto. Arquear suavemente alguns ramos laterais ajuda a antecipar a produção de fruta.",
@@ -889,9 +969,29 @@ export const DEFAULT_PODAS = [
     color: "#eab308",
     image_url: "./images/podas/marmeleiro.jpg",
     category: "Fruteiras de pepita",
-    when_months: [1, 2],
-    when_info: "Durante o repouso vegetativo invernal.",
-    pruning_types: "Poda ligeira de manutenção e desbaste interior.",
+    when_months: [11, 12, 1, 2, 6, 7],
+    formation_months: [12, 1, 2],
+    production_months: [1, 2],
+    cleaning_months: [11, 12, 1, 2, 6, 7],
+    pruning_calendar: {
+      formation: {
+        season: "Repouso de Inverno (Dezembro a Fevereiro)",
+        stage: "1.º ao 3.º ano (Árvore Jovem)",
+        summary: "Formar copa baixa em taça aberta com 3 a 4 pernadas bem distribuídas a partir de 60–80 cm do solo."
+      },
+      production: {
+        season: "Inverno Profundo (Janeiro e Fevereiro)",
+        stage: "Anual ligeira em árvores adultas",
+        summary: "Clarear ramos em excesso sem despontar as pontas jovens exteriores, pois o marmeleiro floresce e frutifica nas extremidades."
+      },
+      cleaning: {
+        season: "Inverno (Nov–Fev) e Verão (Jun–Jul)",
+        stage: "Sanitária e rejuvenescimento",
+        summary: "Arrancar rebentos ladrões que brotam na base da raiz no verão e eliminar ramos secos, cruzados ou pendentes no interior."
+      }
+    },
+    when_info: "Durante o repouso vegetativo invernal (novembro a fevereiro), com limpeza de rebentos basais no verão (junho e julho).",
+    pruning_types: "Poda de formação em taça, poda ligeira de produção e poda de limpeza/desbaste interior.",
     how: "Eliminar ramos cruzados no interior da copa, retirar madeira seca e eliminar os rebentos que nascem no colo da raiz. O marmeleiro frutifica na extremidade dos raminhos formados no próprio ano.",
     tools: "Tesoura de poda e serrote de podar pequeno.",
     tips: "Não desponte excessivamente as pontas dos ramos exteriores, pois é aí que surgirão os botões florais na primavera.",
@@ -906,9 +1006,29 @@ export const DEFAULT_PODAS = [
     color: "#f97316",
     image_url: "./images/podas/pessegueiro.jpg",
     category: "Fruteiras de caroço",
-    when_months: [2, 3],
-    when_info: "Fim do inverno, quando os botões de flor começam a inchar mas antes de abrirem as pétalas cor-de-rosa.",
-    pruning_types: "Poda rigorosa de frutificação anual; o pessegueiro produz apenas na madeira nova crescida no ano anterior.",
+    when_months: [1, 2, 3, 5, 6, 8, 9],
+    formation_months: [2, 3, 5, 6],
+    production_months: [1, 2, 3],
+    cleaning_months: [5, 6, 8, 9],
+    pruning_calendar: {
+      formation: {
+        season: "Fim de Inverno (Fev–Mar) e Primavera (Mai–Jun)",
+        stage: "1.º ao 3.º ano (Árvore Jovem)",
+        summary: "Abrir a copa em taça baixa com 3 a 4 braços principais sem eixo central e orientar os lançamentos novos na primavera."
+      },
+      production: {
+        season: "Fim de Inverno com gomos a inchar (Jan–Mar)",
+        stage: "Anual rigorosa (frutifica em ramo de 1 ano)",
+        summary: "Renovar 50 a 70% da ramagem: cortar ramos que já deram fruto e selecionar ramos mistos vigorosos com gomos triplos."
+      },
+      cleaning: {
+        season: "Primavera (Mai–Jun) e Pós-colheita (Ago–Set)",
+        stage: "Poda em verde e limpeza sanitária",
+        summary: "Retirar ladrões interiores que tapam o sol aos frutos na primavera e eliminar ramos secos, partidos ou com gomose após a colheita."
+      }
+    },
+    when_info: "Fim do inverno (janeiro a março) quando os botões começam a inchar, complementada por poda em verde (maio–junho) e limpeza pós-colheita (agosto–setembro).",
+    pruning_types: "Poda de formação em taça aberta, poda rigorosa de produção anual em madeira de 1 ano e poda em verde de limpeza.",
     how: "Remover ramos que já frutificaram e ficaram exaustos. Desbastar os ramos mistos, mantendo os ramos vigorosos com gomos triplos (dois gomos florais com um gomo de madeira ao meio). Encurtar ramos compridos em 30%.",
     tools: "Tesoura de poda muito bem afiada e mastique cicatrizante para selar cortes grossos.",
     tips: "Muito suscetível à lepra do pessegueiro e cancro bacteriano: aplicar calda bordalesa imediatamente após a conclusão da poda.",
@@ -921,11 +1041,31 @@ export const DEFAULT_PODAS = [
     color: "#be123c",
     image_url: "./images/podas/cerejeira.jpg",
     category: "Fruteiras de caroço",
-    when_months: [8, 9],
-    when_info: "Final do verão (agosto e setembro), imediatamente após a colheita das cerejas, ou muito suavemente no início da floração.",
-    pruning_types: "Poda suave em verde de limpeza; NUNCA podar no inverno profundo para evitar a gomose.",
+    when_months: [3, 5, 6, 7, 8, 9],
+    formation_months: [3, 5, 6, 8],
+    production_months: [7, 8, 9],
+    cleaning_months: [6, 7, 8, 9],
+    pruning_calendar: {
+      formation: {
+        season: "Abrolhamento (Março) e Verão (Mai–Ago)",
+        stage: "1.º ao 4.º ano (Árvore Jovem)",
+        summary: "Conduzir em taça aberta ou vaso retardado através de despontas em verde na primavera/verão, evitando cortes no inverno frio."
+      },
+      production: {
+        season: "Verão logo após a colheita (Julho a Setembro)",
+        stage: "Manutenção frutífera anual",
+        summary: "Controlar a altura das pernadas e abrir entrada de sol para os 'buquês de maio', aproveitando o calor para cicatrização rápida."
+      },
+      cleaning: {
+        season: "Verão Seco Pós-colheita (Junho a Setembro)",
+        stage: "Sanitária e rejuvenescimento suave",
+        summary: "Remover ramos partidos na apanha, ladrões interiores e ramos secos em dias secos e quentes para impedir a formação de gomose."
+      }
+    },
+    when_info: "Final da primavera e verão (junho a setembro), imediatamente após a colheita das cerejas, ou formação suave no abrolhamento (março).",
+    pruning_types: "Poda de formação em verde, poda de produção pós-colheita e poda de limpeza; NUNCA podar no inverno profundo para evitar gomose.",
     how: "Remover ramos doentes, partidos pelo peso da colheita ou entrecruzados. Manter a copa aberta e arejada. Reduzir a altura das copas que subiram em demasia.",
-    tools: "Serrote de dente fino japonês e tesoura de podar afiada.",
+    tools: "Serrote de dente fino japonês, tesoura de podar afiada e pasta cicatrizante.",
     tips: "A cerejeira cicatriza muito mal em tempo húmido e frio, segregando goma pegajosa. Podar com tempo quente e seco garante cicatrização instantânea.",
     difficulty: "Média"
   },
@@ -936,9 +1076,29 @@ export const DEFAULT_PODAS = [
     color: "#6b21a8",
     image_url: "./images/podas/ameixeira.jpg",
     category: "Fruteiras de caroço",
-    when_months: [1, 2, 3],
-    when_info: "Fim do inverno, pouco antes do início da brotação vegetativa.",
-    pruning_types: "Poda de arejamento de copa e rejuvenescimento de ramos velhos.",
+    when_months: [1, 2, 3, 6, 7, 8, 9],
+    formation_months: [1, 2, 5, 6],
+    production_months: [1, 2, 3],
+    cleaning_months: [6, 7, 8, 9],
+    pruning_calendar: {
+      formation: {
+        season: "Fim de Inverno (Jan–Fev) e Primavera (Mai–Jun)",
+        stage: "1.º ao 3.º ano (Árvore Jovem)",
+        summary: "Formar taça aberta livre com 3 a 4 pernadas bem inseridas e despontar lançamentos excessivamente compridos em maio/junho."
+      },
+      production: {
+        season: "Fim do Inverno antes da brotação (Jan–Mar)",
+        stage: "Anual em árvores adultas",
+        summary: "Equilibrar ramos mistos e conservar os dardos curtos ('buquês de maio') para estabilizar a produção e o tamanho das ameixas."
+      },
+      cleaning: {
+        season: "Verão e Pós-colheita (Junho a Setembro)",
+        stage: "Limpeza de ladrões e rejuvenescimento",
+        summary: "Cortar ladrões verticais e rebentos da raiz no verão e eliminar ramos partidos, secos ou sombreados logo após a colheita."
+      }
+    },
+    when_info: "Fim do inverno (janeiro a março) pouco antes da brotação, com limpeza em verde e rejuvenescimento no verão (junho a setembro).",
+    pruning_types: "Poda de formação em taça, poda de produção/frutificação e poda de limpeza e rejuvenescimento de ramos velhos.",
     how: "Clarear o centro da copa retirando os ramos vigorosos verticais e encurtar ligeiramente os ramos pendentes. Conservar os buquês de maio e ramos curtos com botões florais.",
     tools: "Tesoura de poda de duas mãos e tesoura de corte bypass.",
     tips: "As ameixeiras tendem a ter colheitas alternadas ('safra e contra-safra'). Uma poda equilibrada atenua essa alternância e melhora o calibre das ameixas.",
@@ -951,9 +1111,29 @@ export const DEFAULT_PODAS = [
     color: "#ea580c",
     image_url: "./images/podas/damasqueiro.jpg",
     category: "Fruteiras de caroço",
-    when_months: [2, 3],
-    when_info: "Fevereiro a início de março, com botões bem visíveis.",
-    pruning_types: "Poda de frutificação moderada e abertura da copa em taça.",
+    when_months: [2, 3, 5, 6, 7, 8],
+    formation_months: [2, 3, 5, 6],
+    production_months: [2, 3],
+    cleaning_months: [6, 7, 8],
+    pruning_calendar: {
+      formation: {
+        season: "Fim de Inverno (Fev–Mar) e Primavera (Mai–Jun)",
+        stage: "1.º ao 3.º ano (Árvore Jovem)",
+        summary: "Abrir a copa em taça luminosa e beliscar rebentos vigorosos em maio/junho para promover ramificações secundárias floríferas."
+      },
+      production: {
+        season: "Fevereiro a início de Março (Botões visíveis)",
+        stage: "Anual antes da floração",
+        summary: "Renovar brindilos e esporões produtivos em dias secos, mantendo ramos curtos bem expostos ao sol da manhã."
+      },
+      cleaning: {
+        season: "Verão após a colheita (Junho a Agosto)",
+        stage: "Sanitária e rejuvenescimento em verde",
+        summary: "Remover ladrões vigorosos, madeira seca e ramos cruzados no verão seco, quando a árvore cicatriza rápido sem risco de cancro."
+      }
+    },
+    when_info: "Fevereiro a início de março para produção, e de maio a agosto para desponta em verde e limpeza pós-colheita.",
+    pruning_types: "Poda de formação em taça, poda de frutificação moderada e poda sanitária de verão.",
     how: "Eliminar ramos cruzados ou sombreados no centro da árvore. Despontar os ramos mistos fracos e manter os esporões curtos de produção.",
     tools: "Tesoura afiada e pasta cicatrizante de cobre para proteção imediata das feridas.",
     tips: "Árvore de floração muito precoce: proteja os rebentos abertos de geadas tardias de primavera.",
@@ -968,9 +1148,29 @@ export const DEFAULT_PODAS = [
     color: "#f97316",
     image_url: "./images/podas/laranjeira.jpg",
     category: "Citrinos",
-    when_months: [3, 4, 5],
-    when_info: "Primavera, após a apanha das laranjas de inverno e quando tiver passado o perigo de geadas tardias.",
-    pruning_types: "Poda de limpeza, arejamento e rejuvenescimento suave.",
+    when_months: [3, 4, 5, 6, 8, 9],
+    formation_months: [3, 4, 5, 6],
+    production_months: [3, 4, 5],
+    cleaning_months: [3, 4, 5, 8, 9],
+    pruning_calendar: {
+      formation: {
+        season: "Primavera sem geadas (Março a Junho)",
+        stage: "1.º ao 3.º ano (Árvore Jovem)",
+        summary: "Limpar o tronco até 50–60 cm do solo e selecionar 3 a 4 pernadas principais bem distribuídas para formar copa arredondada."
+      },
+      production: {
+        season: "Primavera pós-colheita (Março a Maio)",
+        stage: "Anual ligeira em árvores adultas",
+        summary: "Abrir entradas de luz e ar no topo e interior da copa sem despir a ramagem exterior onde nascem as flores de laranjeira."
+      },
+      cleaning: {
+        season: "Primavera (Mar–Mai) e Fim de Verão (Ago–Set)",
+        stage: "Desladroamento e limpeza sanitária",
+        summary: "Cortar 'chupones' verticais espinhosos, levantar ramos da saia que tocam na terra e retirar raminhos secos interiores."
+      }
+    },
+    when_info: "Primavera (março a maio), após a apanha das laranjas e passado o perigo de geadas, com repasse de ladrões no fim do verão (agosto–setembro).",
+    pruning_types: "Poda de formação da copa, poda de produção/arejamento e poda de limpeza e rejuvenescimento suave.",
     how: "Remover ramos secos, partidos ou que toquem no chão. Eliminar os 'chupones' ou ladrões vigorosos do interior da copa que roubam seiva. Manter a copa equilibrada em forma arredondada sem despir o tronco.",
     tools: "Tesoura de poda ergonómica e luvas grossas para proteger dos espinhos.",
     tips: "Os citrinos não toleram podas drásticas. Desbastar apenas o suficiente para que a luz e o ar circulem, prevenindo cochonilhas e fumagina.",
@@ -983,9 +1183,29 @@ export const DEFAULT_PODAS = [
     color: "#eab308",
     image_url: "./images/podas/limoeiro.jpg",
     category: "Citrinos",
-    when_months: [3, 4, 5],
-    when_info: "Início da primavera (março e abril) ou logo após a vaga principal de limões de inverno.",
-    pruning_types: "Poda de desbaste interior contínuo.",
+    when_months: [3, 4, 5, 6, 7, 9, 10],
+    formation_months: [3, 4, 5],
+    production_months: [3, 4, 5, 9],
+    cleaning_months: [3, 4, 6, 7, 9, 10],
+    pruning_calendar: {
+      formation: {
+        season: "Primavera (Março a Maio)",
+        stage: "1.º ao 3.º ano (Árvore Jovem)",
+        summary: "Definir 3 a 4 braços estruturais abertos e despontar lançamentos longos para criar uma copa firme e resistente ao vento."
+      },
+      production: {
+        season: "Primavera (Mar–Mai) e Outono (Setembro)",
+        stage: "Equilíbrio das várias florações",
+        summary: "Encurtar varas vigorosas improdutivas nas pontas e iluminar o interior, preservando os raminhos laterais com botões e frutos."
+      },
+      cleaning: {
+        season: "Primavera ao Outono (Mar–Abr, Jun–Jul, Set–Out)",
+        stage: "Desbaste contínuo de ladrões",
+        summary: "Eliminar os ladrões verticais com espinhos que surgem no centro da árvore, remover madeira seca e manter a saia a 50 cm do solo."
+      }
+    },
+    when_info: "Principalmente na primavera (março a maio) após a colheita de inverno, com limpeza de ladrões no verão e repasse em setembro–outubro.",
+    pruning_types: "Poda de formação, poda de produção/equilíbrio e desbaste interior contínuo de limpeza.",
     how: "Eliminar os ladrões verticais que brotam com força no meio da árvore sem flores. Manter a saia da árvore a cerca de 50 cm do solo para evitar podridões com a chuva e terra.",
     tools: "Tesourão de podar e tesoura de uma mão desinfetada.",
     tips: "O limoeiro produz várias florações por ano; evite cortar ramos carregados de botões florais pequenos.",
@@ -998,9 +1218,29 @@ export const DEFAULT_PODAS = [
     color: "#d97706",
     image_url: "./images/podas/clementineira.jpg",
     category: "Citrinos",
-    when_months: [3, 4],
-    when_info: "Logo após a colheita dos frutos de outono/inverno.",
-    pruning_types: "Poda ligeira de equilíbrio e desbaste central.",
+    when_months: [2, 3, 4, 5, 8, 9],
+    formation_months: [3, 4, 5],
+    production_months: [2, 3, 4],
+    cleaning_months: [3, 4, 8, 9],
+    pruning_calendar: {
+      formation: {
+        season: "Primavera (Março a Maio)",
+        stage: "1.º ao 3.º ano (Árvore Jovem)",
+        summary: "Formar copa arredondada sobre 3 pernadas fortes bem espaçadas, evitando forquilhas fechadas que rasgam com o peso da fruta."
+      },
+      production: {
+        season: "Pós-colheita (Fevereiro a Abril)",
+        stage: "Anual em árvores em produção",
+        summary: "Renovar raminhos finos esgotados pela colheita anterior e abrir luz no centro para aumentar o calibre e a doçura dos gomos."
+      },
+      cleaning: {
+        season: "Primavera (Mar–Abr) e Fim de Verão (Ago–Set)",
+        stage: "Limpeza interior e rejuvenescimento",
+        summary: "Retirar raminhos secos emaranhados no miolo da copa, suprimir 'chupones' verticais e aliviar ramos baixos vergados."
+      }
+    },
+    when_info: "Logo após a colheita dos frutos (fevereiro a abril), com formação na primavera e remoção de ladrões em agosto–setembro.",
+    pruning_types: "Poda de formação globosa, poda de produção pós-colheita e poda de limpeza interior.",
     how: "Limpar o centro da copa, remover ramos débeis e encurtar ramos finos que verguem demasiado sob o peso da fruta.",
     tools: "Tesoura de poda e luvas de proteção.",
     tips: "Clementinas produzem em ramos finos e ramificados; preservar a copa frondosa mas sem emaranhados.",
@@ -1015,9 +1255,29 @@ export const DEFAULT_PODAS = [
     color: "#65a30d",
     image_url: "./images/podas/oliveira.jpg",
     category: "Oliveira",
-    when_months: [2, 3, 4],
-    when_info: "Logo a seguir à apanha da azeitona (fevereiro e março) até ao aparecimento dos primeiros botões florais em abril.",
-    pruning_types: "Poda de produção bienal em taça aberta e iluminação do miolo.",
+    when_months: [1, 2, 3, 4, 6, 7, 8, 11, 12],
+    formation_months: [2, 3, 4, 6, 7],
+    production_months: [1, 2, 3, 4],
+    cleaning_months: [2, 3, 6, 7, 8, 11, 12],
+    pruning_calendar: {
+      formation: {
+        season: "Fim de Inverno (Fev–Abr) e Verão (Jun–Jul)",
+        stage: "1.º ao 4.º ano (Oliveira Jovem)",
+        summary: "Manter tronco único limpo até 1,0–1,2 m de altura e abrir 3 a 4 pernadas mestras em taça livre, retirando rebentos do fuste."
+      },
+      production: {
+        season: "Pós-apanha da azeitona (Janeiro a Abril)",
+        stage: "Anual ou bienal em árvores adultas",
+        summary: "Abrir o centro da copa ('deixar passar o pássaro'), renovar ramos que já produziram e preservar as saias pendulares de 1 ano."
+      },
+      cleaning: {
+        season: "Inverno (Nov–Mar) e Verão (Jun–Ago)",
+        stage: "Limpeza de varejões e rejuvenescimento",
+        summary: "Cortar ladrões e varejões verticais no verão, remover ramos com tuberculose e rebaixar pernadas velhas para rejuvenescer a copa."
+      }
+    },
+    when_info: "Poda principal logo após a apanha da azeitona (janeiro a abril) e desladroamento de limpeza no verão (junho a agosto).",
+    pruning_types: "Poda de formação em vaso livre, poda de produção em taça aberta e poda de limpeza/rejuvenescimento de pernadas.",
     how: "Remover os ramos velhos que já frutificaram no ano anterior e desbastar ramos verticais que sobem ao céu. Deixar a árvore com 3 a 4 ramos mestres bem distribuídos.",
     tools: "Serrote de poda de corte em tração, tesourão telescópico e motosserra de poda ligeira para ramos grossos.",
     tips: "A sabedoria popular diz que uma oliveira bem podada deve permitir a um pássaro voar através da copa sem esbarrar nas folhas.",
@@ -1030,9 +1290,29 @@ export const DEFAULT_PODAS = [
     color: "#4d7c0f",
     image_url: "./images/podas/oliveira_desladroamento.jpg",
     category: "Oliveira",
-    when_months: [6, 7, 8],
-    when_info: "Verão (junho a agosto) com tempo quente e seco.",
-    pruning_types: "Desladroamento manual da base do tronco e colo da raiz.",
+    when_months: [2, 3, 5, 6, 7, 8, 9],
+    formation_months: [3, 5, 6, 7],
+    production_months: [6, 7, 8],
+    cleaning_months: [2, 3, 6, 7, 8, 9],
+    pruning_calendar: {
+      formation: {
+        season: "Primavera e Início de Verão (Mar e Mai–Jul)",
+        stage: "Oliveiras jovens em formação",
+        summary: "Retirar rebentos tenros ao longo do tronco jovem para canalizar toda a seiva para o crescimento dos ramos mestres da copa."
+      },
+      production: {
+        season: "Verão Quente (Junho a Agosto)",
+        stage: "Proteção da carga de azeitona",
+        summary: "Suprimir os varejões verticais no dorso das pernadas que roubam água e nutrientes essenciais ao enchimento da azeitona."
+      },
+      cleaning: {
+        season: "Inverno (Fev–Mar) e Verão (Jun–Set)",
+        stage: "Limpeza da cepa e colo da raiz",
+        summary: "Cortar rente à casca todos os ladrões que rebentam no pé da oliveira e limpar ramos interiores secos para travar a cochonilha."
+      }
+    },
+    when_info: "Verão (junho a setembro) com tempo quente e seco para eliminar varejões, complementado na revisão de inverno/primavera.",
+    pruning_types: "Desladroamento de formação do fuste, desbaste de varejões nas pernadas e limpeza da base do tronco.",
     how: "Cortar rente ao cepo todos os rebentos vigorosos ('ladrões' ou varejões) que brotam da base do tronco ou do chão e que roubam água e nutrientes à copa produtiva.",
     tools: "Sacho afiado, podão ou tesoura de poda bem encostada à casca do tronco.",
     tips: "Quanto mais cedo os ladrões forem removidos no início do verão, menor será a perda de vigor para a maturação da azeitona.",
@@ -1047,9 +1327,29 @@ export const DEFAULT_PODAS = [
     color: "#a16207",
     image_url: "./images/podas/amendoeira.jpg",
     category: "Frutos secos",
-    when_months: [11, 12, 1],
-    when_info: "Início do inverno (novembro a janeiro) antes da floração precoce típica de fevereiro.",
-    pruning_types: "Poda ligeira de manutenção e desbaste.",
+    when_months: [11, 12, 1, 5, 6, 9, 10],
+    formation_months: [11, 12, 1, 5, 6],
+    production_months: [11, 12, 1],
+    cleaning_months: [9, 10, 11, 12, 1],
+    pruning_calendar: {
+      formation: {
+        season: "Inverno (Nov–Jan) e Primavera (Mai–Jun)",
+        stage: "1.º ao 3.º ano (Árvore Jovem)",
+        summary: "Formar copa em taça aberta com 3 a 4 pernadas bem espaçadas e despontar lançamentos vigorosos mal orientados na primavera."
+      },
+      production: {
+        season: "Outono tardio a Janeiro (Novembro a Janeiro)",
+        stage: "Anual antes da floração precoce",
+        summary: "Clarear ramos de 2 anos e preservar os esporões frutíferos (produtivos até 5 anos) antes da abertura das flores em fevereiro."
+      },
+      cleaning: {
+        season: "Pós-colheita (Set–Out) e Inverno (Nov–Jan)",
+        stage: "Limpeza sanitária e rejuvenescimento",
+        summary: "Remover ramos partidos na apanha, madeira seca ou com gomose e renovar pernadas envelhecidas para entrada de luz."
+      }
+    },
+    when_info: "Início do inverno (novembro a janeiro) antes da floração precoce de fevereiro, com limpeza pós-colheita em setembro–outubro.",
+    pruning_types: "Poda de formação em taça, poda de produção/manutenção de esporões e poda de limpeza pós-colheita.",
     how: "Remover ramos partidos, secos e os ramos que se cruzam no interior. As amêndoas formam-se em ramos de 2 anos e esporões persistentes que duram até 5 anos.",
     tools: "Tesoura de poda e serrote higienizado.",
     tips: "A amendoeira floresce muito cedo em Portugal; realizar a poda antes de abrir a flor para não prejudicar a polinização pelas abelhas.",
@@ -1062,9 +1362,29 @@ export const DEFAULT_PODAS = [
     color: "#78350f",
     image_url: "./images/podas/castanheiro.jpg",
     category: "Frutos secos",
-    when_months: [1, 2],
-    when_info: "Pleno inverno com a árvore em dormência absoluta.",
-    pruning_types: "Poda de formação nos jovens e poda sanitária e de clareio em soutos adultos.",
+    when_months: [11, 12, 1, 2, 6, 7],
+    formation_months: [12, 1, 2, 6],
+    production_months: [12, 1, 2],
+    cleaning_months: [11, 12, 1, 2, 6, 7],
+    pruning_calendar: {
+      formation: {
+        season: "Inverno (Dez–Fev) e Pós-enxertia (Junho)",
+        stage: "1.º ao 5.º ano (Castanheiro Jovem)",
+        summary: "Guiar tronco direito até 2 m, abrir 3 a 4 braços principais equilibrados e suprimir rebentos bravos abaixo do enxerto no verão."
+      },
+      production: {
+        season: "Dormência Profunda (Dezembro a Fevereiro)",
+        stage: "Soutos em plena produção",
+        summary: "Clarear a copa para que o sol atinja toda a periferia onde nascem os ouriços, mantendo madeira jovem e produtiva."
+      },
+      cleaning: {
+        season: "Inverno (Nov–Fev) e Verão (Jun–Jul)",
+        stage: "Sanitária e rejuvenescimento de soutos",
+        summary: "Eliminar ramos secos ou com cancro do castanheiro (selando com pasta cúprica), limpar ladrões na base e rejuvenescer copas velhas."
+      }
+    },
+    when_info: "Pleno inverno em dormência absoluta (novembro a fevereiro) e limpeza de rebentos bravos do porta-enxerto em junho–julho.",
+    pruning_types: "Poda de formação nos jovens, poda de produção/clareio e poda sanitária e de rejuvenescimento em soutos adultos.",
     how: "Eliminar ramos afetados por cancro do castanheiro ou ramos secos. Clarear copas densas para permitir a entrada de luz e facilitar o desenvolvimento dos ouriços.",
     tools: "Serrote de poda de cabo longo, tesoura de duas mãos e pasta cicatrizante com fungicida cúprico.",
     tips: "Desinfetar cuidadosamente todas as lâminas entre árvores para travar a propagação do fungo do cancro (Cryphonectria parasitica).",
@@ -1077,9 +1397,29 @@ export const DEFAULT_PODAS = [
     color: "#15803d",
     image_url: "./images/podas/figueira.jpg",
     category: "Fruteiras de folha caduca",
-    when_months: [1, 2],
-    when_info: "Durante o repouso invernal após a queda total das folhas e antes do despertar da seiva.",
-    pruning_types: "Poda moderada de arejamento e limitação de altura.",
+    when_months: [12, 1, 2, 5, 6, 7],
+    formation_months: [1, 2, 5, 6],
+    production_months: [12, 1, 2],
+    cleaning_months: [1, 2, 6, 7],
+    pruning_calendar: {
+      formation: {
+        season: "Inverno (Jan–Fev) e Primavera (Mai–Jun)",
+        stage: "1.º ao 3.º ano (Figueira Jovem)",
+        summary: "Formar tronco curto com 3 a 4 pernadas abertas em taça baixa para permitir colher os figos facilmente a partir do chão."
+      },
+      production: {
+        season: "Repouso de Inverno (Dezembro a Fevereiro)",
+        stage: "Anual em árvores adultas",
+        summary: "Arejar a copa preservando as pontas dos ramos de 1 ano (onde nascem os figos lampos) e estimular rebentos para figos vindimos."
+      },
+      cleaning: {
+        season: "Inverno (Jan–Fev) e Verão (Jun–Jul)",
+        stage: "Limpeza de rebentos e rejuvenescimento",
+        summary: "Cortar os rebentos que nascem no pé da figueira no verão, remover ramos secos ou rasteiros e rebaixar pernadas demasiado altas."
+      }
+    },
+    when_info: "Durante o repouso invernal após a queda das folhas (dezembro a fevereiro) e limpeza de rebentos da base em maio–julho.",
+    pruning_types: "Poda de formação em taça baixa, poda de produção (figos lampos e vindimos) e poda de limpeza/rejuvenescimento.",
     how: "Cortar ramos secos, ramos baixos que dificultem a passagem e ramos cruzados. Para figos lampos (primeira colheita em junho), preservar as pontas dos ramos do ano anterior onde já se encontram os botões.",
     tools: "Serrote de poda e tesourão.",
     tips: "A madeira da figueira é macia e oca no centro; não corte rente ao tronco principal sem necessidade para evitar cavidades onde a água da chuva se acumule.",
@@ -1094,9 +1434,29 @@ export const DEFAULT_PODAS = [
     color: "#e11d48",
     image_url: "./images/podas/framboesa.jpg",
     category: "Pequenos frutos",
-    when_months: [1, 2, 12],
-    when_info: "Inverno profundo.",
-    pruning_types: "Distinguir entre variedades não-remontantes (1 produção de verão) e remontantes (2 produções outono/verão).",
+    when_months: [11, 12, 1, 2, 7, 8, 9],
+    formation_months: [1, 2, 5, 6],
+    production_months: [11, 12, 1, 2],
+    cleaning_months: [7, 8, 9, 12, 1, 2],
+    pruning_calendar: {
+      formation: {
+        season: "Inverno (Jan–Fev) e Primavera (Mai–Jun)",
+        stage: "1.º ano e condução na espaldeira",
+        summary: "Rebaixar varas recém-plantadas a 25 cm e selecionar 6 a 8 lançamentos novos fortes por metro linear, atando-os aos arames."
+      },
+      production: {
+        season: "Repouso Invernal (Novembro a Fevereiro)",
+        stage: "Poda anual de frutificação",
+        summary: "Nas remontantes, aparar a ponta que deu fruto no outono (para 2 colheitas) ou rebaixar tudo para colheita única abundante."
+      },
+      cleaning: {
+        season: "Pós-colheita (Jul–Set) e Inverno (Dez–Fev)",
+        stage: "Renovação de canas exaustas",
+        summary: "Cortar rente ao solo todas as canas castanhas e secas que já frutificaram no verão e arrancar rebentos fracos fora da linha."
+      }
+    },
+    when_info: "Inverno profundo (novembro a fevereiro) para poda de produção, e fim do verão (julho a setembro) para cortar varas que já deram fruto.",
+    pruning_types: "Poda de formação/condução, poda de produção (remontantes e não-remontantes) e poda de limpeza de canas velhas.",
     how: "Nas não-remontantes: cortar rente ao solo todas as varas velhas que deram fruto no verão anterior e atar as varas novas jovens ao arame. Nas remontantes: podar a ponta que deu fruta no outono ou cortar tudo rente ao solo para colheita única abundante de fim de verão.",
     tools: "Tesoura de podar de mão pequena e luvas de proteção contra espinhos.",
     tips: "Uma boa seleção de varas (deixar cerca de 6 a 8 varas fortes por metro linear) garante frutos de grande calibre e doçura.",
@@ -1109,9 +1469,29 @@ export const DEFAULT_PODAS = [
     color: "#1d4ed8",
     image_url: "./images/podas/mirtilo.jpg",
     category: "Pequenos frutos",
-    when_months: [1, 2],
-    when_info: "Final do inverno antes do abrolhamento dos botões.",
-    pruning_types: "Poda de renovação gradual e clareio da base.",
+    when_months: [12, 1, 2, 3, 6, 7],
+    formation_months: [1, 2, 5, 6],
+    production_months: [12, 1, 2, 3],
+    cleaning_months: [12, 1, 2, 6, 7],
+    pruning_calendar: {
+      formation: {
+        season: "Fim de Inverno (Jan–Fev) e Primavera (Mai–Jun)",
+        stage: "1.º e 2.º ano (Arbusto Jovem)",
+        summary: "Retirar os botões florais no 1.º ano para engrossar as raízes e selecionar 5 a 7 hastes eretas vigorosas vindas da coroa."
+      },
+      production: {
+        season: "Inverno antes do abrolhamento (Dez–Mar)",
+        stage: "Anual em arbustos adultos",
+        summary: "Privilegiar varas jovens de 1 a 3 anos (casca avermelhada) e desbastar raminhos finos nas pontas para obter mirtilos graúdos."
+      },
+      cleaning: {
+        season: "Inverno (Dez–Fev) e Pós-colheita (Jun–Jul)",
+        stage: "Rejuvenescimento de canas velhas",
+        summary: "Cortar junto à base 1 a 2 hastes envelhecidas (> 4 anos, casca cinzenta rugosa) e remover ramos baixos rasteiros ou secos."
+      }
+    },
+    when_info: "Inverno até início de março antes do abrolhamento dos botões, com limpeza ligeira após a colheita em junho–julho.",
+    pruning_types: "Poda de formação da touceira, poda de produção em varas jovens e poda de rejuvenescimento na base.",
     how: "Remover os ramos com mais de 4 anos (madeira acinzentada e rugosa) cortando junto à base. Deixar varas jovens de cor avermelhada ou esverdeada que produzem as melhores bagas.",
     tools: "Tesoura de poda bypass afiada.",
     tips: "O mirtilo prefere solos ácidos; após a poda, renove a cobertura morta com casca de pinheiro e caruma.",
@@ -1126,9 +1506,29 @@ export const DEFAULT_PODAS = [
     color: "#be123c",
     image_url: "./images/podas/roseira.jpg",
     category: "Ornamentais e Arbustos",
-    when_months: [1, 2, 3],
-    when_info: "Fim do inverno, após as geadas mais fortes e antes das primeiras brotações primaveris.",
-    pruning_types: "Poda de rejuvenescimento rigorosa em taça aberta.",
+    when_months: [1, 2, 3, 5, 6, 7, 8, 9, 10],
+    formation_months: [2, 3, 5],
+    production_months: [1, 2, 3, 6, 7, 8, 9],
+    cleaning_months: [1, 2, 3, 5, 6, 7, 8, 10],
+    pruning_calendar: {
+      formation: {
+        season: "Fim de Inverno (Fev–Mar) e Maio",
+        stage: "1.º e 2.º ano (Roseira Jovem)",
+        summary: "Selecionar 3 a 5 hastes principais abertas em taça a partir da base, cortando em bisel 5 mm acima de uma gema voltada para fora."
+      },
+      production: {
+        season: "Inverno (Jan–Mar) e Verão (Jun–Set)",
+        stage: "Floração principal e refloração",
+        summary: "Rebaixar hastes a 3–4 gemas no fim do inverno para rosas grandes e aparar flores murchas no verão para novas vagas de rosas."
+      },
+      cleaning: {
+        season: "Inverno (Jan–Mar) e Primavera/Outono",
+        stage: "Sanitária e rejuvenescimento",
+        summary: "Arrancar ladrões bravos abaixo do enxerto, cortar madeira seca/escura ou ramos cruzados no centro e renovar hastes lenhosas."
+      }
+    },
+    when_info: "Poda principal no fim do inverno (janeiro a março) e poda contínua de limpeza e refloração da primavera ao outono (maio a outubro).",
+    pruning_types: "Poda de formação em taça aberta, poda de floração/produção de rosas e poda de limpeza/rejuvenescimento.",
     how: "Retirar toda a madeira morta, doente e os raminhos fracos. Deixar 3 a 5 hastes fortes e saudáveis cortadas a 3 ou 4 gemas do chão. Corte a 45 graus, 5 mm acima de uma gema apontada para fora.",
     tools: "Tesoura de poda afiada com lâminas desinfetadas e luvas de cabedal compridas anti-espinhos.",
     tips: "Corte sempre no sentido exterior para que os novos ramos cresçam em forma de taça aberta, permitindo sol no centro e evitando fungos.",
@@ -1141,9 +1541,29 @@ export const DEFAULT_PODAS = [
     color: "#2563eb",
     image_url: "./images/podas/hortensia.jpg",
     category: "Ornamentais e Arbustos",
-    when_months: [2, 3],
-    when_info: "Final do inverno, quando o perigo de geadas severas já diminuiu.",
-    pruning_types: "Limpeza de inflorescências secas e rejuvenescimento.",
+    when_months: [2, 3, 7, 8, 9],
+    formation_months: [2, 3, 5],
+    production_months: [2, 3],
+    cleaning_months: [2, 3, 7, 8, 9],
+    pruning_calendar: {
+      formation: {
+        season: "Fim de Inverno (Fev–Mar) e Primavera (Mai)",
+        stage: "1.º e 2.º ano (Arbusto Jovem)",
+        summary: "Equilibrar a touceira escolhendo hastes basais bem distribuídas, preservando os gomos terminais que darão as primeiras flores."
+      },
+      production: {
+        season: "Final do Inverno (Fevereiro e Março)",
+        stage: "Anual para máxima floração",
+        summary: "Cortar apenas as hastes que deram flor no ano anterior logo acima do 1.º par de gomos grossos, sem cortar os ramos novos intactos."
+      },
+      cleaning: {
+        season: "Fim de Inverno (Fev–Mar) e Verão (Jul–Set)",
+        stage: "Rejuvenescimento de hastes velhas",
+        summary: "Cortar rente à base 1/3 das canas lenhosas mais velhas (> 3 anos) no fim do inverno e retirar inflorescências queimadas no verão."
+      }
+    },
+    when_info: "Final do inverno (fevereiro e março) quando passa o risco de geadas fortes, e limpeza de flores murchas de julho a setembro.",
+    pruning_types: "Poda de formação da touceira, poda de floração/produção e poda de limpeza e rejuvenescimento na base.",
     how: "Cortar as hastes com flores secas do ano anterior logo acima do primeiro par de gomos grossos e sadios. Remover ramos muito velhos ou entrelaçados na base para estimular novos rebentos vigorosos.",
     tools: "Tesoura de poda de mão.",
     tips: "Não corte ramos novos que não deram flor no ano anterior: é precisamente nesses ramos que surgirão as maiores flores deste ano.",
@@ -1156,9 +1576,29 @@ export const DEFAULT_PODAS = [
     color: "#8b5cf6",
     image_url: "./images/podas/lavanda.jpg",
     category: "Ornamentais e Arbustos",
-    when_months: [8, 9],
-    when_info: "Final do verão, após a floração secar, ou no final do inverno.",
-    pruning_types: "Poda de conformação arredondada em almofada.",
+    when_months: [3, 4, 7, 8, 9],
+    formation_months: [3, 4, 5, 8],
+    production_months: [7, 8, 9],
+    cleaning_months: [3, 4, 8, 9],
+    pruning_calendar: {
+      formation: {
+        season: "Primavera (Mar–Mai) e Fim de Verão (Ago)",
+        stage: "1.º e 2.º ano (Planta Jovem)",
+        summary: "Despontar as pontas verdes na primavera para forçar ramificação compacta desde a base, evitando que fique pernuda e lenhosa."
+      },
+      production: {
+        season: "Verão / Pós-floração (Julho a Setembro)",
+        stage: "Anual após a colheita das espigas",
+        summary: "Cortar as hastes florais e aparar 2 a 3 cm da folhagem verde em meia-esfera para estimular densa floração no ano seguinte."
+      },
+      cleaning: {
+        season: "Início da Primavera (Mar–Abr) e Fim de Verão (Ago–Set)",
+        stage: "Manutenção sanitária sem tocar no lenho velho",
+        summary: "Retirar espigas secas e raminhos partidos pelo frio, cortando sempre na zona com folhas verdes (nunca cortar na madeira velha nua)."
+      }
+    },
+    when_info: "Final do verão (julho a setembro) logo após a floração secar, e retoque de formação/limpeza no início da primavera (março–abril).",
+    pruning_types: "Poda de formação compacta, poda de produção/floração em almofada e poda de limpeza superficial.",
     how: "Aparar os caules florais secos e cerca de 2 a 3 cm do crescimento verde superior do arbusto, dando formato de meia-esfera.",
     tools: "Tesoura de poda ou tesoura de sebes bem afiada.",
     tips: "NUNCA corte fundo na madeira velha e lenhosa desprovida de folhas, pois a alfazema raramente volta a brotar de madeira velha e pode secar.",
