@@ -28,10 +28,10 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-    --font-heading: ui-sans-serif, system-ui, sans-serif;
-    --font-body: ui-sans-serif, system-ui, sans-serif;
-    --font-display: ui-sans-serif, system-ui, sans-serif;
+    --radius: 0.75rem;
+    --font-heading: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -102,7 +102,16 @@
 }
 /* Personal colours share semantic shades throughout the existing interface. */
 :root { --hv-color-50:236 253 245; --hv-color-100:209 250 229; --hv-color-200:167 243 208; --hv-color-300:110 231 183; --hv-color-400:52 211 153; --hv-color-500:16 185 129; --hv-color-600:5 150 105; --hv-color-700:4 120 87; --hv-color-800:6 95 70; --hv-color-900:6 78 59; --hv-color-950:2 44 34; }
-.hv-app-header { background:linear-gradient(145deg,rgb(var(--hv-color-800)),rgb(var(--hv-color-950))); }
+.hv-app-header {
+  background:
+    radial-gradient(circle at 15% 15%, rgb(var(--hv-color-500) / 0.28) 0%, transparent 45%),
+    radial-gradient(circle at 88% 20%, rgb(251 191 36 / 0.16) 0%, transparent 40%),
+    linear-gradient(140deg, rgb(var(--hv-color-800)) 0%, rgb(var(--hv-color-900)) 52%, rgb(var(--hv-color-950)) 100%);
+}
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 html[data-hv-font="large"] { font-size:18px; }
 html[data-hv-texture]:not([data-hv-texture="none"]) body::after { content:""; position:fixed; inset:0; pointer-events:none; z-index:45; opacity:.045; }
 html[data-hv-texture="paper"] body::after { background:repeating-linear-gradient(12deg,transparent 0 3px,#403522 3px 4px,transparent 4px 9px); opacity:.025; }
