@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Loader2, Filter, Sprout, Sparkles, Calendar, Compass } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import HomeMockupHeader from "@/components/home/HomeMockupHeader";
 import MockupHeroCard from "@/components/home/MockupHeroCard";
 import DailyCuriositiesCarousel from "@/components/home/DailyCuriositiesCarousel";
