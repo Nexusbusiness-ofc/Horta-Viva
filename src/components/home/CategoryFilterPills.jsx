@@ -10,14 +10,20 @@ const CATEGORIES = [
   {
     id: "hortalicas",
     label: "Hortaliças",
-    emoji: "🌱",
-    match: ["hortaliça", "hortalica", "folha", "alface", "couve", "espinafre"]
+    emoji: "🥬",
+    match: ["hortaliça", "hortalica", "folha", "alface", "couve", "espinafre", "agriao", "agrião"]
   },
   {
     id: "frutos",
     label: "Frutos",
     emoji: "🍅",
     match: ["fruto", "tomate", "pimento", "pepino", "abobora", "morango"]
+  },
+  {
+    id: "legumes",
+    label: "Legumes",
+    emoji: "🫘",
+    match: ["legume", "feijão", "feijao", "fava", "ervilha", "grão", "grao", "tremoço", "tremoco", "amendoim", "lentilha"]
   },
   {
     id: "raizes",
@@ -29,7 +35,7 @@ const CATEGORIES = [
     id: "aromaticas",
     label: "Aromáticas",
     emoji: "🌿",
-    match: ["aromatica", "erva", "salsa", "coentros", "manjericao", "alecrim"]
+    match: ["aromatica", "erva", "salsa", "coentros", "manjericao", "alecrim", "salva", "hortelã"]
   },
   {
     id: "podas",

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { Loader2, Filter } from "lucide-react";
+import { Loader2, Filter, Sprout, Sparkles, Calendar, Compass } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import HomeMockupHeader from "@/components/home/HomeMockupHeader";
 import MockupHeroCard from "@/components/home/MockupHeroCard";
@@ -26,12 +26,16 @@ import MascotHomeCard from '@/components/mascot/MascotHomeCard';
 export default function Home() {
   const { preferences } = useRegionalPreferences();
   const { t, locale } = useI18n();
-  const monthName = month => new Intl.DateTimeFormat(locale, { month:'long',timeZone:'UTC' }).format(new Date(Date.UTC(2026,month-1,15)));
+  const monthName = month =>
+    new Intl.DateTimeFormat(locale, { month: 'long', timeZone: 'UTC' }).format(
+      new Date(Date.UTC(2026, month - 1, 15))
+    );
   const navigate = useNavigate();
   const [plants, setPlants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
+  const [seasonActionFilter, setSeasonActionFilter] = useState("all"); // 'all' | 'sow_now' | 'harvest_now'
   const [selectedMonth, setSelectedMonth] = useState(0);
   const [showMonthFilter, setShowMonthFilter] = useState(false);
   const [selectedPlant, setSelectedPlant] = useState(null);
@@ -46,7 +50,6 @@ export default function Home() {
       .then(setPlants)
       .finally(() => setLoading(false));
 
-    // Carregar contagem de plantações ou tarefas para o badge de notificações
     base44.entities.Planting.list("-planted_date")
       .then((plantings) => {
         if (plantings && plantings.length > 0) {
@@ -58,7 +61,17 @@ export default function Home() {
 
   const currentMonth = getLocalMonth(new Date(), preferences);
 
-  // Filtragem de plantas por pesquisa, categoria e mês
+  // Contadores rápidos para o mês atual
+  const sowNowCount = useMemo(
+    () => plants.filter(p => (p.sow_months || []).includes(currentMonth)).length,
+    [plants, currentMonth]
+  );
+  const harvestNowCount = useMemo(
+    () => plants.filter(p => (p.harvest_months || []).includes(currentMonth)).length,
+    [plants, currentMonth]
+  );
+
+  // Filtragem de plantas por pesquisa, categoria, ação sazonal e mês
   const visiblePlants = useMemo(() => {
     let list = plants;
 
@@ -75,7 +88,7 @@ export default function Home() {
       );
     }
 
-    // Filtro por categoria do mockup
+    // Filtro por categoria
     if (activeCategory !== "all") {
       list = list.filter((p) => {
         const catName = (p.category || "").toLowerCase();
@@ -87,7 +100,9 @@ export default function Home() {
             catName.includes("folha") ||
             pName.includes("alface") ||
             pName.includes("couve") ||
-            pName.includes("espinafre")
+            pName.includes("espinafre") ||
+            pName.includes("agrião") ||
+            pName.includes("agriao")
           );
         }
         if (activeCategory === "frutos") {
@@ -97,6 +112,20 @@ export default function Home() {
             pName.includes("pimento") ||
             pName.includes("pepino") ||
             pName.includes("morango")
+          );
+        }
+        if (activeCategory === "legumes") {
+          return (
+            catName.includes("legume") ||
+            pName.includes("feijão") ||
+            pName.includes("feijao") ||
+            pName.includes("fava") ||
+            pName.includes("ervilha") ||
+            pName.includes("grão") ||
+            pName.includes("tremoço") ||
+            pName.includes("tremoco") ||
+            pName.includes("amendoim") ||
+            pName.includes("lentilha")
           );
         }
         if (activeCategory === "raizes") {
@@ -118,14 +147,22 @@ export default function Home() {
             pName.includes("salsa") ||
             pName.includes("coentros") ||
             pName.includes("alecrim") ||
-            pName.includes("manjericão")
+            pName.includes("manjericão") ||
+            pName.includes("salva")
           );
         }
         return true;
       });
     }
 
-    // Filtro opcional por mês
+    // Filtro rápido "Semear Agora" / "Colher Agora"
+    if (seasonActionFilter === "sow_now") {
+      list = list.filter((p) => (p.sow_months || []).includes(currentMonth));
+    } else if (seasonActionFilter === "harvest_now") {
+      list = list.filter((p) => (p.harvest_months || []).includes(currentMonth));
+    }
+
+    // Filtro opcional por mês específico
     if (selectedMonth !== 0) {
       list = list.filter(
         (p) =>
@@ -136,7 +173,7 @@ export default function Home() {
     }
 
     return list;
-  }, [plants, searchQuery, activeCategory, selectedMonth, t]);
+  }, [plants, searchQuery, activeCategory, seasonActionFilter, selectedMonth, currentMonth, t]);
 
   const handleCategorySelect = (cat) => {
     if (cat.isSpecialLink) {
@@ -166,10 +203,14 @@ export default function Home() {
   };
 
   const isSearching = searchQuery.trim().length > 0;
+  const currentMonthFormatted = (() => {
+    const raw = monthName(currentMonth);
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  })();
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-[#f7f9f6] text-stone-800">
-      {/* 1. Topo Verde Floresta Arredondado com Barra de Pesquisa em Pílula (Idêntico ao Mockup) */}
+    <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-b from-[#f3f8f4] via-[#f7faf7] to-[#f4f7f3] text-stone-800">
+      {/* 1. Topo Verde Floresta Arredondado com Barra de Pesquisa em Pílula */}
       <HomeMockupHeader
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -178,97 +219,195 @@ export default function Home() {
         pendingTasksCount={pendingTasksCount}
       />
 
-      {/* Conteúdo Principal adaptado para mobile e ecrãs largos (desktop/PC) */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-28 space-y-6">
-        <RegionSummary />
-        <WeatherCard />
-        <MascotHomeCard />
-        {/* Quando o utilizador NÃO está a pesquisar, exibe todos os blocos do mockup */}
+      {/* Conteúdo Principal em Bento Layout */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-28 space-y-6">
         {!isSearching && (
           <>
-            {/* 2. Cartão de Destaque / Carrossel com Broto e 3 Pontos (Idêntico ao Mockup) */}
-            <MockupHeroCard />
+            {/* Painel Bento Superior: Hero à esquerda + Clima, Região e Mascote organizados */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+              <div className="lg:col-span-7 flex flex-col justify-between gap-3">
+                <RegionSummary />
+                <MockupHeroCard />
+              </div>
+              <div className="lg:col-span-5 flex flex-col justify-between gap-3">
+                <MascotHomeCard />
+                <WeatherCard compact />
+              </div>
+            </div>
 
-            {/* 3. Carrossel Horizontal: Curiosidades Diárias da Horta */}
-            <DailyCuriositiesCarousel />
-
-            {/* 5. Grelha em Destaque: 4 Áreas da App com Imagens Representativas */}
+            {/* Grelha em Destaque: 4 Áreas da App com Imagens Representativas */}
             <HomeExploreGrid />
 
-            {/* 6. Pílulas de Filtros de Categorias (Todos, Hortaliças, Frutos, Raízes, Aromáticas, Podas, Animais) */}
-            <CategoryFilterPills
-              activeCategory={activeCategory}
-              onSelectCategory={handleCategorySelect}
-            />
+            {/* Carrossel Horizontal: Curiosidades Diárias da Horta */}
+            <DailyCuriositiesCarousel />
           </>
         )}
 
-        {/* Informação de Pesquisa Ativa */}
         {isSearching && (
-          <div className="flex items-center justify-between pt-1">
-            <h2 className="text-sm font-bold text-stone-700">
-              🔍 {t('{count} resultados para "{query}"', { count:visiblePlants.length,query:searchQuery })}
+          <div className="flex items-center justify-between pt-1 bg-white rounded-2xl px-4 py-3 border border-emerald-200/80 shadow-2xs">
+            <h2 className="text-sm font-extrabold text-stone-800">
+              🔍 {t('{count} resultados para "{query}"', { count: visiblePlants.length, query: searchQuery })}
             </h2>
             <button
               onClick={handleClearSearch}
-              className="text-xs text-emerald-700 hover:text-emerald-800 font-bold"
+              className="text-xs text-emerald-700 hover:text-emerald-800 font-extrabold px-2.5 py-1 rounded-lg bg-emerald-50"
             >
               {t('Limpar pesquisa')}
             </button>
           </div>
         )}
 
-        {/* 6. Catálogo de Plantas & Alimentos */}
-        <section className="space-y-3 pt-1">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5">
-              <h2 className="text-sm font-black text-stone-800">
-                🌱 {t('Catálogo de Alimentos')}
-              </h2>
-              <span className="text-[11px] text-stone-400 font-bold">
-                ({visiblePlants.length})
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {/* Botão de filtro sazonal por mês */}
-              <button
-                type="button"
-                onClick={() => setShowMonthFilter((prev) => !prev)}
-                className={`text-xs font-bold px-2.5 py-1 rounded-xl border flex items-center gap-1 transition-all ${
-                  selectedMonth !== 0 || showMonthFilter
-                    ? "bg-emerald-50 text-emerald-800 border-emerald-300"
-                    : "bg-white text-stone-600 border-stone-200"
-                }`}
-                title={t('Filtrar por mês do ano')}
-              >
-                <Filter className="w-3 h-3 text-emerald-700" />
-                <span>{selectedMonth === 0 ? t('Mês') : monthName(selectedMonth)}</span>
-              </button>
-
-              <ViewModeToggle mode={viewMode} onChange={setViewMode} />
-            </div>
-          </div>
-          <CatalogLanguageNote />
-
-          {/* Seletor de Mês Expansível */}
-          {showMonthFilter && (
-            <div className="bg-white p-3 rounded-2xl border border-stone-200/80 shadow-xs animate-in fade-in duration-200 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-stone-700">📅 {t('Época de plantio / colheita:')}</span>
-                <button type="button" onClick={() => setSelectedMonth(currentMonth)} className="text-[11px] font-bold text-emerald-700 hover:underline">{monthName(currentMonth)}</button>
-                {selectedMonth !== 0 && (
-                  <button
-                    onClick={() => setSelectedMonth(0)}
-                    className="text-[11px] text-emerald-700 font-bold hover:underline"
-                  >
-                    {t('Ver todos')}
-                  </button>
-                )}
+        {/* Secção do Catálogo de Plantas & Alimentos */}
+        <section className="space-y-4 pt-1">
+          {/* Cabeçalho do Catálogo + Filtro Sazonal Rápido */}
+          <div className="bg-white rounded-3xl p-4 sm:p-5 border border-emerald-200/70 shadow-xs space-y-3.5">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 text-white flex items-center justify-center shadow-sm shadow-emerald-200">
+                  <Sprout className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base sm:text-lg font-black text-stone-800 leading-none">
+                      {t('Catálogo de Alimentos')}
+                    </h2>
+                    <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                      {visiblePlants.length}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-stone-500 font-medium mt-0.5">
+                    {t('Calendários de sementeira, plantação, colheita e cuidados')}
+                  </p>
+                </div>
               </div>
-              <MonthSelector selectedMonth={selectedMonth} onSelect={setSelectedMonth} />
+
+              <div className="flex items-center gap-2">
+                {/* Botão de filtro sazonal por mês */}
+                <button
+                  type="button"
+                  onClick={() => setShowMonthFilter((prev) => !prev)}
+                  className={`text-xs font-extrabold px-3 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all ${
+                    selectedMonth !== 0 || showMonthFilter
+                      ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                      : "bg-stone-50 hover:bg-emerald-50 text-stone-700 border-stone-200"
+                  }`}
+                  title={t('Filtrar por mês do ano')}
+                >
+                  <Filter className="w-3.5 h-3.5" />
+                  <span>{selectedMonth === 0 ? t('Filtrar Mês') : monthName(selectedMonth)}</span>
+                </button>
+
+                <ViewModeToggle mode={viewMode} onChange={setViewMode} />
+              </div>
             </div>
-          )}
+
+            {/* Pílulas de Ação Rápida do Mês Atual (Semear Agora / Colher Agora) */}
+            {!isSearching && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
+                <button
+                  type="button"
+                  onClick={() => setSeasonActionFilter("all")}
+                  className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all ${
+                    seasonActionFilter === "all"
+                      ? "bg-stone-900 text-white border-stone-900 shadow-2xs"
+                      : "bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100"
+                  }`}
+                >
+                  <span>📋</span>
+                  <span>{t('Todas as épocas')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSeasonActionFilter(prev => (prev === "sow_now" ? "all" : "sow_now"))
+                  }
+                  className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all ${
+                    seasonActionFilter === "sow_now"
+                      ? "bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-200"
+                      : "bg-emerald-50/80 text-emerald-800 border-emerald-200 hover:bg-emerald-100/80"
+                  }`}
+                >
+                  <span>🌱</span>
+                  <span>
+                    {t('Semear em')} {currentMonthFormatted}
+                  </span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                      seasonActionFilter === "sow_now"
+                        ? "bg-white/25 text-white"
+                        : "bg-emerald-200/80 text-emerald-900"
+                    }`}
+                  >
+                    {sowNowCount}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSeasonActionFilter(prev => (prev === "harvest_now" ? "all" : "harvest_now"))
+                  }
+                  className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all ${
+                    seasonActionFilter === "harvest_now"
+                      ? "bg-amber-500 text-white border-amber-500 shadow-sm shadow-amber-200"
+                      : "bg-amber-50/80 text-amber-900 border-amber-200 hover:bg-amber-100/80"
+                  }`}
+                >
+                  <span>🧺</span>
+                  <span>
+                    {t('Colher em')} {currentMonthFormatted}
+                  </span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                      seasonActionFilter === "harvest_now"
+                        ? "bg-white/25 text-white"
+                        : "bg-amber-200/80 text-amber-900"
+                    }`}
+                  >
+                    {harvestNowCount}
+                  </span>
+                </button>
+              </div>
+            )}
+
+            {/* Pílulas de Categorias */}
+            {!isSearching && (
+              <CategoryFilterPills
+                activeCategory={activeCategory}
+                onSelectCategory={handleCategorySelect}
+              />
+            )}
+
+            {/* Seletor de Mês Expansível */}
+            {showMonthFilter && (
+              <div className="bg-stone-50 p-3.5 rounded-2xl border border-stone-200/80 animate-in fade-in duration-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-extrabold text-stone-700">
+                    📅 {t('Época de plantio / colheita:')}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedMonth(currentMonth)}
+                      className="text-[11px] font-extrabold text-emerald-700 hover:underline"
+                    >
+                      {t('Mês atual')} ({monthName(currentMonth)})
+                    </button>
+                    {selectedMonth !== 0 && (
+                      <button
+                        onClick={() => setSelectedMonth(0)}
+                        className="text-[11px] text-stone-600 font-bold hover:underline"
+                      >
+                        {t('Ver todos')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <MonthSelector selectedMonth={selectedMonth} onSelect={setSelectedMonth} />
+              </div>
+            )}
+          </div>
+
+          <CatalogLanguageNote />
 
           {/* Lista / Grelha de Plantas */}
           {loading ? (
@@ -276,16 +415,19 @@ export default function Home() {
               <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
             </div>
           ) : visiblePlants.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-3xl border border-stone-200/70 p-6">
+            <div className="text-center py-12 bg-white rounded-3xl border border-stone-200/70 p-6 shadow-2xs">
               <div className="text-4xl mb-2">🌿</div>
-              <p className="text-sm font-bold text-stone-700">{t('Nenhum alimento encontrado nesta categoria.')}</p>
+              <p className="text-sm font-bold text-stone-700">
+                {t('Nenhum alimento encontrado nesta categoria.')}
+              </p>
               <button
                 onClick={() => {
                   setActiveCategory("all");
+                  setSeasonActionFilter("all");
                   setSelectedMonth(0);
                   setSearchQuery("");
                 }}
-                className="mt-3 text-xs text-emerald-700 font-bold underline"
+                className="mt-3 text-xs text-emerald-700 font-extrabold underline"
               >
                 {t('Limpar filtros e ver todas as plantas')}
               </button>
@@ -295,7 +437,7 @@ export default function Home() {
               className={
                 viewMode === "grid"
                   ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3.5"
-                  : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
+                  : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5"
               }
             >
               {visiblePlants.map((p) => (
@@ -310,18 +452,30 @@ export default function Home() {
           )}
         </section>
 
-        {/* 8. Assistente IA Integrado */}
-        <section id="assistente-ia" className="bg-white rounded-3xl p-4 sm:p-6 border border-stone-200/80 shadow-xs scroll-mt-20">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-lg">🤖</span>
-            <h2 className="text-sm font-black text-stone-800">{t('Assistente Agrónomo IA')}</h2>
+        {/* Assistente IA Integrado */}
+        <section
+          id="assistente-ia"
+          className="bg-gradient-to-br from-white via-emerald-50/30 to-teal-50/30 rounded-3xl p-4 sm:p-6 border border-emerald-200/80 shadow-sm scroll-mt-20"
+        >
+          <div className="flex items-center gap-2.5 mb-3">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white flex items-center justify-center shadow-sm">
+              <Sparkles className="w-4.5 h-4.5 text-amber-300" />
+            </div>
+            <div>
+              <h2 className="text-sm sm:text-base font-black text-stone-800 leading-none">
+                {t('Assistente Agrónomo IA')}
+              </h2>
+              <p className="text-[11px] text-stone-500 font-medium mt-0.5">
+                {t('Tira dúvidas sobre cultivo, pragas, rega e calendário regional')}
+              </p>
+            </div>
           </div>
           <AIAssistant query={aiQuery} plants={plants} onClearQuery={() => setAiQuery(null)} />
         </section>
       </main>
 
       {/* Rodapé suave */}
-      <footer className="text-center pt-2 pb-24 text-xs text-stone-400">
+      <footer className="text-center pt-2 pb-24 text-xs text-stone-400 font-medium">
         <span>🌱 Horta Viva — {t('Cultiva com sabedoria')}</span>
       </footer>
 
